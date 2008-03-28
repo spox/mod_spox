@@ -1,0 +1,9 @@
+Install:
+
+gem install --include-dependencies mod_spox
+
+Requirements include:
+    * sequel
+    * fastthread
+    * termios
+    * Ruby >= 1.8.4

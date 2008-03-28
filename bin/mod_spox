@@ -1,0 +1,60 @@
+#!/usr/bin/env ruby
+
+## include our needed libraries ##
+
+['rubygems', 'sequel', 'fastthread',
+'thread', 'etc', 'getoptlong'].each{|file| 
+    begin
+        require file
+    rescue Object => boom
+        puts "ERROR: Failed to load required library: #{file}"
+        exit 1
+    end
+}
+
+$BOTVERSION='0.0.1'
+$VERBOSITY = 0
+
+begin
+    require 'mod_spox/Loader'
+rescue
+    p 'ERROR: Failed to load mod_spox'
+    exit 1
+end
+include ModSpox
+
+opts = GetoptLong.new(
+    ['--config', '-c', GetoptLong::NO_ARGUMENT],
+    ['--debug', '-d', GetoptLong::OPTIONAL_ARGUMENT],
+    ['--version', '-v', GetoptLong::NO_ARGUMENT],
+    ['--help', '-h', GetoptLong::NO_ARGUMENT]
+)
+verbose = 0
+opts.each do |opt, arg|
+    case opt
+        when '--help'
+            p 'Usage: mod_spox [opts]'
+            p '--config -c:     starts configuration wizard'
+            p '--debug -d:      turns on debugging (include number >0 for more info)'
+            p '--version -V:    output bot version information'
+            p '--help -h:       print this help message'
+            exit
+        when '--version'
+            p "mod_spox IRC bot version: #{$BOTVERSION}"
+            p 'http://dev.modspox.com'
+            exit
+        when '--debug'
+            if(arg && arg =~ /^[0-9]+/)
+                $VERBOSITY = arg.to_i
+            end
+        when '--config'
+            require 'mod_spox/ConfigurationWizard'
+            wizard = ConfigurationWizard.new
+            wizard.run
+            exit
+    end
+end
+
+initialize_bot
+bot = Bot.new
+bot.run

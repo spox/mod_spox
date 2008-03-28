@@ -1,0 +1,33 @@
+mod_spox
+    http://modspox.rubyforge.org
+    Author: spox
+    
+== Description
+
+A Ruby IRC bot
+
+== Usage
+
+Configuration:
+
+mod_spox --config
+
+Running:
+
+mod_spox
+
+== Requirements
+
+ * fastthread
+ * sequel
+ * termios
+ 
+== Install
+
+gem install --include-dependencies mod_spox
+
+== License
+
+mod_spox is licensed under the GPLv3
+
+Copyright (c) 2008 spox <spox@modspox.com>
