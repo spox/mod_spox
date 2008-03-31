@@ -35,13 +35,13 @@ module ModSpox
         def load_plugin(message)
             begin
                 Logger.log("THE MESSAGE NAME IS: #{message.name}")
-                path = message.name.nil? ? BotConfig[:userpluginpath] : "#{BotConfig[:userpluginpath]}/#{message.name}"
-                File.copy(message.path, path)
+                path = !message.name ? BotConfig[:userpluginpath] : "#{BotConfig[:userpluginpath]}/#{message.name}"
+                FileUtils.copy(message.path, path)
                 reload_plugins
                 @pipeline << Messages::Internal::PluginLoadResponse.new(message.requester, true)
                 Logger.log("Loaded new plugin: #{message.path}", 10)
             rescue Object => boom
-                Logger.log("Failed to load plugin: #{message.path}", 10)
+                Logger.log("Failed to load plugin: #{message.path} Reason: #{boom}", 10)
                 @pipeline << Messages::Internal::PluginLoadResponse.new(message.requester, false)
             end
         end
@@ -51,9 +51,9 @@ module ModSpox
         def unload_plugin(message)
             begin
                 unless(message.name.nil?)
-                    File.copy(message.path, "#{BotConfig[:userpluginpath]}/#{message.name}")
+                    FileUtils.copy(message.path, "#{BotConfig[:userpluginpath]}/#{message.name}")
                 end
-                File.unlink(message.path)
+                FileUtils.remove_file(message.path)
                 reload_plugins
                 @pipeline << Messages::Internal::PluginUnloadResponse.new(message.requester, true)
                 Logger.log("Unloaded plugin: #{message.path}", 10)
@@ -77,15 +77,23 @@ module ModSpox
             [BotConfig[:pluginpath], BotConfig[:userpluginpath]].each{|path|
                 Dir.new(path).each{|file|
                     if(file =~ /^[^\.].+\.rb$/)
-                        @plugins_module.module_eval(IO.readlines("#{path}/#{file}").join("\n"))
+                        begin
+                            @plugins_module.module_eval(IO.readlines("#{path}/#{file}").join("\n"))
+                        rescue Object => boom
+                            Logger.log("Failed to load file: #{path}/#{file}. Reason: #{boom}")
+                        end
                     end
                 }
             }
             @plugins_module.constants.each{|const|
                 klass = @plugins_module.const_get(const)
                 if(klass < Plugin)
-                    @plugins[const.to_sym] = klass.new(@pipeline)
-                    Logger.log("Initialized new plugin: #{const}", 15)
+                    begin
+                        @plugins[const.to_sym] = klass.new(@pipeline)
+                        Logger.log("Initialized new plugin: #{const}", 15)
+                    rescue Object => boom
+                        Logger.log("Failed to initialize plugin #{const}. Reason: #{boom}")
+                    end
                 end
             }
             @pipeline << Messages::Internal::SignaturesUpdate.new

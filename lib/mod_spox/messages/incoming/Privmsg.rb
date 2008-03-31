@@ -40,7 +40,7 @@ module ModSpox
                 
                 # Is this a public message
                 def is_public?
-                    return @target.is_a?(Model::Channel)
+                    return @target.is_a?(Models::Channel)
                 end
                 
                 # Does the message contain colors
@@ -56,6 +56,12 @@ module ModSpox
                 # Is this message an action message
                 def is_action?
                     @action
+                end
+                
+                # Convinence method for replying to the correct place
+                def replyto
+                    return @source if is_private?
+                    return @target if is_public?
                 end
             
             end

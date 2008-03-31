@@ -1,6 +1,7 @@
 module ModSpox
     class Plugin
         def initialize(pipeline)
+            raise Exceptions::BotException.new('Plugin creation failed to supply message pipeline') unless pipeline.is_a?(Pipeline)
             @pipeline = pipeline
             @pipeline.hook_plugin(self)
         end
