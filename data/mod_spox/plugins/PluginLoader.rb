@@ -108,12 +108,16 @@ class PluginLoader < ModSpox::Plugin
     def plugin_discovery(path)
         plugins = Hash.new
         Dir.new(path).each do |file|
-            next unless file =~ /\.rb$/
-            sandbox = Module.new
-            sandbox.module_eval(IO.readlines("#{path}/#{file}").join("\n"))
-            sandbox.constants.each do |const|
-                klass = sandbox.const_get(const)
-                plugins[const] = "#{path}/#{file}" if klass < Plugin
+            begin
+                next unless file =~ /\.rb$/
+                sandbox = Module.new
+                sandbox.module_eval(IO.readlines("#{path}/#{file}").join("\n"))
+                sandbox.constants.each do |const|
+                    klass = sandbox.const_get(const)
+                    plugins[const] = "#{path}/#{file}" if klass < Plugin
+                end
+            rescue Object => boom
+                Logger.log("Failed to parse file: #{path}/#{file}. Reason: #{boom}")
             end
         end
         return plugins
