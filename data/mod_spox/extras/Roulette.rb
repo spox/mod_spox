@@ -27,7 +27,7 @@ class Roulette < ModSpox::Plugin
         return unless message.is_public?
         cur_game = game(message.target)
         nick = Nick.filter(:nick => params[:nick])
-        if(game.shots == 1 && nick && Info.filter(:game_id => cur_game.pk, :nick_id => nick.pk))
+        if(cur_game.shots == 1 && nick && Info.filter(:game_id => cur_game.pk, :nick_id => nick.pk))
             do_shot(nick, message.target)
         else
             do_suicide(message.source, message.target)
