@@ -17,6 +17,7 @@ class Karma < ModSpox::Plugin
         if(message.is_public?)
             message.message.scan(@karma_regex) do |match|
                 thing, adj = match
+                thing.downcase!
                 thing = thing[1..-2] if thing[0..0] == '(' && thing[-1..1] == ')'
                 adj = adj == '++' ? +1 : -1
                 karma = KarmaDatatype::Karma.find_or_create(:thing => thing, :channel_id => message.target.pk)
@@ -26,6 +27,7 @@ class Karma < ModSpox::Plugin
     end
     
     def score(message, params)
+        params[:thing].downcase!
         return unless message.is_public?
         karma = KarmaDatatype::Karma.filter(:thing => params[:thing], :channel_id => message.target.pk).first
         if(karma)
@@ -36,6 +38,7 @@ class Karma < ModSpox::Plugin
     end
     
     def reset(message, params)
+        params[:thing].downcase!
         return unless message.is_public?
         karma = KarmaDatatype::Karma.filter(:thing => params[:thing], :channel_id => message.target.pk).first
         if(karma)
