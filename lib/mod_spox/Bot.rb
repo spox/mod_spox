@@ -102,7 +102,7 @@ module ModSpox
         # Adds hooks to pipeline for processing messages
         def hook_pipeline
             {:Outgoing_Admin => :admin, :Outgoing_Away => :away,
-             :Outgoing_ChannelMode => :chanmode, :Outgoing_Connect => :connect,
+             :Outgoing_ChannelMode => :channel_mode, :Outgoing_Connect => :connect,
              :Outgoing_Die => :die, :Outgoing_Info => :info,
              :Outgoing_Invite => :invite, :Outgoing_Ison => :ison,
              :Outgoing_Join => :join, :Outgoing_Kick => :kick,
@@ -119,7 +119,7 @@ module ModSpox
              :Outgoing_Summon => :summon, :Outgoing_Time => :time,
              :Outgoing_Topic => :topic, :Outgoing_Trace => :trace,
              :Outgoing_Unaway => :unaway, :Outgoing_User => :user,
-             :Outgoing_UserHost => :userhost, :Outgoing_UserMode => :usermode,
+             :Outgoing_UserHost => :userhost, :Outgoing_UserMode => :user_mode,
              :Outgoing_Users => :users, :Outgoing_Version => :version,
              :Outgoing_Who => :who, :Outgoing_WhoWas => :whowas,
              :Outgoing_Whois => :whois, :Internal_EstablishConnection => :bot_connect,
