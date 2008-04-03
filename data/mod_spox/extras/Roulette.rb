@@ -13,16 +13,25 @@ class Roulette < ModSpox::Plugin
         Info.create_table unless Info.table_exists?
     end
     
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: empty
+    # Play roulette
     def roulette(message, params)
         return unless message.is_public?
         do_shot(message.source, message.target)
     end
     
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: empty
+    # Kill self
     def suicide(message, params)
         return unless message.is_public?
         do_suicide(message.source, message.target)
     end
     
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: nick
+    # Shoot other person playing current game
     def shoot(message, params)
         return unless message.is_public?
         cur_game = game(message.target)
@@ -33,7 +42,10 @@ class Roulette < ModSpox::Plugin
             do_suicide(message.source, message.target)
         end
     end
-    
+
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: empty
+    # List topten players
     def topten(message, params)
         return unless message.is_public?
         ds = Database.db[:infos].left_outer_join(:games, :id => :game_id)
@@ -51,7 +63,10 @@ class Roulette < ModSpox::Plugin
             reply(message.replyto, "Roulette topten: #{top.join(', ')}")
         end
     end
-    
+
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: empty | nick
+    # List statistics on self or given nick
     def stats(message, params)
         return unless message.is_public?
         if(params[:nick])
@@ -68,6 +83,9 @@ class Roulette < ModSpox::Plugin
     
     private
     
+    # nick:: ModSpox::Models::Nick
+    # channel:: ModSpox::Models::Channel
+    # Report win/loss ratio for nick
     def win_loss_ratio(nick, channel)
         if(games_lost(nick, channel) > 0)
             val = (games_won(nick, channel).to_f / games_total(nick, channel).to_f) * 100
@@ -78,25 +96,40 @@ class Roulette < ModSpox::Plugin
         end
         return sprintf("%.2f", val)
     end
-    
+
+    # nick:: ModSpox::Models::Nick
+    # channel:: ModSpox::Models::Channel
+    # Return number of games nick has won
     def games_won(nick, channel)
         Info.left_outer_join(:games, :id => :game_id).filter{:nick_id == nick.pk && :channel_id == channel.pk && :win == true}.size
     end
     
+    # nick:: ModSpox::Models::Nick
+    # channel:: ModSpox::Models::Channel
+    # Return number of games nick has lost
     def games_lost(nick, channel)
         games_total(nick, channel) - games_won(nick, channel)
     end
-    
+
+    # nick:: ModSpox::Models::Nick
+    # channel:: ModSpox::Models::Channel
+    # Return number of games nick has played
     def games_total(nick, channel)
         Info.left_outer_join(:games, :id => :game_id).filter{:nick_id == nick.pk && :channel_id == channel.pk}.exclude(:game_id => game(channel).pk).size
     end
-    
+
+    # nick:: ModSpox::Models::Nick
+    # channel:: ModSpox::Models::Channel
+    # Return number of shots nick has taken
     def total_shots(nick, channel)
         v = Info.left_outer_join(:games, :id => :game_id).filter{:nick_id == nick.pk && :channel_id == channel.pk}.exclude(:game_id => game(channel).pk).sum(:infos__shots)
         v = 0 unless v
         return v
     end
-    
+
+    # nick:: ModSpox::Models::Nick
+    # channel:: ModSpox::Models::Channel
+    # Fire shot    
     def do_shot(nick, channel)
         begin
             shot(nick, channel)
@@ -108,6 +141,9 @@ class Roulette < ModSpox::Plugin
         end
     end
     
+    # nick:: ModSpox::Models::Nick
+    # channel:: ModSpox::Models::Channel
+    # Commit suicide
     def do_suicide(nick, channel)
         begin
             6.times do
@@ -119,7 +155,9 @@ class Roulette < ModSpox::Plugin
             reply(channel, "#{nick.nick}: *BANG*")
         end
     end
-    
+
+    # channel:: ModSpox::Models::Channel
+    # Return current game
     def game(channel)
         game = Game.filter{:shots > 0 && :channel_id == channel.pk}.first
         unless(game)
@@ -130,6 +168,9 @@ class Roulette < ModSpox::Plugin
         return game
     end
     
+    # nick:: ModSpox::Models::Nick
+    # channel:: ModSpox::Models::Channel
+    # Process shot
     def shot(nick, channel)
         cur_game = game(channel)
         info = Info.find_or_create(:game_id => cur_game.pk, :nick_id => nick.pk)
@@ -138,6 +179,9 @@ class Roulette < ModSpox::Plugin
         raise Bullet.new(cur_game) if cur_game.shots < 1
     end
     
+    # nick:: ModSpox::Models::Nick
+    # game:: Game
+    # Return number of games nick has won
     def game_over(nick, game)
         Info.filter(:game_id => game.pk).each do |info|
             info.set(:win => true) unless info.nick_id == nick.pk
