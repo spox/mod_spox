@@ -2,7 +2,7 @@ module ModSpox
 
     # The Pool class is used to reduce thread creation. When
     # used in conjuntion with a PoolQueue, it provides an easy
-    # way to process many objects in an asynchronise manner
+    # way to process many objects in an asynchronous manner
     class Pool
     
         # num_procs:: Number of threads to use
