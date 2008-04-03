@@ -5,16 +5,18 @@ class Banner < ModSpox::Plugin
     
     def initialize(pipeline)
         super(pipeline)
-        admin = Group.find_or_create(:name => 'banner').first
-        Signature.new(:signature => 'ban (\S+)', :plugin => name, :method => :default_ban, :group_id => admin.pk,
+        admin = Group.find_or_create(:name => 'banner')
+        Signature.find_or_create(:signature => 'ban (\S+)', :plugin => name, :method => 'default_ban', :group_id => admin.pk,
             :description => 'Kickban given nick from current channel').params = [:nick]
-        Signature.new(:signature => 'ban (\S+) (\S+)', :plugin => name, :method => :channel_ban, :group_id => admin.pk,
+        Signature.find_or_create(:signature => 'ban (\S+) (\S+)', :plugin => name, :method => 'channel_ban', :group_id => admin.pk,
             :description => 'Kickban given nick from given channel').params = [:nick, :channel]
-        Signature.new(:signature => 'ban (\S+) (\S+) (\d+) ?(.+)?', :plugin => name, :method => :full_ban, :group_id => admin.pk,
+        Signature.find_or_create(:signature => 'ban (\S+) (\S+) (\d+) ?(.+)?', :plugin => name, :method => 'full_ban', :group_id => admin.pk,
             :description => 'Kickban given nick from given channel for given number of seconds').params = [:nick, :channel, :time, :message]
-        Signature.new(:signature => 'banmask (\S+) (\S+) (\d+) ?(.+)?', :plugin => name, :method => :mask_ban, :group_id => admin.pk,
-            :description => 'Kickban given mask from given channel for given number of seconds providing an optional message',
+        Signature.find_or_create(:signature => 'banmask (\S+) (\S+) (\d+) ?(.+)?', :plugin => name, :method => 'mask_ban', :group_id => admin.pk,
+            :description => 'Kickban given mask from given channel for given number of seconds providing an optional message'
             ).params = [:mask, :channel, :time, :message]
+        BanRecord.create_table unless BanRecord.table_exists?
+        BanMask.create_table unless BanMask.table_exists?
     end
     
     def default_ban(message, params)
@@ -29,10 +31,10 @@ class Banner < ModSpox::Plugin
     end
     
     def full_ban(message, params)
-        nick = Nick.filter(:nick => params[:nick]).first
+        nick = Models::Nick.filter(:nick => params[:nick]).first
         channel = Channel.filter(:name => params[:channel]).first
         if(!me.is_op?(message.target))
-            reply message.replyto "Error: I'm not a channel operator"
+            reply(message.replyto "Error: I'm not a channel operator")
         elsif(!nick)
             reply(message.replyto, "#{message.source.nick}: Failed to find nick #{params[:nick]}")
         elsif(!channel)
@@ -51,7 +53,7 @@ class Banner < ModSpox::Plugin
     end
     
     class BanRecord < Sequel::Model
-        set_scehema do
+        set_schema do
             primary_key :id
             timestamp :stamp, :null => false
             integer :bantime, :null => false, :default => 1

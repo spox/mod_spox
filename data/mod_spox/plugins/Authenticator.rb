@@ -163,7 +163,7 @@ class Authenticator < ModSpox::Plugin
             info << "\2INFO [#{nick.nick}]:\2"
             groups = []
             nick.auth_groups.each{|g| groups << g.name}
-            info << "Groups: #{groups.join(', ')}."
+            info << "Groups: #{groups.uniq.sort.join(', ')}."
             nick.auth.password.nil? ? info << 'Password has not been set.' : info << 'Password has been set.'
             nick.auth.services ? info << 'Nickserv ident is enabled.' : info << 'Nickserv ident is disabled.'
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "#{info.join(' ')}")
