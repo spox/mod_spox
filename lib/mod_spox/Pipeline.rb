@@ -10,6 +10,7 @@ module ModSpox
             Logger.log("Created queue #{@messageq} in pipeline", 10)
             @hooks = Hash.new
             @plugins = Hash.new
+            @admin = Models::Group.filter(:name => 'admin').first
             populate_triggers
             populate_signatures
             hook(self, :populate_triggers, :Internal_TriggersUpdate)
@@ -127,7 +128,7 @@ module ModSpox
                     Logger.log("Matching against: #{trigger}#{sig.signature}")
                     res = message.message.scan(/^#{trigger}#{sig.signature}$/)
                     if(res.size > 0)
-                        next unless message.source.auth_groups.include?(sig.group) || sig.group.nil?
+                        next unless message.source.auth_groups.include?(sig.group) || message.source.auth_groups.include?(@admin) ||sig.group.nil?
                         params = Hash.new
                         sig.params.size.times do |i|
                             params[sig.params[i - 1].to_sym] = res[0][i]
