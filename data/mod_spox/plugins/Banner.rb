@@ -5,7 +5,7 @@ class Banner < ModSpox::Plugin
     
     def initialize(pipeline)
         super(pipeline)
-        admin = Group.filter(:name => 'admin').first
+        admin = Group.find_or_create(:name => 'banner').first
         Signature.new(:signature => 'ban (\S+)', :plugin => name, :method => :default_ban, :group_id => admin.pk,
             :description => 'Kickban given nick from current channel').params = [:nick]
         Signature.new(:signature => 'ban (\S+) (\S+)', :plugin => name, :method => :channel_ban, :group_id => admin.pk,
@@ -18,12 +18,33 @@ class Banner < ModSpox::Plugin
     end
     
     def default_ban(message, params)
+        params[:time] = 86400
+        params[:channel] = message.target.name
+        full_ban(message, params)
     end
     
     def channel_ban(message, params)
+        params[:time] = 86400
+        full_ban(message, params)
     end
     
     def full_ban(message, params)
+        nick = Nick.filter(:nick => params[:nick]).first
+        channel = Channel.filter(:name => params[:channel]).first
+        if(!me.is_op?(message.target))
+            reply message.replyto "Error: I'm not a channel operator"
+        elsif(!nick)
+            reply(message.replyto, "#{message.source.nick}: Failed to find nick #{params[:nick]}")
+        elsif(!channel)
+            reply(message.replyto, "#{message.source.nick}: Failed to find channel #{params[:channel]}")
+        elsif(nick)
+            mask = nick.source.empty? ? "#{nick.nick}!*@*" : "*!*@#{nick.address}" 
+            BanRecord.new(:nick_id => nick.pk, :bantime => params[:time].to_i, :remaining => params[:time].to_i,
+                :invite => false, :channel_id => channel.pk, :mask => mask).save
+            message = params[:message] ? params[:message] : 'no soup for you!'
+            @pipeline << ChannelMode.new(channel, '+b', mask)
+            @pipeline << Kick.new(nick, channel, message)
+        end
     end
     
     def mask_ban(message, params)
@@ -39,6 +60,10 @@ class Banner < ModSpox::Plugin
             boolean :invite, :null => false, :default => false
             foreign_key :channel_id, :null => false, :table => :channels
             foreign_key :nick_id, :null => false, :table => :nicks
+        end
+        
+        before_create do
+            set :stamp => Time.now
         end
     end
     

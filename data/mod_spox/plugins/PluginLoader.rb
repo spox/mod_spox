@@ -21,9 +21,9 @@ class PluginLoader < ModSpox::Plugin
     # params:: matching signature params
     # Output currently available plugins for loading
     def available_plugins(message, params)
-        @pipeline << Messages::Outgoing::Privmsg.new(message.source.nick, "\2Currently available plugins:\2")
+        @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "\2Currently available plugins:\2")
         find_plugins.each_pair do | plugin, path |
-            @pipeline << Messages::Outgoing::Privmsg.new(message.source.nick, "\2#{plugin}:\2 #{path}")
+            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "\2#{plugin}:\2 #{path}")
         end
     end
     
@@ -31,7 +31,7 @@ class PluginLoader < ModSpox::Plugin
     # params:: matching signature params
     # Output currently loaded plugins
     def loaded_plugins(message, params)
-        @pipeline << Messages::Outgoing::Privmsg.new(message.source.nick, "\2Currently loaded plugins:\2 #{plugin_list.join(', ')}")
+        @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "\2Currently loaded plugins:\2 #{plugin_list.join(', ')}")
     end
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: matching signature params
@@ -41,9 +41,9 @@ class PluginLoader < ModSpox::Plugin
         if(plugins.has_key?(params[:plugin]))
             name = plugin_discovery(BotConfig[:pluginextraspath]).keys.include?(params[:plugin]) ? nil : "#{params[:plugin]}.rb"
             @pipeline << Messages::Internal::PluginLoadRequest.new(self, plugins[params[:plugin]], name)
-            @pipeline << Messages::Outgoing::Privmsg.new(message.source.nick, "Okay")
+            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Okay")
         else
-            @pipeline << Messages::Outgoing::Privmsg.new(message.source.nick, "Failed to find plugin: #{params[:plugin]}")
+            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find plugin: #{params[:plugin]}")
         end
     end
     
@@ -55,9 +55,9 @@ class PluginLoader < ModSpox::Plugin
         unless(path.nil?)
             name = plugin_discovery(BotConfig[:pluginextraspath]).keys.include?(params[:plugin]) ? nil : ".#{params[:plugin]}.rb"
             @pipeline << Messages::Internal::PluginUnloadRequest.new(self, path, name)
-            @pipeline << Messages::Outgoing::Privmsg.new(message.source.nick, "Okay")
+            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Okay")
         else
-            @pipeline << Messages::Outgoing::Privmsg.new(message.source.nick, "Failed to find loaded plugin named: #{params[:plugin]}")
+            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find loaded plugin named: #{params[:plugin]}")
         end
     end
     
@@ -66,7 +66,7 @@ class PluginLoader < ModSpox::Plugin
     # Reloads plugins    
     def reload_plugin(message, params)
         @pipeline << Messages::Internal::PluginReload.new
-        @pipeline << Messages::Outgoing::Privmsg.new(message.source.nick, 'Okay')
+        @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, 'Okay')
     end
     
     # message:: ModSpox::Messages::Internal::PluginModuleResponse
