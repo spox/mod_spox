@@ -45,7 +45,7 @@ module ModSpox
                 groups = []
                 auth_ids = []
                 group_ids = []
-                auth = Auth.filter(:nick_id => pk, :authed => true).first
+                auth = Auth.filter{:nick_id == pk && :authed == true}.first
                 if(auth)
                     groups = auth.groups
                 end
@@ -94,6 +94,15 @@ module ModSpox
             # Channels nick is currently in
             def channels
                 NickChannel.filter(:nick_id => pk)
+            end
+            
+            # channel:: Models::Channel
+            # Return if nick is operator in given channel
+            def is_op?(channel)
+                NickMode.filter(:channel_id => channel.pk, :nick_id => pk).each do |mode|
+                    return true if mode.mode == 'o'
+                end
+                return false
             end
             
             # Purge all nick information
