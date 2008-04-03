@@ -14,7 +14,7 @@ module ModSpox
                     channel = find_model(chan)
                     kickee = find_model(kicked)
                     channel.nick_remove(kickee)
-                    return Messages::Incoming::Kick(string, channel, kicker, kickee, reason)
+                    return Messages::Incoming::Kick.new(string, channel, kicker, kickee, reason)
                 else
                     Logger.log('Failed to process KICK message')
                 end

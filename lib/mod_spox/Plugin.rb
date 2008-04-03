@@ -23,5 +23,16 @@ module ModSpox
         def reply(target, message)
             @pipeline << Messages::Outgoing::Privmsg.new(target, message)
         end
+        
+        # Returns the nick model of the bot
+        def me
+            nick = Models::Nick.filter(:botnick => true).first
+            if(nick)
+                return nick
+            else
+                raise Exception.new("Fatal Error: I don't know who I am.")
+            end
+        end
+            
     end
 end
