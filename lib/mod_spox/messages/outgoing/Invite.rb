@@ -1,7 +1,7 @@
 module ModSpox
     module Messages
         module Outgoing
-            class Names
+            class Invite
                 # nick to invite
                 attr_reader :nick
                 # channel to invite nick to
