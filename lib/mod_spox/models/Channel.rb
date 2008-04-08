@@ -17,7 +17,11 @@ module ModSpox
             
             # Nicks residing within this channel
             def nicks
-                NickChannel.filter(:channel_id => pk)
+                all_nicks = []
+                NickChannel.filter(:channel_id => pk).each do |nc|
+                    all_nicks << nc.nick
+                end
+                return all_nicks
             end
             
             # Adds a nick to this channel

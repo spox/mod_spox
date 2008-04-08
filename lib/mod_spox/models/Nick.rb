@@ -93,7 +93,11 @@ module ModSpox
             
             # Channels nick is currently in
             def channels
-                NickChannel.filter(:nick_id => pk)
+                chans = []
+                NickChannel.filter(:nick_id => pk).each do |nc|
+                    chans << nc.channel
+                end
+                return chans
             end
             
             # channel:: Models::Channel
