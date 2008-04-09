@@ -16,14 +16,17 @@ class Banner < ModSpox::Plugin
             :description => 'Kickban given mask from given channel for given number of seconds providing an optional message'
             ).params = [:mask, :message, :time, :channel]
         @pipeline.hook(self, :mode_check, :Incoming_Mode)
+        @pipeline.hook(self, :join_check, :Incoming_Join)
+        @pipeline.hook(self, :who_check, :Incoming_Who)
+        @pipeline.hook(self, :get_action, :Internal_TimerResponse)
         BanRecord.create_table unless BanRecord.table_exists?
         BanMask.create_table unless BanMask.table_exists?
-        @updater = nil
-        updater
+        @action = nil
+        @pipeline << Messages::Internal::TimerAdd.new(self, 0.5){ updater }
     end
     
     def destroy
-        updater(false)
+        updater
     end
     
     def mode_check(message)
@@ -63,7 +66,7 @@ class Banner < ModSpox::Plugin
     # show_time:: show ban time in kick message
     def ban(nick, channel, time, reason, invite=false, show_time=true)
         raise Exceptions::InvalidType.new("Nick given is not a nick model") unless nick.is_a?(Models::Nick)
-        raise Exceptions::InvalidType.new("Channel given is not a channel model") unless nick.is_a?(Models::Channel)
+        raise Exceptions::InvalidType.new("Channel given is not a channel model") unless channel.is_a?(Models::Channel)
         if(!me.is_op?(channel))
             raise Exceptions::NotOperator.new("I am not an operator in #{channel.name}")
         elsif(!nick.channels.include?(channel))
@@ -73,7 +76,7 @@ class Banner < ModSpox::Plugin
             BanRecord.new(:nick_id => nick.pk, :bantime => time.to_i, :remaining => time.to_i,
                 :invite => invite, :channel_id => channel.pk, :mask => mask).save
             message = reason ? reason : 'no soup for you!'
-            message = "#{message} (#{Helpers.format_secs(time.to_i)} ban)" if show_time
+            message = "#{message} (Duration: #{Helpers.format_seconds(time.to_i)})" if show_time
             @pipeline << ChannelMode.new(channel, '+b', mask)
             @pipeline << Kick.new(nick, channel, message)
             updater
@@ -96,7 +99,8 @@ class Banner < ModSpox::Plugin
         channel = params[:channel] ? Channel.filter(:name => params[:channel]).first : message.target
         if(channel)
             begin
-                mask_ban(params[:mask], channel, params[:mesasge], params[:time])
+                mask_ban(params[:mask], channel, params[:message], params[:time])
+                reply(message.replyto, "Okay")
             rescue Object => boom
                 reply(message.replyto, "Error: Failed to ban mask. Reason: #{boom}")
                 Logger.log("ERROR: #{boom} #{boom.backtrace.join("\n")}")
@@ -114,19 +118,82 @@ class Banner < ModSpox::Plugin
                 channel.nicks.each do |nick|
                     match = nil
                     masks[channel.name].each do |mask|
+                        Logger.log("MASK IS NIL") if mask.nil?
                         if(nick.source =~ /#{mask[:mask]}/)
-                            match = mask if mask.nil? || mask[:bantime].to_i > match[:bantime].to_i
+                            match = mask if match.nil? || mask[:bantime].to_i > match[:bantime].to_i
                         end
                     end
-                    ban(nick, channel, match[:bantime], match[:message]) 
+                    unless match.nil?
+                        begin
+                            ban(nick, channel, match[:bantime], match[:message]) 
+                        rescue Object => boom
+                            Logger.log("Mask based ban failed. Reason: #{boom}")
+                        end
+                    end
                 end
+            else
+                Logger.log("Ban masks will not be processed due to lack of operator status")
             end
         end
     end
     
-    def updater(new_record = true)
-        unless @updater.nil?
-            time = Object::Time.now.to_i - @updater
+    def mask_check(nick, channel)
+        return unless me.is_op?(channel)
+        updater
+        match = nil
+        BanMask.filter(:channel_id => channel.pk).each do |bm|
+            if(nick.source =~ /#{bm.mask}/)
+                match = bm if match.nil? ||  match.bantime < bm.bantime
+            end
+        end
+        unless(match.nil?)
+            begin
+                ban(nick, channel, match.bantime, match.message)
+            rescue Object => boom
+                Logger.log("Mask based ban failed. Reason: #{boom}")
+            end
+        end
+    end
+    
+    # message:: ModSpox::Messages::Incoming::Mode
+    # Check for mode changes. Remove pending ban removals if
+    # done manually
+    def mode_check(message)
+        if(message.target.is_a?(String))
+            if(message.mode == '-b')
+                BanRecord.filter(:mask => message.target, :channel_id => message.channel.pk).each do |match|
+                    match.set(:remaining => 0)
+                    match.set(:removed => true)
+                end
+                updater
+            end
+        end
+    end
+    
+    # message:: ModSpox::Messages::Incoming::Join
+    # Check is nick is banned
+    def join_check(message)
+        mask_check(message.nick, message.channel)
+    end
+    
+    # message:: ModSpox::Messages::Incoming::Who
+    # Check if we updated any addresses
+    def who_check(message)
+        check_masks
+    end
+    
+    def get_action(message)
+        @action = message.action
+        @sleep = Object::Time.now
+        updater
+    end
+    
+    def updater
+        return unless @action
+        time = (Object::Time.now - @sleep).to_i
+        @sleep = Object::Time.now
+        Logger.log("TIME LOGGED ASLEEP: #{time}")
+        if(time > 0)
             BanRecord.filter{:remaining > 0}.update("remaining = remaining - #{time}")
             BanMask.filter{:bantime > 0}.update("bantime = bantime - #{time}")
         end
@@ -142,10 +209,7 @@ class Banner < ModSpox::Plugin
         next_mask_record = BanMask.filter{:bantime > 0}.order(:bantime.ASC).first
         time = next_ban_record ? next_ban_record.remaining : 0
         time = next_mask_record && next_mask_record.bantime > time ? next_mask_record.bantime : time
-        if(time > 0 && new_record)
-            @updater = Object::Time.now.to_i
-            @pipeline << Messages::Internal::TimerAdd.new(self, time, nil, true){ updater }
-        end
+        time > 0 ? @action.reset_period(time) : @action.suspend        
     end
     
     class BanRecord < Sequel::Model

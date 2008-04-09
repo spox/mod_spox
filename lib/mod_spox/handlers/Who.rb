@@ -18,8 +18,8 @@ module ModSpox
                     # 6: info
                     # 7: hops
                     # 8: realname
-                    location = $1 unless location.include?('*')
-                    location = $5 if location == '*'
+                    location = $1 unless $1.include?('*')
+                    location = $5 if $5 == '*'
                     location = $1.gsub(/\*\s/, '') if location.include?('* ')
                     info = $6
                     nick = find_model($5)
@@ -43,17 +43,18 @@ module ModSpox
                             Models::NickMode.filter(:channel_id => channel.pk, :nick_id => nick.pk).each{|m| m.destroy}
                         end
                     end
-                elsif(string =~ /#{RPL_ENDWHO}\s\S+\s(\S+)\s/)
+                elsif(string =~ /#{RPL_ENDOFWHO}\s\S+\s(\S+)\s/)
                     location = $1
                     loc = find_model(location)
                     @raw_cache[location] << string
-                    message = Messages::Incoming::Who.new(@raw_cache.join("\n"), loc, @cache[location])
+                    message = Messages::Incoming::Who.new(@raw_cache[location].join("\n"), loc, @cache[location])
                     @raw_cache.delete(location)
                     @cache.delete(location)
                     return message
                 else
                     Logger.log('Failed to match RPL_WHO type message')
                 end
+                return nil
             end
         end
     end

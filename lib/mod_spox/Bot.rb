@@ -359,7 +359,7 @@ module ModSpox
         # message:: Messages::Outgoing::Who message
         # Sends WHO message to server
         def who(message)
-            o = message.only_ops ? 'o' : ''
+            o = message.only_ops? ? 'o' : ''
             @socket << "WHO #{message.mask} #{o}"
         end
 

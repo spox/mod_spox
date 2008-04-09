@@ -31,10 +31,12 @@ module ModSpox
                         full_modes.sub(/^./, '').length.times do |i|
                             nick = find_model(targets.scan(/\S+/)[i])
                             nicks << nick
-                            mode = full_modes[i + 1].chr
-                            Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk, :mode => mode) if action == '+'
-                            if(action == '-' && model = Models::NickMode.filter(:channel_id => channel.pk, :nick_id => nick.pk, :mode => mode).first)
-                                model.destroy
+                            if(nick.is_a?(Models::Nick))
+                                mode = full_modes[i + 1].chr
+                                Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk, :mode => mode) if action == '+'
+                                if(action == '-' && model = Models::NickMode.filter(:channel_id => channel.pk, :nick_id => nick.pk, :mode => mode).first)
+                                    model.destroy
+                                end
                             end
                         end
                         nicks = nicks[0] if nicks.size == 1

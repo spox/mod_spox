@@ -13,6 +13,10 @@ module ModSpox
                     @mask = mask
                     @op_only = op_only
                 end
+                
+                def only_ops?
+                    return op_only
+                end
             end
         end
     end
