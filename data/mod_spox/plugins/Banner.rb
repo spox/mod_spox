@@ -21,12 +21,14 @@ class Banner < ModSpox::Plugin
         @pipeline.hook(self, :get_action, :Internal_TimerResponse)
         BanRecord.create_table unless BanRecord.table_exists?
         BanMask.create_table unless BanMask.table_exists?
-        @action = nil
-        @pipeline << Messages::Internal::TimerAdd.new(self, 0.5){ updater }
+        @actions = []
+        @up_sync = Mutex.new
+        @timer_sync = Mutex.new
+        updater
     end
     
     def destroy
-        updater
+        do_update
     end
     
     def mode_check(message)
@@ -118,7 +120,6 @@ class Banner < ModSpox::Plugin
                 channel.nicks.each do |nick|
                     match = nil
                     masks[channel.name].each do |mask|
-                        Logger.log("MASK IS NIL") if mask.nil?
                         if(nick.source =~ /#{mask[:mask]}/)
                             match = mask if match.nil? || mask[:bantime].to_i > match[:bantime].to_i
                         end
@@ -159,14 +160,20 @@ class Banner < ModSpox::Plugin
     # Check for mode changes. Remove pending ban removals if
     # done manually
     def mode_check(message)
-        if(message.target.is_a?(String))
+        if(message.target.is_a?(String) && message.source != me)
             if(message.mode == '-b')
+                update = false
                 BanRecord.filter(:mask => message.target, :channel_id => message.channel.pk).each do |match|
                     match.set(:remaining => 0)
                     match.set(:removed => true)
+                    update = true
                 end
-                updater
+                updater if update
             end
+        end
+        if(message.target == me && message.mode == '+o')
+            check_masks
+            updater
         end
     end
     
@@ -183,33 +190,67 @@ class Banner < ModSpox::Plugin
     end
     
     def get_action(message)
-        @action = message.action
-        @sleep = Object::Time.now
-        updater
+        if(message.action_added? && message.origin == self)
+            @actions << message.action
+        elsif(message.action_removed? && @actions.include?(message.action))
+            @actions.delete(message.action)
+        end
     end
     
     def updater
-        return unless @action
-        time = (Object::Time.now - @sleep).to_i
-        @sleep = Object::Time.now
-        Logger.log("TIME LOGGED ASLEEP: #{time}")
-        if(time > 0)
-            BanRecord.filter{:remaining > 0}.update("remaining = remaining - #{time}")
-            BanMask.filter{:bantime > 0}.update("bantime = bantime - #{time}")
-        end
-        BanRecord.filter{:remaining <= 0 && :removed == false}.each do |record|
-            if(me.is_op?(record.channel))
-                @pipeline << ChannelMode.new(record.channel, '-b', record.mask)
-                record.set(:removed => true)
-                @pipeline << Invite.new(record.nick, record.channel) if record.invite
+        @up_sync.synchronize do
+            Logger.log("UPDATER IS NOW LOCKED")
+            unless(@actions.empty?)
+                @actions.each{|a|@pipeline << Messages::Internal::TimerRemove.new(a)}
+                Logger.log("Waiting for actions to become empty")
+                sleep(0.01) until @actions.empty?
+                Logger.log("Actions has now become empty")
             end
+            do_update
+            Logger.log("UPDATER IS NOW UNLOCKED AND READY FOR USE")
         end
-        BanMask.filter{:bantime < 1}.destroy
-        next_ban_record = BanRecord.filter{:remaining > 0}.order(:remaining.ASC).first
-        next_mask_record = BanMask.filter{:bantime > 0}.order(:bantime.ASC).first
-        time = next_ban_record ? next_ban_record.remaining : 0
-        time = next_mask_record && next_mask_record.bantime > time ? next_mask_record.bantime : time
-        time > 0 ? @action.reset_period(time) : @action.suspend        
+    end
+    
+    def do_update
+        @timer_sync.synchronize do
+            Logger.log("do_update IS NOW LOCKED")
+            begin
+                time = @sleep.nil? ? 0 : (Object::Time.now - @sleep).to_i
+                if(time > 0)
+                    BanRecord.filter{:remaining > 0}.update("remaining = remaining - #{time}")
+                    BanMask.filter{:bantime > 0}.update("bantime = bantime - #{time}")
+                end
+                BanRecord.filter{:remaining <= 0 && :removed == false}.each do |record|
+                    if(me.is_op?(record.channel))
+                        @pipeline << ChannelMode.new(record.channel, '-b', record.mask)
+                        record.set(:removed => true)
+                        @pipeline << Invite.new(record.nick, record.channel) if record.invite
+                    end
+                end
+                BanMask.filter{:bantime < 1}.destroy
+                next_ban_record = BanRecord.filter{:remaining > 0}.order(:remaining.ASC).first
+                next_mask_record = BanMask.filter{:bantime > 0}.order(:bantime.ASC).first
+                if(next_ban_record && next_mask_record)
+                    time = next_ban_record.bantime < next_mask_record.bantime ? next_ban_record.bantime : next_mask_record.bantime
+                elsif(next_ban_record)
+                    time = next_ban_record.bantime
+                elsif(next_mask_record)
+                    time = next_mask_record.bantime
+                else
+                    time = nil
+                end
+                Logger.log("Time left to sleep is now: #{time}")
+                unless(time.nil?)
+                    @sleep = Object::Time.now
+                    @pipeline << Messages::Internal::TimerAdd.new(self, time, nil, true){ do_update }
+                else
+                    @sleep = nil
+                end
+            rescue Object => boom
+                Logger.log("Updating encountered an unexpected error: #{boom}")
+            end
+            Logger.log("do_update IS NOW UNLOCKED AND READY FOR USE")
+        end
     end
     
     class BanRecord < Sequel::Model
