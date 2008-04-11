@@ -6,6 +6,7 @@ module ModSpox
         # Create a new Pipeline
         def initialize(procs=3)
             super(procs)
+            @timeout = 20 # Anything over 20 seconds and we assume a plugin locked up the thread
             @messageq = Queue.new
             Logger.log("Created queue #{@messageq} in pipeline", 10)
             @hooks = Hash.new
@@ -81,11 +82,13 @@ module ModSpox
             @plugins.clear
         end
         
+        # Repopulate the active trigger list
         def populate_triggers(m=nil)
             @triggers = []
             Models::Trigger.filter(:active => true).each{|t|@triggers << t.trigger}
         end
         
+        # Repopulate the active signatures list
         def populate_signatures(m=nil)
             @signatures = []
             Models::Signature.all.each{|s|@signatures << s}
@@ -102,13 +105,21 @@ module ModSpox
                 type = message.class.to_s.gsub(/^ModSpox::Messages::/, '').gsub(/::/, '_').to_sym
                 mod = type.to_s.gsub(/_.+$/, '').to_sym
                 Logger.log("Pipeline determines that #{message} is of type: #{type}", 10)
-                [type, mod, :all].each{|type|
+                [type, mod, :all].each do |type|
                     if(@hooks.has_key?(type))
-                        @hooks[type].each_value{|objects| 
-                            objects.each{|v| v[:object].send(v[:method].to_s, message) } 
-                        }
+                        @hooks[type].each_value do |objects|
+                            begin
+                                Timeout::timeout(@timeout) do
+                                    objects.each{|v| v[:object].send(v[:method].to_s, message) }
+                                end
+                            rescue Timeout::Error => boom
+                                Logger.log('Timeout reached while waiting for plugin to complete task')
+                            rescue Object => boom
+                                Logger.log("Plugin threw exception while attempting to process message: #{boom}\n#{boom.backtrace.join("\n")}")
+                            end
+                        end
                     end
-                } 
+                end
             rescue Object => boom
                 Logger.log("Pipeline encountered an exception while processing a message: #{boom}\n#{boom.backtrace.join("\n")}", 10)
             end
@@ -124,7 +135,7 @@ module ModSpox
             @triggers.each{|t| trigger = t if message.message =~ /^#{t}/}
             if(!trigger.nil? || message.addressed?)
                 Logger.log("Message has matched against a known trigger", 15)
-                @signatures.each{|sig|
+                @signatures.each do |sig|
                     Logger.log("Matching against: #{trigger}#{sig.signature}")
                     res = message.message.scan(/^#{trigger}#{sig.signature}$/)
                     if(res.size > 0)
@@ -135,10 +146,18 @@ module ModSpox
                             Logger.log("Signature params: #{sig.params[i - 1].to_sym} = #{res[0][i]}")
                         end
                         if(@plugins.has_key?(sig.plugin.to_sym))
-                            @plugins[sig.plugin.to_sym].send(sig.values[:method], message, params)
+                            begin
+                                Timeout::timeout(@timeout) do
+                                    @plugins[sig.plugin.to_sym].send(sig.values[:method], message, params)
+                                end
+                            rescue Timeout::Error => boom
+                                Logger.log('Timeout reached while waiting for plugin to complete task')
+                            rescue Object => boom
+                                Logger.log("Plugin threw exception while attempting to process message: #{boom}\n#{boom.backtrace.join("\n")}")
+                            end
                         end
                     end
-                }
+                end
             else
                 Logger.log("Message failed to match any known trigger", 15)
             end
