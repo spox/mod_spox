@@ -14,7 +14,7 @@ require 'rake/contrib/rubyforgepublisher'
 
 NAME = 'mod_spox'
 RUBYFORGENAME = 'modspox'
-BOTVERSION = '0.0.1'
+BOTVERSION = '0.0.2'
 
 spec = Gem::Specification.new do |s|
     s.name = NAME

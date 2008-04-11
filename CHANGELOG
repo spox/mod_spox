@@ -1,2 +1,17 @@
+0.0.2 Release (Alpha status)
+    * New features available from the following new plugins:
+        * Karma
+        * Pinger
+        * Search
+        * Triggers
+        * Roulette
+        * Urban Dictionary
+        * Banner
+    * Fixed plugin loading problem in PluginLoader
+    * Fixed an issue with database creation in SQLite
+    * Fixed Pipeline to continue processing message when a plugin raises an exception
+    * Reworked authentication mechanisms. Now using group based permissions
+    * Added various convenience methods
+
 0.0.1 Release
     * Initial release. No changes to report.
