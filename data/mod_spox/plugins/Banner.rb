@@ -15,6 +15,14 @@ class Banner < ModSpox::Plugin
         Signature.find_or_create(:signature => 'banmask (\S+) (\S+) (\d+) ?(.+)?', :plugin => name, :method => 'message_mask_ban', :group_id => admin.pk,
             :description => 'Kickban given mask from given channel for given number of seconds providing an optional message'
             ).params = [:mask, :message, :time, :channel]
+        Signature.find_or_create(:signature => 'banmask list', :plugin => name, :method => 'mask_list', :group_id => admin.pk,
+            :description => 'List all currently active banmasks')
+        Signature.find_or_create(:signature => 'banmask remove (\d+)', :plugin => name, :method => 'mask_remove', :group_id => admin.pk,
+            :description => 'Remove a currently enabled ban mask').params = [:id]
+        Signature.find_or_create(:signature => 'banlist', :plugin => name, :method => 'ban_list', :group_id => admin.pk,
+            :description => 'List all currently active bans generated from the bot')
+        Signature.find_or_create(:signature => 'banlist remove (\d+)', :plugin => name, :method => 'ban_remove', :group_id => admin.pk,
+            :description => 'Remove a current ban').params = [:id]
         @pipeline.hook(self, :mode_check, :Incoming_Mode)
         @pipeline.hook(self, :join_check, :Incoming_Join)
         @pipeline.hook(self, :who_check, :Incoming_Who)
@@ -31,21 +39,26 @@ class Banner < ModSpox::Plugin
         do_update
     end
     
-    def mode_check(message)
-        Logger.log("RECIEVED MODE MESSAGE")
-    end
-    
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: parameters
+    # Perform a simple ban with default values
     def default_ban(message, params)
         params[:time] = 86400
         params[:channel] = message.target.name
         full_ban(message, params)
     end
     
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: parameters
+    # Ban given nick in given channel
     def channel_ban(message, params)
         params[:time] = 86400
         full_ban(message, params)
     end
     
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: parameters
+    # Ban nick in given channel for given time providing given message
     def full_ban(message, params)
         nick = Models::Nick.filter(:nick => params[:nick]).first
         channel = Channel.filter(:name => params[:channel]).first
@@ -97,6 +110,9 @@ class Banner < ModSpox::Plugin
         updater
     end
     
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: parameters
+    # Set a ban on any nick with a source match given regex
     def message_mask_ban(message, params)
         channel = params[:channel] ? Channel.filter(:name => params[:channel]).first : message.target
         if(channel)
@@ -112,6 +128,66 @@ class Banner < ModSpox::Plugin
         end 
     end
     
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: parameters
+    # List all ban masks
+    def mask_list(message, params)
+        updater
+        if(BanMask.all.size > 0)
+            reply(message.replyto, "Masks currently banned:")
+            BanMask.all.each do |mask|
+                reply(message.replyto, "\2ID:\2 #{mask.pk} \2Mask:\2 #{mask.mask} \2Time:\2 #{Helpers.format_seconds(mask.bantime.to_i)} \2Channel:\2 #{mask.channel.name}")
+            end
+        else
+            reply(message.replyto, "No ban masks currently enabled")
+        end
+    end
+
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: parameters
+    # Remove ban mask with given ID
+    def mask_remove(message, params)
+        mask = BanMask[params[:id].to_i]
+        if(mask)
+            mask.destroy
+            updater
+            reply(message.replyto, 'Okay')
+        else
+            reply(message.replyto, "\2Error:\2 Failed to find ban mask with ID: #{params[:id]}")
+        end
+    end
+    
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: parameters
+    # List all currently active bans originating from the bot    
+    def ban_list(message, params)
+        updater
+        set = BanRecord.filter(:removed => false)
+        if(set.size > 0)
+            reply(message.replyto, "Currently active bans:")
+            set.each do |record|
+                reply(message.replyto, "\2ID:\2 #{record.pk} \2Nick:\2 #{record.nick.nick} \2Channel:\2 #{record.channel.name} \2Initial time:\2 #{Helpers.format_seconds(record.bantime.to_i)} \2Time remaining:\2 #{Helpers.format_seconds(record.remaining.to_i)}")
+            end
+        else
+            reply(message.replyto, "No bans currently active")
+        end
+    end
+    
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: parameters
+    # Remove given ban
+    def ban_remove(message, params)
+        record = BanRecord[params[:id].to_i]
+        if(record)
+            record.set(:remaining => 0)
+            updater
+            reply(message.replyto, 'Okay')
+        else
+            reply(message.replyto, "\2Error:\2 Failed to find ban record with ID: #{params[:id]}")
+        end 
+    end
+    
+    # Check all enabled ban masks and ban any matches found
     def check_masks
         masks = BanMask.map_masks
         masks.keys.each do |channel_name|
@@ -138,6 +214,9 @@ class Banner < ModSpox::Plugin
         end
     end
     
+    # nick:: ModSpox::Models::Nick
+    # channel:: ModSpox::Models::Channel
+    # Check if the nick in the channel matches any ban masks
     def mask_check(nick, channel)
         return unless me.is_op?(channel)
         updater
@@ -189,6 +268,8 @@ class Banner < ModSpox::Plugin
         check_masks
     end
     
+    # message:: ModSpox::Messages::Internal::TimerResponse
+    # Store any timer actions we have registered
     def get_action(message)
         if(message.action_added? && message.origin == self)
             @actions << message.action
@@ -197,9 +278,9 @@ class Banner < ModSpox::Plugin
         end
     end
     
+    # Update all BanMask and BanRecords
     def updater
         @up_sync.synchronize do
-            Logger.log("UPDATER IS NOW LOCKED")
             unless(@actions.empty?)
                 @actions.each{|a|@pipeline << Messages::Internal::TimerRemove.new(a)}
                 Logger.log("Waiting for actions to become empty")
@@ -207,13 +288,12 @@ class Banner < ModSpox::Plugin
                 Logger.log("Actions has now become empty")
             end
             do_update
-            Logger.log("UPDATER IS NOW UNLOCKED AND READY FOR USE")
         end
     end
     
+    # Completes update
     def do_update
         @timer_sync.synchronize do
-            Logger.log("do_update IS NOW LOCKED")
             begin
                 time = @sleep.nil? ? 0 : (Object::Time.now - @sleep).to_i
                 if(time > 0)
@@ -249,7 +329,6 @@ class Banner < ModSpox::Plugin
             rescue Object => boom
                 Logger.log("Updating encountered an unexpected error: #{boom}")
             end
-            Logger.log("do_update IS NOW UNLOCKED AND READY FOR USE")
         end
     end
     
