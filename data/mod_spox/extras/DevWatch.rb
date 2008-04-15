@@ -14,24 +14,32 @@ class DevWatch < ModSpox::Plugin
             :description => 'List all channels on the development watch list')
         Signature.find_or_create(:signature => 'devwatch url ?(\S+)?', :plugin => name, :method => 'set_url', :group_id => admin.pk,
             :description => 'Set URL for development RSS feed').params = [:url]
-        Setting[:devwatch] = Hash.new if Setting[:devwatch].nil?
-        Setting[:devwatch][:channels] = Array.new unless Setting[:devwatch].has_key?(:channels)
-        Setting[:devwatch][:interval] = 300
+        Signature.find_or_create(:signature => 'devwatch interval ?(\d+)?', :plugin => name, :method => 'set_interval', :group_id => admin.pk,
+            :description => 'Set time interval for notifications').params = [:time]
+        if(Setting[:devwatch].nil?)
+            Setting.find_or_create(:name => 'devwatch').value = {:channels => [], :interval => 300}
+        end
+        @pipeline.hook(self, :timer_response, :Internal_TimerResponse)
         @original = nil
         @new = nil
+        @timer = nil
+        @lock = Mutex.new
         run
     end
     
     def enable_watch(message, params)
-        channel = Channel.filter(params[:channel]).first
+        channel = Channel.filter(:name => params[:channel]).first
         if(channel)
+            vals = Setting[:devwatch]
             if(params[:status] == 'on')
-                Setting[:devwatch][:channels] << channel.pk unless Setting[:devwatch][:channels].include?(channel.pk)
+                vals[:channels] << channel.pk unless vals[:channels].include?(channel.pk)
                 reply(message.replyto, "#{channel.name} is now on the development watch list")
             else
-                Setting[:devwatch][:channels].delete(channel.pk) if Setting[:devwatch][:channels].include?(channel.pk)
+                vals[:channels].delete(channel.pk) if vals[:channels].include?(channel.pk)
                 reply(message.replyto, "#{channel.name} has been removed from the development watch list")
             end
+            Setting.filter(:name => 'devwatch').first.value = vals
+            run
         else
             reply(message.replyto, "\2Error:\2 I have no record of #{params[:channel]}.")
         end
@@ -49,8 +57,11 @@ class DevWatch < ModSpox::Plugin
     
     def set_url(message, params)
         if(params[:url])
-            Setting[:devwatch][:url] = params[:url]
+            vals = Setting[:devwatch]
+            vals[:url] = params[:url]
             reply(message.replyto, "OK")
+            Setting.filter(:name => 'devwatch').first.value = vals
+            run
         else
             if(Setting[:devwatch].has_key?(:url))
                 reply(message.replyto, "\2Devwatch URL:\2 #{Setting[:devwatch][:url]}")
@@ -60,10 +71,40 @@ class DevWatch < ModSpox::Plugin
         end
     end
     
+    def set_interval(message, params)
+        if(params[:time])
+            vals = Setting[:devwatch]
+            vals[:interval] = params[:time].to_i
+            Setting.filter(:name => 'devwatch').first.value = vals
+            @timer.reset_period(params[:time].to_i) unless @timer.nil?
+            reply(message.replyto, "Devwatch announcement interval reset to: #{Helpers.format_seconds(params[:time].to_i)}")
+        else
+            reply(message.replyto, "Devwatch announcement interval set to: #{Helpers.format_seconds(Setting[:devwatch][:interval].to_i)}")
+        end
+    end
+    
     def run
-        check_updates
-        if(Setting[:devwatch].has_key?(:url) && Setting[:devwatch][:channels].size > 0)
-            @pipeline << ModSpox::Messages::Internal::TimerAdd.new(self, Setting[:devwatch][:interval].to_i, nil, true)
+        @lock.synchronize do
+            check_updates
+            if(Setting[:devwatch].has_key?(:url) && Setting[:devwatch][:channels].size > 0)
+                if(@timer.nil?)
+                    @pipeline << ModSpox::Messages::Internal::TimerAdd.new(self, Setting[:devwatch][:interval].to_i){check_updates}
+                    sleep(0.01) while @timer.nil?
+                end
+            else
+                if(@timer)
+                    @pipeline << ModSpox::Messages::Internal::TimerRemove.new(@timer)
+                    sleep(0.01) until @timer.nil?
+                end
+            end
+        end
+    end
+    
+    def timer_response(message)
+        if(message.origin == self && message.action_added?)
+            @timer = message.action
+        elsif(message.action == @timer && message.action_removed?)
+            @timer = nil
         end
     end
     
@@ -84,7 +125,6 @@ class DevWatch < ModSpox::Plugin
         end
     end
 
-    
     def print_new
         new_items = Array.new
         # run through the list until we hit a duplicate #
