@@ -11,11 +11,11 @@ module ModSpox
         class Setting < Sequel::Model(:settings)
             
             def value=(val)
-                set(:value => Base64.encode64(Marshal.dump(val)))
+                set(:value => Marshal.dump(val))
             end
             
             def value
-                return values[:value] ? Marshal.load(Base64.decode64(values[:value])) : nil
+                return values[:value] ? Marshal.load(values[:value]) : nil
             end
             
             # key:: name of the setting
