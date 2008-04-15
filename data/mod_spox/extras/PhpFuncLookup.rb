@@ -1,5 +1,9 @@
 require 'cgi'
 
+# Inspired from an old plugin for the original mod_spox
+# Original development: spox & Ryan "pizza_milkshake" Flynn
+# Ported: 2008
+
 class PhpFuncLookup < ModSpox::Plugin
 
     include Models
@@ -59,21 +63,29 @@ class PhpFuncLookup < ModSpox::Plugin
             "%="    => [ "assignment",  "Modulus Assignment",           "" ],
             "->"    => [ "?",           "Object member accessor thingy","" ],
         }
-        Signature.find_or_create(:signature => 'pfunc (\S+)', :plugin => name, :method => 'pfunc', :description => 'Lookup PHP function').params = [:name]
-        Signature.find_or_create(:signature => 'fetch php manual', :plugin => name, :method => 'fetch', :group_id => Group.filter(:name => 'admin').first.pk,
+        admin = Group.filter(:name => 'admin').first
+        Signature.find_or_create(:signature => 'pfunc (\S+)', :plugin => name, :method => 'phpfunc', :description => 'Lookup PHP function').params = [:name]
+        Signature.find_or_create(:signature => 'fetch php manual', :plugin => name, :method => 'fetch', :group_id => admin.pk,
             :description => 'Download and extract PHP manual')
+        Signature.find_or_create(:signature => 'pfunc trigger (\S+)', :plugin => name, :method => 'set_trigger', :group_id => admin.pk,
+            :description => 'Set the trigger for auto-lookups').params = [:trigger]
+        Signature.find_or_create(:signature => 'pfunc show trigger', :plugin => name, :method => 'show_trigger', :description => 'Show current trigger')
+        Signature.find_or_create(:signature => 'pfunc (add|remove) (\S+)', :plugin => name, :method => 'set_channels', :group_id => admin.pk,
+            :description => 'Add or remove channels from auto-lookups').params = [:action, :channel]
+        Signature.find_or_create(:signature => 'pfunc show channels', :plugin => name, :method => 'list_channels', :description => 'Show channels with auto lookup enabled')
         @pipeline.hook(self, :listen, :Incoming_Privmsg)
+        populate_classes
     end
         
-    def pfunc(m, params)
+    def phpfunc(m, params)
         name = params[:name].downcase
-        Logger.log "pfunc name=#{name}"
+        Logger.log "phpfunc name=#{name}"
         if name =~ /^\S+$/ && name =~ /\*/
             parse_wildcard(m, name) 
         elsif name =~ /^\$/
             parse_predefined(m, name) 
-        elsif name =~ /^\S+$/ && File.exists?("#{@manual}/function.#{name.gsub(/_/, '-')}.html")
-            parse_function(m, name) 
+        elsif name =~ /^\S+$/ && filename = find_file(name)
+            parse_function(m, name, filename) 
         elsif @ops.has_key?(name)
             parse_operator(m, name) 
         end
@@ -85,14 +97,62 @@ class PhpFuncLookup < ModSpox::Plugin
     end
     
     def listen(m)
-        if(m.target.is_a?(Channel) && m.target.name.downcase == '#php')
+        if(m.target.is_a?(Channel) && Setting[:phpfunc][:channels].include?(m.target.pk))
             if m.message =~ /^#{Regexp.escape(@trigger)}(\S+)$/
-                pfunc(m, {:name => $1})
+                phpfunc(m, {:name => $1})
             end
         end
     end
     
+    def set_trigger(message, params)
+        vals = Setting[:phpfunc]
+        vals[:trigger] = params[:trigger]
+        Setting.filter(:name => 'phpfunc').first.value = vals
+        @trigger = params[:trigger]
+        reply message.replyto, "PHP function lookup trigger set to: #{params[:trigger]}"
+    end
+    
+    def set_channels(message, params)
+        channel = Channel.filter(:name => params[:channel]).first
+        if(channel)
+            vals = Setting[:phpfunc]
+            if(params[:action] == 'add')
+                vals[:channels] << channel.pk unless Setting[:phpfunc][:channels].include?(channel.pk)
+                reply message.replyto, "Channel \2#{params[:channel]}\2 added to PHP auto lookup"
+            else
+                vals[:channels].delete(channel.pk) if Setting[:phpfunc][:channels].include?(channel.pk)
+                reply message.replyto, "Channel \2#{params[:channel]}\2 has been removed from PHP auto lookup"
+            end
+            Setting.filter(:name => 'phpfunc').first.value = vals
+        else
+            reply message.replyto, "Error: No record of channel #{params[:channel]}"
+        end
+    end
+    
+    def list_channels(message, params)
+        if(Setting[:phpfunc][:channels].size > 0)
+            chans = []
+            Setting[:phpfunc][:channels].each do |id|
+                chans << Channel[id].name
+            end
+            reply message.replyto, "PHP auto lookup enabled channels: #{chans.join(', ')}"
+        else
+            reply message.replyto, 'No channels currently enabled for PHP auto lookup'
+        end
+    end
+    
+    def show_trigger(message, p)
+        reply message.replyto, "PHP auto lookup trigger: \2#{Setting[:phpfunc][:trigger]}\2"
+    end
+    
     private
+
+    def find_file(name)
+        Dir.new(@manual).each do |filename|
+            return filename if filename.downcase == "function.#{name.gsub(/(_|->)/, '-').downcase}.html"
+        end
+        return nil
+    end
 
     def fetch_manual(message=nil, params=nil)
         Thread.new do
@@ -112,7 +172,11 @@ class PhpFuncLookup < ModSpox::Plugin
     end
 
     def setup_setting
-        Setting[:phpfunc] = {:directory => Config[:plugin_directory] + '/php', :trigger => '@' } if Setting[:phpfunc].nil?
+        s = Setting.filter(:name => 'phpfunc').first
+        unless(s)
+            s = Setting.find_or_create(:name => 'phpfunc')
+            s.value = {:directory => Config[:plugin_directory] + '/php', :trigger => '@', :channels => []}
+        end
         unless(File.directory?(Setting[:phpfunc][:directory]))
             FileUtils.mkdir_p(Setting[:phpfunc][:directory]) 
         end
@@ -121,10 +185,11 @@ class PhpFuncLookup < ModSpox::Plugin
     def parse_predefined(m, name)
         name.upcase!
         page = File.open("#{@manual}/language.variables.predefined.html").readlines.join(' ').gsub(/[\n\r]/, '')
-        debug page
-        if page =~ /#{name.gsub(/\$/, '\$')}<\/A.+?&#13;(.+?)<CODE/
+        if page =~ /<dt>\s*<span class="term"><a href="reserved\.variables\.html.+? class="link">#{name.gsub(/\$/, '\$')}<\/a><\/span>\s*<dd>\s*<span class="simpara">(.+?)<\/span>/
             desc = $1
-            desc.gsub!(/\s+/, ' ')
+            desc.gsub!(/[\r\n]/, ' ')
+            desc.gsub!(/<.+?>/, ' ')
+            desc = CGI::unescapeHTML(desc.gsub(/\s+/, ' '))
             reply m.replyto, "\2PHP Superglobal\2"
             reply m.replyto, "\2#{name}:\2 #{desc}"
         else
@@ -135,20 +200,13 @@ class PhpFuncLookup < ModSpox::Plugin
     def parse_wildcard(m, name)
         matches = []
         pattern = name.gsub(/\*/, '.*?')
-        if(@classlist.empty?)
-            Dir.open(@manual).each do |file|
-                if(file =~ /^class\.(.+?)\.html/)
-                    @classlist << $1
-                end
-            end
-            @classlist.uniq!
-        end
         Dir.open(@manual).each do |file|
             if(file =~ /^(.+?#{pattern}.+?)\.html/)
                 match = $1
                 if(match =~ /^function\.(.+?)\-/)
                     if(@classlist.include?($1.downcase))
-                        match.gsub!(/[-]/, '->')
+                        match.gsub!(/[-]/, '_')
+                        match.sub!(/_/, '->')
                     else
                         match.gsub!(/[-]/, '_')
                     end
@@ -164,19 +222,19 @@ class PhpFuncLookup < ModSpox::Plugin
         reply m.replyto, matches.values_at(0..19).join(', ')
     end
     
-    def parse_function(m, name)
-        page = File.open("#{@manual}/function.#{name.gsub(/_/, '-')}.html", 'r').readlines.join('')
+    def parse_function(m, name, filename)
+        page = File.open("#{@manual}/#{filename}", 'r').readlines.join('')
         page.gsub!(/[\r\n]/, '')
-        versions = page =~ /<p>[\s]+(\(.+?\))<\/p>/mi ? $1 : '(UNKNOWN)'
-        proto = page =~ /<h2>Description<\/h2>(.+?)<br><\/br><p>/i ? $1 : name
-        desc = page =~ /<\/p>#{name.gsub(/-/, '_')}&nbsp;--&nbsp;(.+?)<\/div><divclass=/i ? $1 : '(UNKNOWN)'
+        versions = page =~ /<p class="verinfo">(.+?)<\/p>/i ? $1 : '(UNKNOWN)'
+        proto = page =~ /<div class="methodsynopsis dc-description">(.+?)<\/div>/i ? $1 : name
+        desc = page =~ /<p class="refpurpose dc-title">.+? — (.+?)<\/p>/i ? $1 : '(UNKNOWN)'
         versions = CGI::unescapeHTML(versions)
         proto = CGI::unescapeHTML(proto.gsub(/<.+?>/, ' ').gsub(/[\s]+/, ' '))
         desc = CGI::unescapeHTML(desc.gsub(/<.+?>/, ' ').gsub(/[\s]+/, ' '))
         reply m.replyto, versions
         reply m.replyto, "\2#{proto}\2"
         reply m.replyto, desc
-        reply m.replyto, "http://www.php.net/#{name}"
+        reply m.replyto, "http://www.php.net/manual/en/#{filename.gsub(/\.html$/, '.php')}"
     end
 
     def parse_operator(m, name)
@@ -186,6 +244,17 @@ class PhpFuncLookup < ModSpox::Plugin
         reply m.replyto, "\2#{name}\2 is the \2#{title.to_a.join("\2 or \2")}\2 operator"
         type.to_a.each do |t|
             reply m.replyto, "http://php.net/manual/en/language.operators.#{t}.php"
+        end
+    end
+    
+    def populate_classes
+        if(@classlist.empty?)
+            Dir.open(@manual).each do |file|
+                if(file =~ /^class\.(.+?)\.html/)
+                    @classlist << $1
+                end
+            end
+            @classlist.uniq!
         end
     end
     
