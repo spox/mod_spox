@@ -11,11 +11,11 @@ module ModSpox
         class Setting < Sequel::Model(:settings)
             
             def value=(val)
-                set(:value => Marshal.dump(val))
+                set(:value => Base64.encode64(Marshal.dump(val)))
             end
             
             def value
-                return values[:value] ? Marshal.load(values[:value]) : nil
+                return values[:value] ? Marshal.load(Base64.decode64(values[:value])) : nil
             end
             
             # key:: name of the setting
@@ -28,7 +28,8 @@ module ModSpox
             
             # key:: name of the setting
             # val:: value of the setting
-            # Stores the val in setting named by the given key            
+            # Stores the val in setting named by the given key
+            # Note: Will fail if attempting to save hashes. Must set value explicitly
             def self.[]=(key, val)
                 key = key.to_s if key.is_a?(Symbol)
                 model = Setting.find_or_create(:name => key)
