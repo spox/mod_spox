@@ -33,8 +33,6 @@ spec = Gem::Specification.new do |s|
     s.rubyforge_project = 'modspox'
     s.has_rdoc = false
     s.add_dependency 'sequel'
-    s.add_dependency 'fastthread'
-    s.add_dependency 'termios'
 end
 
 Rake::GemPackageTask.new(spec) do |package|

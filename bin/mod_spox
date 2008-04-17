@@ -2,8 +2,7 @@
 
 ## include our needed libraries ##
 
-['rubygems', 'sequel', 'fastthread',
-'thread', 'etc', 'getoptlong'].each{|file| 
+['rubygems', 'sequel', 'thread', 'etc', 'getoptlong'].each{|file| 
     begin
         require file
     rescue Object => boom
@@ -11,6 +10,13 @@
         exit 1
     end
 }
+
+## optional libraries ##
+begin
+    require 'fastthread'
+rescue Object => boom
+    puts "WARNING: fastthread gem was not found"
+end
 
 $BOTVERSION='0.0.2'
 $VERBOSITY = 0
@@ -33,15 +39,15 @@ verbose = 0
 opts.each do |opt, arg|
     case opt
         when '--help'
-            p 'Usage: mod_spox [opts]'
-            p '--config -c:     starts configuration wizard'
-            p '--debug -d:      turns on debugging (include number >0 for more info)'
-            p '--version -V:    output bot version information'
-            p '--help -h:       print this help message'
+            puts 'Usage: mod_spox [opts]'
+            puts '--config -c:     starts configuration wizard'
+            puts '--debug -d:      turns on debugging (include number >0 for more info)'
+            puts '--version -v:    output bot version information'
+            puts '--help -h:       print this help message'
             exit
         when '--version'
-            p "mod_spox IRC bot version: #{$BOTVERSION}"
-            p 'http://dev.modspox.com'
+            puts "mod_spox IRC bot version: #{$BOTVERSION}"
+            puts 'http://rubyforge.org/projects/modspox'
             exit
         when '--debug'
             if(arg && arg =~ /^[0-9]+/)

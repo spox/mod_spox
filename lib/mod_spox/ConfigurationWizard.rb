@@ -1,4 +1,4 @@
-['etc', 'termios', 'mod_spox/Loader',
+['etc', 'mod_spox/Loader',
  'mod_spox/BotConfig',  'mod_spox/BaseConfig'].each{|f|require f}
 
 
@@ -28,6 +28,12 @@ module ModSpox
             @config << {:id => :admin_password, :string => 'Administrator password: ', :regex => '.+', :default => nil, :value => nil, :echo => false}
             @config << {:id => :plugin_directory, :string => 'Plugin directory (bot must have write priviliges): ', :regex => '.+', :default => nil, :echo => true}
             @config << {:id => :trigger, :string => 'Trigger character for plugins: ', :regex => '.', :default => '!', :value => nil, :echo => true}            
+            @stuck_visible = true
+            begin
+                require 'termios'
+                @stuck_visible = false
+            rescue Object => boom
+            end
         end
     
         # Run the configuration wizard
@@ -83,7 +89,7 @@ module ModSpox
         # echo:: echo user input
         # Turns echoing of user input on or off
         def input_echo(echo=true)
-            return if echo == @echo
+            return if echo == @echo || @stuck_visible
             term = Termios::getattr($stdin)
             term.c_lflag |= Termios::ECHO if echo
             term.c_lflag &= ~Termios::ECHO unless echo
