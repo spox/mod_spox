@@ -10,7 +10,7 @@ module ModSpox
             protected
             
             def find_model(string)
-                if(string =~ /^[A-Za-z\|\\\{\}\[\]\^\`~\_\-]+$/)
+                if(string =~ /^[A-Za-z\|\\\{\}\[\]\^\`~\_\-]+[A-Za-z0-9\|\\\{\}\[\]\^\`~\_\-]*$/)
                     Logger.log("Model: #{string} -> Nick")
                     return Models::Nick.find_or_create(:nick => string)
                 elsif(string =~ /^[&#+!]/)
