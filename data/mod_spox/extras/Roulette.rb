@@ -11,6 +11,14 @@ class Roulette < ModSpox::Plugin
         Signature.find_or_create(:signature => 'roulette stats ?(\S+)?', :plugin => name, :method => 'stats').params = [:nick]
         Game.create_table unless Game.table_exists?
         Info.create_table unless Info.table_exists?
+        @banner = nil
+        @pipeline.hook(:self, :get_banner, :Internal_PluginResponse)
+    end
+    
+    # message:: ModSpox::Messages::Internal::PluginResponse
+    # Get the banner plugin
+    def get_banner(message)
+        @banner = message.plugin if message.found?
     end
     
     # message:: ModSpox::Messages::Incoming::Privmsg
@@ -136,8 +144,7 @@ class Roulette < ModSpox::Plugin
             reply(channel, "#{nick.nick}: *click*")
         rescue Bullet => bang
             game_over(nick, bang.game)
-            #TODO: add banner here
-            reply(channel, "#{nick.nick}: *BANG*")
+            kill_nick(nick, channel)
         end
     end
     
@@ -151,7 +158,20 @@ class Roulette < ModSpox::Plugin
             end
         rescue Bullet => bang
             game_over(nick, bang.game)
-            #TODO: add banner here
+            kill_nick(nick, channel)
+        end
+    end
+    
+    def kill_nick(nick, channel)
+        unless(@banner.nil?)
+            begin
+                @banner.ban(nick, channel, '*BANG*', true, false)
+            rescue NotOperator => boom
+                reply(channel, "#{nick.nick}: *BANG*")
+            rescue Object => boom
+                Logger.log("Error: Roulette ban generated an unexpected error: #{boom}")
+            end
+        else
             reply(channel, "#{nick.nick}: *BANG*")
         end
     end
@@ -159,6 +179,7 @@ class Roulette < ModSpox::Plugin
     # channel:: ModSpox::Models::Channel
     # Return current game
     def game(channel)
+        @pipeline << Messages::Internal::PluginRequest.new(self, 'Banner') if @banner.nil?
         game = Game.filter{:shots > 0 && :channel_id == channel.pk}.first
         unless(game)
             chamber = rand(5) + 1
