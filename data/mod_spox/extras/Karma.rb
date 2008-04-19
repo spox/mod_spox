@@ -4,7 +4,7 @@ class Karma < ModSpox::Plugin
 
     def initialize(pipeline)
         super(pipeline)
-        KarmaDatatype::Karma.create_table unless KarmaDatatype::Karma.table_exists?
+        Datatype::Karma.create_table unless Datatype::Karma.table_exists?
         Models::Signature.find_or_create(:signature => 'karma (\S+)', :plugin => name, :method => 'score', :description => 'Returns karma for given thing').params = [:thing]
         Models::Signature.find_or_create(:signature => 'karma reset (\S+)', :plugin => name, :method => 'reset',
             :group_id => Models::Group.filter(:name => 'admin').first.pk, :description => 'Reset a karma score').params = [:thing]
@@ -20,7 +20,7 @@ class Karma < ModSpox::Plugin
                 thing.downcase!
                 thing = thing[1..-2] if thing[0..0] == '(' && thing[-1..1] == ')'
                 adj = adj == '++' ? +1 : -1
-                karma = KarmaDatatype::Karma.find_or_create(:thing => thing, :channel_id => message.target.pk)
+                karma = Datatype::Karma.find_or_create(:thing => thing, :channel_id => message.target.pk)
                 karma.set(:score => karma.score + adj)
             end
         end
@@ -29,7 +29,7 @@ class Karma < ModSpox::Plugin
     def score(message, params)
         params[:thing].downcase!
         return unless message.is_public?
-        karma = KarmaDatatype::Karma.filter(:thing => params[:thing], :channel_id => message.target.pk).first
+        karma = Datatype::Karma.filter(:thing => params[:thing], :channel_id => message.target.pk).first
         if(karma)
             @pipeline << Privmsg.new(message.replyto, "Karma for \2#{karma.thing}\2 is #{karma.score}")
         else
@@ -40,7 +40,7 @@ class Karma < ModSpox::Plugin
     def reset(message, params)
         params[:thing].downcase!
         return unless message.is_public?
-        karma = KarmaDatatype::Karma.filter(:thing => params[:thing], :channel_id => message.target.pk).first
+        karma = Datatype::Karma.filter(:thing => params[:thing], :channel_id => message.target.pk).first
         if(karma)
             karma.set(:score => 0)
             @pipeline << Privmsg.new(message.replyto, "Karma for \2#{karma.thing}\2 has been reset")
@@ -49,19 +49,18 @@ class Karma < ModSpox::Plugin
         end        
     end
 
-end
-
-module KarmaDatatype
-    class Karma < Sequel::Model
-        set_schema do
-            primary_key :id
-            text :thing, :null => false, :unique => true
-            integer :score, :null => false, :default => 0
-            foreign_key :channel_id, :table => :channels
-        end
-        
-        def channel
-            ModSpox::Models::Channel[channel_id]
+    module Datatype
+        class Karma < Sequel::Model
+            set_schema do
+                primary_key :id
+                text :thing, :null => false, :unique => true
+                integer :score, :null => false, :default => 0
+                foreign_key :channel_id, :table => :channels
+            end
+            
+            def channel
+                ModSpox::Models::Channel[channel_id]
+            end
         end
     end
 end
