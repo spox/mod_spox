@@ -47,6 +47,7 @@ class PhpCli < ModSpox::Plugin
     end
     
     def execute_php(message, params)
+        return unless @channels.include?(message.target.pk)
         filepath = @path + "/#{rand(99999)}.bot.php"
         file = File.open(filepath, 'w')
         file.write("<? $_SERVER = $_ENV = array(); #{params[:code]} ?>")
