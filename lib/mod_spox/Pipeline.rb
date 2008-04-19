@@ -140,6 +140,8 @@ module ModSpox
                     res = message.message.scan(/^#{trigger}#{sig.signature}$/)
                     if(res.size > 0)
                         next unless message.source.auth_groups.include?(sig.group) || message.source.auth_groups.include?(@admin) ||sig.group.nil?
+                        next if sig.requirement == 'private' && message.is_public?
+                        next if sig.requirement == 'public' && message.is_private?
                         params = Hash.new
                         sig.params.size.times do |i|
                             params[sig.params[i - 1].to_sym] = res[0][i]
