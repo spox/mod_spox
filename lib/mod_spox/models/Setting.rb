@@ -33,8 +33,7 @@ module ModSpox
             def self.[]=(key, val)
                 key = key.to_s if key.is_a?(Symbol)
                 model = Setting.find_or_create(:name => key)
-                model.value = val
-                model.save
+                model.set(:value => Base64.encode64(Marshal.dump(val)))
             end
         end
     end
