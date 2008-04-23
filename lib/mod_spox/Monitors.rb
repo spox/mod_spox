@@ -34,23 +34,41 @@ module ModSpox
         
             # Create a new Boolean Monitor
             def initialize
-                @thread = nil
+                @threads = []
             end
             
             # Stop waiting
             def wakeup
-                Logger.log("Sending wakeup for thread: #{@thread}", 5)
-                @thread.run unless @thread == nil
-                Logger.log("Status of thread to wakeup: #{@thread.status}", 5)
-                Logger.log("Calling thread is: #{Thread.current}", 5)
-                @thread = nil
+                return if @threads.empty?
+                @threads.each do |thread|
+                    if(thread.status == 'sleep')
+                        Logger.log("Sending wakeup for thread: #{thread}", 5)
+                        thread.run
+                        Logger.log("Status of thread to wakeup: #{thread.status}", 5)
+                        Logger.log("Calling thread is: #{Thread.current}", 5)
+                    else
+                        Logger.log("Thread to wakeup has been killed: #{thread}")
+                    end
+                    @threads.delete(thread)
+                end
             end
             
             # Start waiting
             def wait
-                @thread = Thread.current
-                Logger.log("Stopping execution of thread: #{@thread}", 5)
+                @threads << Thread.current
+                Logger.log("Stopping execution of thread: #{Thread.current}", 5)
                 Thread.stop
+            end
+            
+            # Returns if a thread is currently waiting in this monitor
+            def thread_waiting?(thread)
+                return @threads.include?(thread)
+            end
+            
+            # Removes a thread from the list of waiting. Will be removed automatically
+            # if thread has been killed on next call to wakeup
+            def remove_thread(thread)
+                @threads.delete(thread) if @threads.include?(thread)
             end
         
         end

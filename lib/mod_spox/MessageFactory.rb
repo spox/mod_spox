@@ -5,10 +5,9 @@ module ModSpox
         # pipeline:: Message pipeline
         # Create a new MessageFactory
         def initialize(pipeline)
-            super(1)
+            super()
             @pipeline = pipeline
             @handlers = Hash.new
-            @queue = Queue.new
             Logger.log("Created new factory queue: #{@queue}", 15)
             build_handlers
             start_pool

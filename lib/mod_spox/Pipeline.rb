@@ -5,10 +5,9 @@ module ModSpox
         # procs:: number of threads running in Pool
         # Create a new Pipeline
         def initialize(procs=3)
-            super(procs)
+            super()
             @timeout = 20 # Anything over 20 seconds and we assume a plugin locked up the thread
-            @messageq = Queue.new
-            Logger.log("Created queue #{@messageq} in pipeline", 10)
+            Logger.log("Created queue #{@queue} in pipeline", 10)
             @hooks = Hash.new
             @plugins = Hash.new
             @admin = Models::Group.filter(:name => 'admin').first
@@ -23,7 +22,7 @@ module ModSpox
         # Queues a message to send down pipeline
         def <<(message)
             Logger.log("Message added to pipeline queue: #{message}", 5)
-            @messageq << message
+            @queue << message
         end
         
         # plugin:: Plugin to hook to pipeline
@@ -99,7 +98,7 @@ module ModSpox
         # Processes messages
         def processor
             begin
-                message = @messageq.pop
+                message = @queue.pop
                 Logger.log("Pipeline is processing a message: #{message}", 10)
                 parse(message)
                 type = message.class.to_s.gsub(/^ModSpox::Messages::/, '').gsub(/::/, '_').to_sym

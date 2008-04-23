@@ -145,7 +145,6 @@ module ModSpox
                     Kernel.select([@socket], nil, nil, nil)
                     @factory << read
                 end
-                @sendq.clear
             }
         end
         

@@ -6,11 +6,10 @@ module ModSpox
         # procs:: number of threads in the pool
         # Create a new Timer
         def initialize(pipeline, procs=2)
-            super(procs)
+            super()
             @pipeline = pipeline
             @timers = Array.new
-            @actions = Queue.new
-            Logger.log("Created queue: #{@actions} in timer", 10)
+            Logger.log("Created queue: #{@queue} in timer", 10)
             @monitor = Monitors::Timer.new
             @thread = nil
             @stop_timer = false
@@ -105,7 +104,7 @@ module ModSpox
         
         # Clears all actions in the timer's queue
         def clear
-            @actions.clear
+            @queue.clear
             @timers.clear
         end
         
@@ -117,14 +116,14 @@ module ModSpox
             for action in @timers do
                 action.tick(time_passed)
                 if(action.due?)
-                    @actions << action.schedule
+                    @queue << action.schedule
                 end
             end
         end
         
         # Process the actions
         def processor
-            action = @actions.pop
+            action = @queue.pop
             begin
                 action.run
                 remove(action) if action.is_complete?
