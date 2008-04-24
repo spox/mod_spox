@@ -26,11 +26,11 @@ class Confess < ModSpox::Plugin
         Signature.find_or_create(:signature => 'confess fetcher (start|stop)', :plugin => name, :method => 'fetcher',
             :description => 'Turn confession fetcher on or off', :group_id => Group.filter(:name => 'admin').first.pk).params = [:status]
         Config[:confess] = 'nofetch' if Config[:confess].nil?
-        start_fetcher if Config[:confess] == 'fetch'
         @last_confession = {}
         @fetch = false
         @mutex = Mutex.new
         @coder = HTMLEntities.new
+        start_fetcher if Config[:confess] == 'fetch'
     end
     
     def confess(message, params)
@@ -51,7 +51,7 @@ class Confess < ModSpox::Plugin
     def show_score(message, params)
         c = Confession[params[:id].to_i]
         if(c)
-            reply message.replyto, "\2[#{c.pk}]:\2 #{c.score}% of raters gave this confession a positive score"
+            reply message.replyto, "\2[#{c.pk}]:\2 #{c.score.to_i}% of raters gave this confession a positive score"
         else
             reply message.replyto, "\2Error:\2 Failed to find confession with ID: #{params[:id]}"
         end
@@ -61,7 +61,7 @@ class Confess < ModSpox::Plugin
         if(params[:id])
             c = Confession[params[:id].to_i]
         else
-            c = Confession[@last_confession[message.target.pk]]
+            c = Confession[@last_confession[message.target.pk]] if @last_confession.has_key?(message.target.pk)
         end
         if(c)
             if(params[:score] == '++')
@@ -71,12 +71,12 @@ class Confess < ModSpox::Plugin
             end
             c.set(:score => ((c.positive.to_f) / (c.positive.to_f + c.negative.to_f)) * 100.0)
         else
-            reply message.replyto, "\2Error:\2 Failed to find confession with ID: #{params[:id]}"
+            reply message.replyto, "\2Error:\2 Failed to find confession to score"
         end
     end
     
     def count(message, params)
-        reply message.replyto, "Current number of stored confessions: #{Confession.all.count}"
+        reply message.replyto, "Current number of stored confessions: #{Confession.all.size}"
     end
     
     def fetcher(message, params)
