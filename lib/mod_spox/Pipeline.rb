@@ -1,10 +1,9 @@
 module ModSpox
 
     class Pipeline < Pool
-    
-        # procs:: number of threads running in Pool
+
         # Create a new Pipeline
-        def initialize(procs=3)
+        def initialize
             super()
             @timeout = 20 # Anything over 20 seconds and we assume a plugin locked up the thread
             Logger.log("Created queue #{@queue} in pipeline", 10)
@@ -97,8 +96,8 @@ module ModSpox
         
         # Processes messages
         def processor
+            message = @queue.pop
             begin
-                message = @queue.pop
                 Logger.log("Pipeline is processing a message: #{message}", 10)
                 parse(message)
                 type = message.class.to_s.gsub(/^ModSpox::Messages::/, '').gsub(/::/, '_').to_sym

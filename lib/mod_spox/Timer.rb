@@ -3,9 +3,8 @@ module ModSpox
     class Timer < Pool
     
         # pipeline:: message pipeline
-        # procs:: number of threads in the pool
         # Create a new Timer
-        def initialize(pipeline, procs=2)
+        def initialize(pipeline)
             super()
             @pipeline = pipeline
             @timers = Array.new
