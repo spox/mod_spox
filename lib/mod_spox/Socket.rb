@@ -39,6 +39,7 @@ module ModSpox
         def connect
             Logger.log("Establishing connection to #{@server}:#{@port}", 10)
             @socket = TCPSocket.new(@server, @port)
+            @socket.sync = true
             server = Models::Server.find_or_create(:host => @server, :port => @port)
             server.connected = true
             server.save

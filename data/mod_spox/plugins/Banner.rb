@@ -14,7 +14,7 @@ class Banner < ModSpox::Plugin
             :description => 'Kickban given nick from given channel for given number of seconds').params = [:nick, :channel, :time, :message]
         Signature.find_or_create(:signature => 'banmask (\S+) (\S+) (\d+) ?(.+)?', :plugin => name, :method => 'message_mask_ban', :group_id => admin.pk,
             :description => 'Kickban given mask from given channel for given number of seconds providing an optional message'
-            ).params = [:mask, :message, :time, :channel]
+            ).params = [:mask, :channel, :time, :message]
         Signature.find_or_create(:signature => 'banmask list', :plugin => name, :method => 'mask_list', :group_id => admin.pk,
             :description => 'List all currently active banmasks')
         Signature.find_or_create(:signature => 'banmask remove (\d+)', :plugin => name, :method => 'mask_remove', :group_id => admin.pk,
