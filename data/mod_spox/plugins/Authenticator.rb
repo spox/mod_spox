@@ -32,6 +32,8 @@ class Authenticator < ModSpox::Plugin
             :group_id => group.pk, :description => 'List available authentication groups')
         Models::Signature.find_or_create(:signature => 'auth group info (\S+)', :plugin => name, :method => 'group_info',
             :group_id => group.pk, :description => 'List members of given group').params = [:group]
+        Models::Signature.find_or_create(:signature => 'groups', :plugin => name, :method => 'show_groups',
+            :description => 'Show user groups they are currently a member of')
     end
     
     # message:: ModSpox::Messages::Incoming::Privmsg
@@ -169,6 +171,16 @@ class Authenticator < ModSpox::Plugin
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "#{info.join(' ')}")
         else
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "I have no record of nick: #{params[:nick]}")
+        end
+    end
+    
+    def show_groups(message, params)
+        groups = []
+        message.source.auth_groups.each{|g| groups << g.name}
+        if(groups.empty?)
+            reply message.replyto, "You are not currently a member of any groups"
+        else
+            reply message.replyto, "\2Groups (#{message.source.nick}):\2 #{groups.join(', ')}"
         end
     end
     
