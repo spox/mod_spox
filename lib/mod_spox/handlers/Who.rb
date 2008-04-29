@@ -35,6 +35,7 @@ module ModSpox
                     @raw_cache[location] << string
                     if(location[0].chr !~ /[A-Za-z]/)
                         channel = find_model(location)
+                        Models::NickChannel.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
                         if(info.include?('+'))
                             Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk, :mode => 'v')
                         elsif(info.include?('@'))

@@ -17,6 +17,7 @@ module ModSpox
                         source.source = base_source
                         source.save
                     end
+                    Models::NickChannel.find_or_create(:channel_id => target.pk, :nick_id => source.pk) if target.is_a?(ModSpox::Channel)
                     return Messages::Incoming::Privmsg.new(string, source, target, message)
                 else
                     Logger.log('Failed to match PRIVMSG message')

@@ -18,13 +18,17 @@ mod_spox
 
 == Requirements
 
- * fastthread
  * sequel
+  * database driver
+ 
+== Optional
+
  * termios
+ * fastthread
  
 == Install
 
-gem install --include-dependencies mod_spox
+sudo gem install --include-dependencies mod_spox
 
 == License
 
