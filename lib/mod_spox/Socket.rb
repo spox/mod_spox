@@ -127,11 +127,11 @@ module ModSpox
             @writer_thread = Thread.new{
                 until @kill do
                     write(@sendq.pop)
-                    if((Time.now - @check_time) > @burst_in && @check_burst > @burst)
-                        sleep(@delay)
+                    if((Time.now - @check_time) > @burst_in)
                         @check_time = nil
                         @check_burst = 0
-                    elsif((Time.now - @check_time) > @burst_in && @check_burst < @burst)
+                    elsif((Time.now - @check_time) >= @burst_in && @check_burst >= @burst)
+                        sleep(@delay)
                         @check_time = nil
                         @check_burst = 0
                     end
