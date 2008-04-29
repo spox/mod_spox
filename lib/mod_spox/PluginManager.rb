@@ -14,6 +14,7 @@ module ModSpox
             @pipeline.hook(self, :unload_plugin, :Internal_PluginUnloadRequest)
             @pipeline.hook(self, :reload_plugins, :Internal_PluginReload)
             @pipeline.hook(self, :send_modules, :Internal_PluginModuleRequest)
+            @pipeline.hook(self, :plugin_request, :Internal_PluginRequest)
             @plugins_module = Module.new
             load_plugins
         end
@@ -34,7 +35,6 @@ module ModSpox
         # Loads a plugin
         def load_plugin(message)
             begin
-                Logger.log("THE MESSAGE NAME IS: #{message.name}")
                 path = !message.name ? BotConfig[:userpluginpath] : "#{BotConfig[:userpluginpath]}/#{message.name}"
                 FileUtils.copy(message.path, path)
                 reload_plugins
@@ -67,6 +67,17 @@ module ModSpox
         # Sends the plugins module to the requester
         def send_modules(message)
             @pipeline << Messages::Internal::PluginModuleResponse.new(message.requester, @plugins_module)
+        end
+        
+        # message:: Messages::Internal::PluginRequest
+        # Returns a plugin to requesting object
+        def plugin_request(message)
+            if(@plugins.has_key?(message.plugin))
+                response = Messages::Internal::PluginResponse.new(message.requester, @plugins[message.plugin])
+            else
+                response = Messages::Internal::PluginResponse.new(message.requester, nil)
+            end
+            @pipeline << response
         end
         
         private

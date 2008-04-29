@@ -9,7 +9,7 @@ module ModSpox
                 # Request plugin from bot
                 def initialize(object, name)
                     super(object)
-                    @name = name.is_a?(Symbol) ? name : name.to_sym
+                    @plugin = name.is_a?(Symbol) ? name : name.to_sym
                 end
             end
         end
