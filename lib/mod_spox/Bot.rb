@@ -272,7 +272,7 @@ module ModSpox
             target = message.target.name if message.target.is_a?(Models::Channel)
             target = message.target.nick if message.target.is_a?(Models::Nick)
             target = message.target unless target
-            @socket << "PRIVMSG #{target} :#{message.message}"
+            @socket << "PRIVMSG #{target} :#{message.is_action? ? "\cAACTION #{message.message}\cA" : message.message}"
         end
 
         # message:: Messages::Outgoing::Notice message
