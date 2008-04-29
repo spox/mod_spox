@@ -10,7 +10,7 @@ module ModSpox
             
             def params=(prms)
                 raise InvalidType.new('Parameter names must be provided in an array') unless prms.kind_of?(Array)
-                set(:params => prms.reverse.join('|'))
+                set(:params => prms.join('|'))
             end
         
             def params

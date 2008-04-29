@@ -63,9 +63,9 @@ module ModSpox
         def unhook(object, method, type)
             Logger.log("Object #{object.class.to_s} unhooking from messages of type: #{type}", 10)
             type = type.gsub(/::/, '_').to_sym unless type.is_a?(Symbol)
-            name = object.class.gsub(/^.+:/, '').to_sym
-            raise Exception::InvalidValue.new("Unknown hook type given: #{type.to_s}") unless @hooks.has_key?(type)
-            raise Exception::InvalidValue.new("Unknown object hooked: #{name.to_s}") unless @hooks[type].has_key?(name)
+            name = object.class.to_s.gsub(/^.+:/, '').to_sym
+            raise Exceptions::InvalidValue.new("Unknown hook type given: #{type.to_s}") unless @hooks.has_key?(type)
+            raise Exceptions::InvalidValue.new("Unknown object hooked: #{name.to_s}") unless @hooks[type].has_key?(name)
             @hooks[type][name].each{|hook|
                 @hooks[type][name].delete(hook) if hook[:method] == method
             }
@@ -142,8 +142,8 @@ module ModSpox
                         next if sig.requirement == 'public' && message.is_private?
                         params = Hash.new
                         sig.params.size.times do |i|
-                            params[sig.params[i - 1].to_sym] = res[0][i]
-                            Logger.log("Signature params: #{sig.params[i - 1].to_sym} = #{res[0][i]}")
+                            params[sig.params[i].to_sym] = res[0][i]
+                            Logger.log("Signature params: #{sig.params[i].to_sym} = #{res[0][i]}")
                         end
                         if(@plugins.has_key?(sig.plugin.to_sym))
                             begin
