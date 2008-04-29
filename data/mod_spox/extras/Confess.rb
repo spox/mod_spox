@@ -15,8 +15,8 @@ class Confess < ModSpox::Plugin
             raise Exceptions::BotException.new("Missing required HTMLEntities library")
         end
         Confession.create_table unless Confession.table_exists?
-        Signature.find_or_create(:signature => 'confess ?(\d+)?', :plugin => name, :method => 'confess',
-            :description => 'Print a confession').params = [:id]
+        Signature.find_or_create(:signature => 'confess ?(.+)?', :plugin => name, :method => 'confess',
+            :description => 'Print a confession').params = [:term]
         Signature.find_or_create(:signature => 'confess(\+\+|\-\-) ?(\d+)?', :plugin => name, :method => 'score',
             :description => 'Score a confession').params = [:score, :id]
         Signature.find_or_create(:signature => 'confess score (\d+)', :plugin => name, :method => 'show_score',
@@ -34,17 +34,24 @@ class Confess < ModSpox::Plugin
     end
     
     def confess(message, params)
-        if(params[:id])
-            c = Confession[params[:id].to_i]
+        c = nil
+        reg = false
+        if(params[:term])
+            if(params[:term] =~ /^\d+$/)
+                c = Confession[params[:term].to_i]
+            else
+                c = Confession.filter(:confession => Regexp.new(params[:term])).first
+                reg = true
+            end
         else
             ids = Confession.map(:id)
             c = Confession[ids[rand(ids.size - 1)].to_i]
         end
         if(c)
-            reply message.replyto, "\2[#{c.pk}]\2: #{c.confession}"
+            reply message.replyto, "\2[#{c.pk}]\2: #{reg ? c.confession.gsub(/(#{params[:term]})/, "\2\\1\2") : c.confession}"
             @last_confession[message.target.pk] = c.pk
         else
-            reply message.replyto, "\2Error:\2 Failed to find confession with ID: #{params[:id]}"
+            reply message.replyto, "\2Error:\2 Failed to find confession"
         end
     end
     
