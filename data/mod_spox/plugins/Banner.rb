@@ -83,9 +83,9 @@ class Banner < ModSpox::Plugin
         raise Exceptions::InvalidType.new("Nick given is not a nick model") unless nick.is_a?(Models::Nick)
         raise Exceptions::InvalidType.new("Channel given is not a channel model") unless channel.is_a?(Models::Channel)
         if(!me.is_op?(channel))
-            raise Exceptions::NotOperator.new("I am not an operator in #{channel.name}")
+            raise NotOperator.new("I am not an operator in #{channel.name}")
         elsif(!nick.channels.include?(channel))
-            raise Exceptions::NotInChannel.new("#{nick.nick} is not in channel: #{channel.name}")
+            raise NotInChannel.new("#{nick.nick} is not in channel: #{channel.name}")
         else
             mask = nick.source.nil? || nick.source.empty? ? "#{nick.nick}!*@*" : "*!*@#{nick.address}"
             BanRecord.new(:nick_id => nick.pk, :bantime => time.to_i, :remaining => time.to_i,
