@@ -19,6 +19,10 @@ class AOLSpeak < ModSpox::Plugin
     end
     
     def aolkick(message, params)
+        if(@banner.nil?)
+            @pipeline << Messages::Internal::PluginRequest.new(self, 'Banner')
+            sleep(0.1)
+        end
         if(params[:channel])
             channel = Models::Channel.filter(:name => params[:channel]).first
         else

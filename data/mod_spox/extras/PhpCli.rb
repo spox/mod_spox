@@ -1,3 +1,4 @@
+# IMPORTANT NOTE: This plugin will only function if the PHP executable can be located
 class PhpCli < ModSpox::Plugin
 
     include Models

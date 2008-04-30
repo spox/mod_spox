@@ -2,6 +2,8 @@ require 'net/http'
 require 'digest/md5'
 require 'cgi'
 
+
+# IMPORTANT NOTE: This plugin requires installation of the HTMLEntities gem 
 class Confess < ModSpox::Plugin
 
     include Models

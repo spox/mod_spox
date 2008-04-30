@@ -1,3 +1,4 @@
+# IMPORTANT NOTE: This plugin requires installation of the LOLSpeak gem
 class LolSpeak < ModSpox::Plugin
 
     include Models
