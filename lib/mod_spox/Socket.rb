@@ -59,7 +59,7 @@ module ModSpox
         # new_burst:: Number of lines allowed in burst
         # Resets the burst
         def burst=(new_burst)
-            raise Exceptions::InvalidValue('Burst value must be a positive number') unless new_busrt.to_i > 0
+            raise Exceptions::InvalidValue('Burst value must be a positive number') unless new_burst.to_i > 0
             @burst = new_burst
         end
         
@@ -85,7 +85,7 @@ module ModSpox
             @last_send = Time.new
             @sent += 1
             @check_burst += 1
-            @check_time = Time.now if @check_time.nil?
+            @check_time = Time.now.to_i if @check_time.nil?
         end
         
         # Retrieves a string from the server
@@ -127,10 +127,10 @@ module ModSpox
             @writer_thread = Thread.new{
                 until @kill do
                     write(@sendq.pop)
-                    if((Time.now - @check_time) > @burst_in)
+                    if((Time.now.to_i - @check_time) > @burst_in)
                         @check_time = nil
                         @check_burst = 0
-                    elsif((Time.now - @check_time) >= @burst_in && @check_burst >= @burst)
+                    elsif((Time.now.to_i - @check_time) >= @burst_in && @check_burst >= @burst)
                         sleep(@delay)
                         @check_time = nil
                         @check_burst = 0
