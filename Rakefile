@@ -5,16 +5,13 @@
 
 require 'rubygems'
 require 'rake'
-require 'rubyforge'
 require 'rake/rdoctask'
 require 'rake/packagetask'
 require 'rake/gempackagetask'
-require 'rake/contrib/sshpublisher'
-require 'rake/contrib/rubyforgepublisher'
 
 NAME = 'mod_spox'
 RUBYFORGENAME = 'modspox'
-BOTVERSION = '0.0.2'
+BOTVERSION = '0.0.3'
 
 spec = Gem::Specification.new do |s|
     s.name = NAME
@@ -61,6 +58,8 @@ task :doc => :rdoc
 
 #desc 'Publish the release files to RubyForge'
 task :release => [:package] do
+    require 'rake/contrib/rubyforgepublisher'
+    require 'rubyforge'
     packages = %w( gem tgz zip ).collect{ |ext| "pkg/#{NAME}-#{BOTVERSION}.#{ext}" }
     rubyforge = RubyForge.new
     rubyforge.login
@@ -69,5 +68,6 @@ end
 
 #desc 'Publish the API documentation'
 task :papi => [:rdoc] do
+    require 'rake/contrib/sshpublisher'
     Rake::SshDirPublisher.new("spox@rubyforge.org", "/var/www/gforge-projects/modspox/docs", "doc").upload
 end
