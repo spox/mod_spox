@@ -6,7 +6,7 @@ module ModSpox
             end
             def process(string)
                 if(string =~ /(\d+) :.*[Uu]nknown/)
-                    return Messages::Incoming::LuserUnknown(string, $1.to_i)
+                    return Messages::Incoming::LuserUnknown.new(string, $1.to_i)
                 else
                     Logger.log('Failed to match RPL_LUSERUNKNOWN message')
                 end

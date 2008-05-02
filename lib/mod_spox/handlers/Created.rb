@@ -6,7 +6,7 @@ module ModSpox
             end
             def process(string)
                 if(string =~ /#{RPL_CREATED.to_s}.+?:created\s(.+)$/)
-                    return Messages::Incoming::Created(string, $1)
+                    return Messages::Incoming::Created.new(string, $1)
                 else
                     Logger.log('Failed to parse RPL_CREATED message')
                 end

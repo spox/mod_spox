@@ -9,7 +9,7 @@ module ModSpox
                     source = find_model($1)
                     target = find_model($2)
                     channel = find_model($3)
-                    return Messages::Incoming::Invite(string, source, target, channel)
+                    return Messages::Incoming::Invite.new(string, source, target, channel)
                 else
                     Logger.log('Failed to parse INVITE message')
                 end
