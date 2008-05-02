@@ -1,3 +1,24 @@
+0.0.3 Release (Alpha status)
+    * New features available from the following new plugins:
+        * AOLSpeak
+        * AutoKick
+        * AutoRejoin
+        * Confess
+        * EightBall
+        * LolSpeak
+        * PhpCli
+        * PhpFuncLookup
+        * Quotes
+        * Talk
+        * Translate
+        * Weather
+        * Help
+    * Added private/public/both specification for signatures
+    * Added smart thread creation/deletion for Pool
+    * Modified Rakefile to build gem without need for unused libraries
+    * Added support for action privmsgs 
+    * Various fixes of small bugs
+
 0.0.2 Release (Alpha status)
     * New features available from the following new plugins:
         * Karma
