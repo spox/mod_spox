@@ -16,6 +16,8 @@ module ModSpox
         # TODO: for nick field -> "tack a COLLATE NOCASE onto the columns"
         class Nick < Sequel::Model(:nicks)
             
+            set_cache Database.cache, :ttl => 3600 unless Database.cache.nil?
+            
             def visible=(val)
                 unless(val)
                     set :username => nil

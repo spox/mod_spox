@@ -12,6 +12,15 @@ module ModSpox
             @@type = type
         end
         
+        def self.cache=(cache)
+            @@cache = nil
+            @@cache = cache
+        end
+        
+        def self.cache
+            return Database.class_variable_defined?(:@@cache) ? @@cache : nil
+        end
+        
         def self.type
             return Database.class_variable_defined?(:@@type) ? @@type : nil
         end

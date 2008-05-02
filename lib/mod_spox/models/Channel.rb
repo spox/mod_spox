@@ -10,6 +10,8 @@ module ModSpox
         # parked:: Bot is currently in this channel
         class Channel < Sequel::Model(:channels)
             
+            set_cache Database.cache, :ttl => 3600 unless Database.cache.nil?
+            
             # Modes for this channel
             def channel_modes
                 ChannelMode.filter(:channel_id => pk)

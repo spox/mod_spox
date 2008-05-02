@@ -61,6 +61,15 @@ module ModSpox
         require 'mod_spox/BotConfig'
         require 'mod_spox/BaseConfig'
         require 'mod_spox/Database'
+        memcache = false
+        begin
+            require 'memcache'
+            memcache = true
+            Database.cache = MemCache.new('localhost:11211', :namespace => 'modspox')
+        rescue Object => boom
+            # do nothing #
+        end
+            
         config = BaseConfig.new(BotConfig[:userconfigpath])
         case config[:db_adapter]
             when 'mysql'
