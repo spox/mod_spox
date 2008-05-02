@@ -31,11 +31,11 @@ module ModSpox
             Logger.log("New block is being added to the timer", 15)
             action = add(message.period, message.once, message.data, &message.block)
             begin
-                @pipeline << Messages::Internal::TimerResponse.new(message.requester, action, true)
+                @pipeline << Messages::Internal::TimerResponse.new(message.requester, action, true, message.id)
                 Logger.log("New block was successfully added to the timer", 15)
             rescue Object => boom
                 Logger.log("Failed to add block to timer: #{boom}", 10)
-                @pipeline << Messages::Internal::TimerResponse.new(message.requester, action, false)
+                @pipeline << Messages::Internal::TimerResponse.new(message.requester, action, false, message.id)
             end
         end
         
@@ -44,7 +44,7 @@ module ModSpox
         def remove_message(message)
             remove(message.action)
             Logger.log("Action has been removed from the Timer", 15)
-            @pipeline << Messages::Internal::TimerResponse.new(nil, message.action, false)
+            @pipeline << Messages::Internal::TimerResponse.new(nil, message.action, false, message.id)
         end
         
         # period:: seconds between running action

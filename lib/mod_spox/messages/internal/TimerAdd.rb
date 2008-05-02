@@ -10,6 +10,8 @@ module ModSpox
                 attr_reader :period
                 # only execute block once
                 attr_reader :once
+                # message identification
+                attr_reader :ident
                 # period:: interval between executions
                 # once:: only run block once
                 # block:: code block
@@ -20,6 +22,12 @@ module ModSpox
                     @period = period
                     @once = once
                     @block = block
+                    @ident = rand(99999999)
+                end
+                
+                # Message ID
+                def id
+                    @ident
                 end
             end
         end
