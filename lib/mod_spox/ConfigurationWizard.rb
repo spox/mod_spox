@@ -148,7 +148,6 @@ module ModSpox
                     Database.db << "CREATE TABLE IF NOT EXISTS groups (id int not null auto_increment primary key, name varchar(255) not null unique)"
                     Database.db << "CREATE TABLE IF NOT EXISTS auth_groups (auth_id int not null references auths, group_id int not null references groups, primary key(auth_id, group_id))"
                 when :pgsql
-                    Database.db << "CREATE TYPE sig_requirement AS ENUM ('public', 'private', 'both')"
                     Database.db << "CREATE TABLE nicks (id serial not null primary key, nick text unique not null, username text, real_name text, address text, source text, connected_at timestamp, connected_to text, seconds_idle integer, visible boolean not null default false, away boolean not null default false, botnick boolean not null default false)"
                     Database.db << "CREATE TABLE channels (id serial not null primary key, name text unique not null, password text, autojoin boolean not null default false, topic text, quiet boolean not null default false, parked boolean not null default false)"
                     Database.db << "CREATE TABLE auths (id serial not null primary key, password text, services boolean not null default false, mask text unique, authed boolean not null default false, nick_id integer unique references nicks)"
@@ -158,7 +157,7 @@ module ModSpox
                     Database.db << "CREATE TABLE nick_channels (channel_id integer not null references channels, nick_id integer not null references nicks, primary key(nick_id, channel_id))"
                     Database.db << "CREATE TABLE nick_modes (id serial not null primary key, mode text not null, nick_id integer not null references nicks, channel_id integer references channels, unique (nick_id, channel_id))"
                     Database.db << "CREATE TABLE servers (id serial not null primary key, host text not null, port integer not null default 6667, priority integer not null default 0, connected boolean not null default false, unique (host, port))"
-                    Database.db << "CREATE TABLE signatures (id serial not null primary key, signature text not null, params text, group_id integer default null references groups, method text not null, plugin text not null, description text, requirement sig_requirement default 'both' not null)"
+                    Database.db << "CREATE TABLE signatures (id serial not null primary key, signature text not null, params text, group_id integer default null references groups, method text not null, plugin text not null, description text, requirement text default 'both' not null)"
                     Database.db << "CREATE TABLE settings (id serial not null primary key, name text unique not null, value text)"
                     Database.db << "CREATE TABLE triggers (id serial not null primary key, trigger text unique not null, active boolean not null default false)"
                     Database.db << "CREATE TABLE auth_groups (auth_id integer not null references auths, group_id integer not null references groups, primary key (auth_id, group_id))"
