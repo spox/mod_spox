@@ -1,3 +1,4 @@
+require 'base64'
 module ModSpox
     module Models
         # Attributes provided by model:
@@ -15,6 +16,14 @@ module ModSpox
         
             def params
                 return values[:params].nil? ? [] : values[:params].split('|')
+            end
+            
+            def signature=(sig)
+                update_values(:signature => Base64.encode64(Marshal.dump(sig)))
+            end
+            
+            def signature
+                return values[:signature] ? Marshal.load(Base64.decode64(values[:signature])) : nil
             end
             
             def group
