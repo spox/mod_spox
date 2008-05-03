@@ -20,20 +20,20 @@ module ModSpox
             
             def visible=(val)
                 unless(val)
-                    set :username => nil
-                    set :real_name => nil
-                    set :address => nil
-                    set :source => nil
-                    set :connected_at => nil
-                    set :connected_to => nil
-                    set :seconds_idle => nil
-                    set :away => false
+                    update_with_params :username => nil
+                    update_with_params :real_name => nil
+                    update_with_params :address => nil
+                    update_with_params :source => nil
+                    update_with_params :connected_at => nil
+                    update_with_params :connected_to => nil
+                    update_with_params :seconds_idle => nil
+                    update_with_params :away => false
                 end
-                set :visible => val
+                update_values :visible => val
             end
                     
             def source=(mask)
-                set :source => mask
+                update_values :source => mask
                 auth.check_mask(mask)
             end
             

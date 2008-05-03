@@ -11,7 +11,7 @@ module ModSpox
         class Setting < Sequel::Model(:settings)
             
             def value=(val)
-                set(:value => Base64.encode64(Marshal.dump(val)))
+                update_values(:value => Base64.encode64(Marshal.dump(val)))
             end
             
             def value
@@ -33,7 +33,7 @@ module ModSpox
             def self.[]=(key, val)
                 key = key.to_s if key.is_a?(Symbol)
                 model = Setting.find_or_create(:name => key)
-                model.set(:value => Base64.encode64(Marshal.dump(val)))
+                model.update_with_params(:value => Base64.encode64(Marshal.dump(val)))
             end
         end
     end

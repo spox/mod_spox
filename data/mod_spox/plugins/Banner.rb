@@ -179,7 +179,7 @@ class Banner < ModSpox::Plugin
     def ban_remove(message, params)
         record = BanRecord[params[:id].to_i]
         if(record)
-            record.set(:remaining => 0)
+            record.update_with_params(:remaining => 0)
             updater
             reply(message.replyto, 'Okay')
         else
@@ -243,8 +243,8 @@ class Banner < ModSpox::Plugin
             if(message.mode == '-b')
                 update = false
                 BanRecord.filter(:mask => message.target, :channel_id => message.channel.pk).each do |match|
-                    match.set(:remaining => 0)
-                    match.set(:removed => true)
+                    match.update_vaules(:remaining => 0)
+                    match.update_with_params(:removed => true)
                     update = true
                 end
                 updater if update
@@ -303,7 +303,7 @@ class Banner < ModSpox::Plugin
                 BanRecord.filter{:remaining <= 0 && :removed == false}.each do |record|
                     if(me.is_op?(record.channel))
                         @pipeline << ChannelMode.new(record.channel, '-b', record.mask)
-                        record.set(:removed => true)
+                        record.update_with_params(:removed => true)
                         @pipeline << Invite.new(record.nick, record.channel) if record.invite
                     end
                 end

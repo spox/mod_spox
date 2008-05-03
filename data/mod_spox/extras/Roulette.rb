@@ -195,8 +195,8 @@ class Roulette < ModSpox::Plugin
     def shot(nick, channel)
         cur_game = game(channel)
         info = Info.find_or_create(:game_id => cur_game.pk, :nick_id => nick.pk)
-        info.set(:shots => info.shots + 1)
-        cur_game.set(:shots => cur_game.shots - 1)
+        info.update_with_params(:shots => info.shots + 1)
+        cur_game.update_with_params(:shots => cur_game.shots - 1)
         raise Bullet.new(cur_game) if cur_game.shots < 1
     end
     
@@ -205,7 +205,7 @@ class Roulette < ModSpox::Plugin
     # Return number of games nick has won
     def game_over(nick, game)
         Info.filter(:game_id => game.pk).each do |info|
-            info.set(:win => true) unless info.nick_id == nick.pk
+            info.update_with_params(:win => true) unless info.nick_id == nick.pk
         end
     end
     

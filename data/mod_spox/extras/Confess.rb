@@ -74,11 +74,11 @@ class Confess < ModSpox::Plugin
         end
         if(c)
             if(params[:score] == '++')
-                c.set(:positive => c.positive.to_i + 1)
+                c.update_with_params(:positive => c.positive.to_i + 1)
             else
-                c.set(:negative => c.negative.to_i + 1)
+                c.update_with_params(:negative => c.negative.to_i + 1)
             end
-            c.set(:score => ((c.positive.to_f) / (c.positive.to_f + c.negative.to_f)) * 100.0)
+            c.update_with_params(:score => ((c.positive.to_f) / (c.positive.to_f + c.negative.to_f)) * 100.0)
         else
             reply message.replyto, "\2Error:\2 Failed to find confession to score"
         end

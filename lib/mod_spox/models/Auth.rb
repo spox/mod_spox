@@ -47,14 +47,14 @@ module ModSpox
             
             # Set services (nickserv) identification
             def services_identified=(val)
-                set :authed => true if val && services
+                update_with_params :authed => true if val && services
             end
             
             # pass:: password to compare
             # Check and authenticate against password
             def check_password(pass)
                 if(Digest::SHA1.hexdigest(pass) == password)
-                    set :authed => true
+                    update_with_params :authed => true
                     return true
                 else
                     return false
@@ -62,14 +62,14 @@ module ModSpox
             end
             
             def password=(pass)
-                set :password => Digest::SHA1.hexdigest(pass)
+                update_values :password => Digest::SHA1.hexdigest(pass)
             end
             
             # source:: source to apply mask to
             # Check and authenticate by mask against source
             def check_mask(source)
                 if(source =~ /^#{mask}$/)
-                    set :authed => true
+                    update_with_params :authed => true
                 end
             end
             

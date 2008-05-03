@@ -21,7 +21,7 @@ class Karma < ModSpox::Plugin
                 thing = thing[1..-2] if thing[0..0] == '(' && thing[-1..1] == ')'
                 adj = adj == '++' ? +1 : -1
                 karma = Datatype::Karma.find_or_create(:thing => thing, :channel_id => message.target.pk)
-                karma.set(:score => karma.score + adj)
+                karma.update_with_params(:score => karma.score + adj)
             end
         end
     end
@@ -42,7 +42,7 @@ class Karma < ModSpox::Plugin
         return unless message.is_public?
         karma = Datatype::Karma.filter(:thing => params[:thing], :channel_id => message.target.pk).first
         if(karma)
-            karma.set(:score => 0)
+            karma.update_with_params(:score => 0)
             @pipeline << Privmsg.new(message.replyto, "Karma for \2#{karma.thing}\2 has been reset")
         else
             @pipeline << Privmsg.new(message.replyto, "\2Error:\2 #{params[:thing]} has no karma")

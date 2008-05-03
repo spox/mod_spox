@@ -10,7 +10,7 @@ module ModSpox
             
             def params=(prms)
                 raise InvalidType.new('Parameter names must be provided in an array') unless prms.kind_of?(Array)
-                set(:params => prms.join('|'))
+                update_values(:params => prms.join('|'))
             end
         
             def params
@@ -22,7 +22,7 @@ module ModSpox
             end
             
             def group=(group)
-                set :group_id => group.pk
+                update_values :group_id => group.pk
             end
 
         end

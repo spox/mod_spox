@@ -129,9 +129,9 @@ class Authenticator < ModSpox::Plugin
     def nick_ident(message, params)
         nick = Models::Nick.find_or_create(:nick => params[:nick])
         if(params[:ident] == 'true')
-            nick.auth.set(:services => true)
+            nick.auth.update_with_params(:services => true)
         else
-            nick.auth.set(:services => false)
+            nick.auth.update_with_params(:services => false)
         end
         @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Nick #{params[:nick]} has been updated. Services for authentication has been set to #{params[:ident]}")
     end
