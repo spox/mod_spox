@@ -67,10 +67,9 @@ module ModSpox
             memcache = true
             Database.cache = MemCache.new('localhost:11211', :namespace => 'modspox')
         rescue Object => boom
-            puts "FAILED TO LOAD MEMCACHE SUPPORT"
+            puts "FAILED TO LOAD MEMCACHE SUPPORT: #{boom}"
             # do nothing #
         end
-            
         config = BaseConfig.new(BotConfig[:userconfigpath])
         case config[:db_adapter]
             when 'mysql'
