@@ -145,7 +145,7 @@ module ModSpox
                                 sleep_time = (@@max_thread_life - time).to_i if sleep_time = 0 || (@@max_thread_life - time).to_i < sleep_time
                                 if(time > @@max_thread_life)
                                     Pool.delete_thread(thread)
-                                elsif([nil, false, 'sleep', 'aborting'].include?(thread.status))
+                                elsif([nil, false, 'aborting'].include?(thread.status))
                                     Pool.delete_thread(thread)
                                 end
                             end
