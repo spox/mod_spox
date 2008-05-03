@@ -47,7 +47,7 @@ module ModSpox
                 groups = []
                 auth_ids = []
                 group_ids = []
-                auth = Auth.filter{:nick_id == pk && :authed == true}.first
+                auth = Auth.filter('nick_id = ?', pk).filter('authed = ?', true).first
                 if(auth)
                     groups = auth.groups
                 end

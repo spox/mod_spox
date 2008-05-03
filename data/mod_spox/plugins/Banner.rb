@@ -297,19 +297,19 @@ class Banner < ModSpox::Plugin
             begin
                 time = @sleep.nil? ? 0 : (Object::Time.now - @sleep).to_i
                 if(time > 0)
-                    BanRecord.filter{:remaining > 0}.update("remaining = remaining - #{time}")
-                    BanMask.filter{:bantime > 0}.update("bantime = bantime - #{time}")
+                    BanRecord.filter('remaining > ?', 0).update("remaining = remaining - #{time}")
+                    BanMask.filter('bantime > ?', 0).update("bantime = bantime - #{time}")
                 end
-                BanRecord.filter{:remaining <= 0 && :removed == false}.each do |record|
+                BanRecord.filter('remaining <= ?', 0).filter('removed = ?', false).each do |record|
                     if(me.is_op?(record.channel))
                         @pipeline << ChannelMode.new(record.channel, '-b', record.mask)
                         record.update_with_params(:removed => true)
                         @pipeline << Invite.new(record.nick, record.channel) if record.invite
                     end
                 end
-                BanMask.filter{:bantime < 1}.destroy
-                next_ban_record = BanRecord.filter{:remaining > 0}.order(:remaining.ASC).first
-                next_mask_record = BanMask.filter{:bantime > 0}.order(:bantime.ASC).first
+                BanMask.filter('bantime < ?', 1).destroy
+                next_ban_record = BanRecord.filter('remaining > ?', 0).order(:remaining.ASC).first
+                next_mask_record = BanMask.filter('bantime > ?', 0).order(:bantime.ASC).first
                 if(next_ban_record && next_mask_record)
                     time = next_ban_record.bantime < next_mask_record.bantime ? next_ban_record.bantime : next_mask_record.bantime
                 elsif(next_ban_record)

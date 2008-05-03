@@ -109,7 +109,7 @@ class Roulette < ModSpox::Plugin
     # channel:: ModSpox::Models::Channel
     # Return number of games nick has won
     def games_won(nick, channel)
-        Info.left_outer_join(:games, :id => :game_id).filter{:nick_id == nick.pk && :channel_id == channel.pk && :win == true}.size
+        Info.left_outer_join(:games, :id => :game_id).filter('nick_id = ?', nick.pk).filter('channel_id = ?', channel.pk).filter('win = ?', true).size
     end
     
     # nick:: ModSpox::Models::Nick
@@ -123,14 +123,14 @@ class Roulette < ModSpox::Plugin
     # channel:: ModSpox::Models::Channel
     # Return number of games nick has played
     def games_total(nick, channel)
-        Info.left_outer_join(:games, :id => :game_id).filter{:nick_id == nick.pk && :channel_id == channel.pk}.exclude(:game_id => game(channel).pk).size
+        Info.left_outer_join(:games, :id => :game_id).filter('nick_id = ?', nick.pk).filter('channel_id = ?', channel.pk).exclude(:game_id => game(channel).pk).size
     end
 
     # nick:: ModSpox::Models::Nick
     # channel:: ModSpox::Models::Channel
     # Return number of shots nick has taken
     def total_shots(nick, channel)
-        v = Info.left_outer_join(:games, :id => :game_id).filter{:nick_id == nick.pk && :channel_id == channel.pk}.exclude(:game_id => game(channel).pk).sum(:infos__shots)
+        v = Info.left_outer_join(:games, :id => :game_id).filter('nick_id = ?', nick.pk).filter('channel_id = ?', channel.pk).exclude(:game_id => game(channel).pk).sum(:infos__shots)
         v = 0 unless v
         return v
     end
@@ -180,7 +180,7 @@ class Roulette < ModSpox::Plugin
     # Return current game
     def game(channel)
         @pipeline << Messages::Internal::PluginRequest.new(self, 'Banner') if @banner.nil?
-        game = Game.filter{:shots > 0 && :channel_id == channel.pk}.first
+        game = Game.filter('shots > ?', 0).filter('channel_id = ?', channel.pk).first
         unless(game)
             chamber = rand(5) + 1
             game = Game.new(:chamber => chamber, :shots => chamber, :channel_id => channel.pk)
