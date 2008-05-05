@@ -12,7 +12,7 @@ class Roulette < ModSpox::Plugin
         Game.create_table unless Game.table_exists?
         Info.create_table unless Info.table_exists?
         @banner = nil
-        @pipeline.hook(:self, :get_banner, :Internal_PluginResponse)
+        @pipeline.hook(self, :get_banner, :Internal_PluginResponse)
     end
     
     # message:: ModSpox::Messages::Internal::PluginResponse

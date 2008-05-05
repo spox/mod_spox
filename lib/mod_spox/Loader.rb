@@ -62,15 +62,17 @@ module ModSpox
         require 'mod_spox/BaseConfig'
         require 'mod_spox/Database'
         memcache = false
-        begin
-            require 'memcache'
-            memcache = true
-            Database.cache = MemCache.new('localhost:11211', :namespace => 'modspox')
-        rescue Object => boom
-            puts "FAILED TO LOAD MEMCACHE SUPPORT: #{boom}"
-            # do nothing #
-        end
         config = BaseConfig.new(BotConfig[:userconfigpath])
+        if(config[:memcache] == 'on')
+            begin
+                require 'memcache'
+                memcache = true
+                Database.cache = MemCache.new('localhost:11211', :namespace => 'modspox')
+            rescue Object => boom
+                puts "FAILED TO LOAD MEMCACHE SUPPORT: #{boom}"
+                # do nothing #
+            end
+        end
         case config[:db_adapter]
             when 'mysql'
                 Database.db = Sequel.mysql(config[:db_database], :user => config[:db_username],

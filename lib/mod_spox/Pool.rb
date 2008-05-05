@@ -67,7 +67,7 @@ module ModSpox
         # Lock for thread safety
         @@lock = Mutex.new
         # Maximum number of threads in pool
-        @@max_threads = 10
+        @@max_threads = 100
         # Maximum number of seconds a thread may spend waiting for an action
         @@max_thread_life = 60
         # Thread to tend to pool actions
@@ -128,7 +128,7 @@ module ModSpox
                 run_pool.proc.call
                 @@threads[Thread.current] = Time.now
             else
-                @@thread_stopper.wait
+                @@thread_stopper.wait if Pool.max_queue_size < 1
             end
         end
         
@@ -136,6 +136,7 @@ module ModSpox
         def Pool.start_watcher
             @@pool_thread = Thread.new{
                 until(@@kill) do
+                @@threads.each{|t| Logger.log("Thread: #{t} Status: #{t.status}")}
                     sleep_time = 0
                     begin
                         waiters = Pool.waiting_threads
@@ -155,7 +156,7 @@ module ModSpox
                             end
                         end
                     rescue Object => boom
-                        Logger.log("Pool watcher caught an error (ignoring): #{boom}")
+                        Logger.log("Pool watcher caught an error (ignoring): #{boom}\n#{boom.backtrace.join("\n")}")
                     end
                     sleep_time = 1 if sleep_time == 0
                     sleep_time = nil if sleep_time < 0

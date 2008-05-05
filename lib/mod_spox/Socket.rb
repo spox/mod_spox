@@ -1,6 +1,6 @@
 module ModSpox
 
-    class Socket
+    class Socket < Pool
     
         attr_reader :sent
         attr_reader :received
@@ -18,6 +18,7 @@ module ModSpox
         # burst:: Number of lines allowed to be sent within the burst_in time limit
         # Create a new Socket
         def initialize(bot, server, port, delay=2, burst_in=2, burst=4)
+            super()
             @factory = bot.factory
             @pipeline = bot.pipeline
             @server = server
@@ -29,10 +30,11 @@ module ModSpox
             @burst_in = 2
             @kill = false
             @reader_thread = nil
-            @writer_thread = nil
             @time_check = nil
             @check_burst = 0
             @pause = false
+            @sendq = @queue
+            start_pool
         end
         
         # Connects to the IRC server
@@ -43,9 +45,7 @@ module ModSpox
             server = Models::Server.find_or_create(:host => @server, :port => @port)
             server.connected = true
             server.save
-            @sendq = Queue.new
             Logger.log("Created new send queue: #{@sendq}", 10)
-            spooler
             reader
         end
         
@@ -81,7 +81,7 @@ module ModSpox
         def write(message)
             return if message.nil?
             Logger.log("<< #{message}", 5)
-            @socket.send(message + "\n", 0)
+            @socket.puts(message) #send(message + "\n", 0)
             @last_send = Time.new
             @sent += 1
             @check_burst += 1
@@ -109,34 +109,24 @@ module ModSpox
             message.strip!
             return message
         end
-        
+
         # message:: String to be sent to server
         # Queues a message up to be sent to the IRC server
         def <<(message)
-            queue(message)
-        end
-        
-        # message:: String to be sent to server
-        # Queues a message up to be sent to the IRC server
-        def queue(message)
             @sendq << message
         end
         
         # Starts the thread for sending messages to the server
-        def spooler
-            @writer_thread = Thread.new{
-                until @kill do
-                    write(@sendq.pop)
-                    if((Time.now.to_i - @check_time) > @burst_in)
-                        @check_time = nil
-                        @check_burst = 0
-                    elsif((Time.now.to_i - @check_time) >= @burst_in && @check_burst >= @burst)
-                        sleep(@delay)
-                        @check_time = nil
-                        @check_burst = 0
-                    end
-                end
-            }    
+        def processor
+            write(@sendq.pop)
+            if((Time.now.to_i - @check_time) > @burst_in)
+                @check_time = nil
+                @check_burst = 0
+            elsif((Time.now.to_i - @check_time) >= @burst_in && @check_burst >= @burst)
+                sleep(@delay)
+                @check_time = nil
+                @check_burst = 0
+            end    
         end
         
         # Starts the thread for reading messages from the server
@@ -155,10 +145,7 @@ module ModSpox
             @kill = true
             @reader_thread.join(0.1)
             @reader_thread.kill if @reader_thread.alive?
-            @writer_thread.join(0.1)
-            @writer_thread.kill if @writer_thread.alive?
             @reader_thread = nil
-            @writer_thread = nil
             @socket.close
             server = Models::Server.find_or_create(:host => @server, :port => @port)
             server.connected = false

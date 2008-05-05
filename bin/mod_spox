@@ -18,7 +18,7 @@ rescue Object => boom
     puts "WARNING: fastthread gem was not found"
 end
 
-$BOTVERSION='0.0.2'
+$BOTVERSION='0.0.3'
 $VERBOSITY = 0
 
 begin

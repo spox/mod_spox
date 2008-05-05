@@ -1,3 +1,4 @@
+require 'fileutils'
 module ModSpox
 
     class PluginManager
