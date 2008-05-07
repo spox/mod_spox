@@ -30,20 +30,21 @@ module ModSpox
             @socket = nil
             @nick = nil
             @thread = Thread.current
+            @waiter = Monitors::Boolean.new
             hook_pipeline
         end
         
         # Run the bot
         def run
-            trap('SIGTERM'){ Logger.log("Caught SIGTERM"); Thread.current.exit }
-            trap('SIGKILL'){ Logger.log("Caught SIGKILL"); Thread.current.exit }
-            trap('SIGINT'){ Logger.log("Caught SIGINT"); Thread.current.exit }
-            trap('SIGQUIT'){ Logger.log("Caught SIGQUIT"); Thread.current.exit }
+            trap('SIGTERM'){ Logger.log("Caught SIGTERM"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit }
+            trap('SIGKILL'){ Logger.log("Caught SIGKILL"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit }
+            trap('SIGINT'){ Logger.log("Caught SIGINT"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit }
+            trap('SIGQUIT'){ Logger.log("Caught SIGQUIT"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit }
             until @shutdown do
                 @timer.start
                 @pipeline << Messages::Internal::BotInitialized.new
                 begin
-                    Thread.stop
+                    @waiter.wait
                 rescue Object => boom
                     Logger.log("Caught exception: #{boom}")
                 end

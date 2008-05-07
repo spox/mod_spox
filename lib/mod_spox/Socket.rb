@@ -80,12 +80,12 @@ module ModSpox
         # Sends a string to the IRC server
         def write(message)
             return if message.nil?
-            Logger.log("<< #{message}", 5)
             @socket.puts(message) #send(message + "\n", 0)
+            Logger.log("<< #{message}", 5)
             @last_send = Time.new
             @sent += 1
             @check_burst += 1
-            @check_time = Time.now.to_i if @check_time.nil?
+            @time_check = Time.now.to_i if @time_check.nil?
         end
         
         # Retrieves a string from the server
@@ -96,7 +96,7 @@ module ModSpox
         # Retrieves a string from the server
         def read
             message = @socket.gets
-            if(message.nil?)
+            if(message.nil?) # || message =~ /^ERROR/)
                 @pipeline << Messages::Internal::Disconnected.new
                 shutdown
                 server = Models::Server.find_or_create(:host => @server, :port => @port)
@@ -119,37 +119,36 @@ module ModSpox
         # Starts the thread for sending messages to the server
         def processor
             write(@sendq.pop)
-            if((Time.now.to_i - @check_time) > @burst_in)
-                @check_time = nil
+            if((Time.now.to_i - @time_check) > @burst_in)
+                @time_check = nil
                 @check_burst = 0
-            elsif((Time.now.to_i - @check_time) >= @burst_in && @check_burst >= @burst)
+            elsif((Time.now.to_i - @time_check) >= @burst_in && @check_burst >= @burst)
                 sleep(@delay)
-                @check_time = nil
+                @time_check = nil
                 @check_burst = 0
             end    
         end
         
         # Starts the thread for reading messages from the server
         def reader
-            @reader_thread = Thread.new{
+            @reader_thread = Thread.new do
                 until @kill do
                     Kernel.select([@socket], nil, nil, nil)
                     @factory << read
                 end
-            }
+            end
         end
         
         # restart:: Reconnect after closing connection
         # Closes connection to IRC server
         def shutdown(restart=false)
+            @socket.close unless @socket.closed?
             @kill = true
-            @reader_thread.join(0.1)
-            @reader_thread.kill if @reader_thread.alive?
-            @reader_thread = nil
-            @socket.close
             server = Models::Server.find_or_create(:host => @server, :port => @port)
             server.connected = false
             server.save
+            sleep(0.1)            
+            @reader_thread.kill if @reader_thread.alive?
             connect if restart
         end
         

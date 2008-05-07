@@ -3,27 +3,6 @@ module ModSpox
     # The Pool class is used to reduce thread creation. It provides
     # an easy way to process many objects in an asynchronous manner.
     class Pool
-    
-        # 
-        def Pool.max_threads(num=nil)
-            if(num.nil?)
-                return @@max_threads
-            else
-                num = num.to_i
-                raise Exceptions::InvalidValue.new('Maximum threads setting must be a positive integer') if num < 1
-                @@max_threads = num
-            end
-        end
-        
-        def Pool.max_thread_life(num=nil)
-            if(num.nil?)
-                return @@max_thread_life
-            else
-                num = num.to_i
-                raise Exceptions::InvalidValue.new('Maximum thread life setting must be a positive integer') if num < 1
-                @@max_thread_life = num
-            end
-        end
 
         # Action thread is to perform
         attr_reader :proc
@@ -63,46 +42,23 @@ module ModSpox
         # Running pools
         @@pools = Array.new
         # Threads running in pool
-        @@threads = Hash.new
+        @@threads = Array.new
         # Lock for thread safety
         @@lock = Mutex.new
-        # Maximum number of threads in pool
-        @@max_threads = 100
         # Maximum number of seconds a thread may spend waiting for an action
-        @@max_thread_life = 60
-        # Thread to tend to pool actions
-        @@pool_thread = nil
+        @@max_exec_time = 60
         # Informs threads to halt
         @@kill = false
-        # Place for threads to wait for actions
-        @@thread_stopper = Monitors::Boolean.new
-        # Timer for the Pool thread
-        @@watcher_timer = Monitors::Timer.new
         
         # Adds a new thread to the pool
         def Pool.add_thread
-            if(@@threads.size < @@max_threads)
-                thread = Thread.new do
-                    sleep(0.01)
-                    until(@@kill) do
-                        Pool.schedule_thread
-                    end
+            @@threads << Thread.new do
+                until(Pool.max_queue_size < 1 || @@kill) do
+                    Pool.schedule_thread
                 end
-                @@threads[thread] = Time.now
-                Logger.log("New thread added to pool: #{thread}")
-            else
-                raise Exceptions::BotException.new("Reached maximum thread pool size: #{@@max_threads} threads")
-            end
-        end
-        
-        # thread:: Thread to delete
-        # Removes thread from pool
-        def Pool.delete_thread(thread)
-            @@lock.synchronize do
-                @@threads.delete(thread) if @@threads.has_key?(thread)
-                @@thread_stopper.remove_thread(thread)
-                thread.kill
-                Logger.log("Thread removed from thread pool: #{thread}")
+                Logger.log("Found myself in thread array") if @@threads.include?(Thread.current)
+                Logger.log("Failed to find myself in thread array") unless @@threads.include?(Thread.current)
+                @@threads.delete(Thread.current)
             end
         end
         
@@ -124,75 +80,36 @@ module ModSpox
                 end
             end
             unless(run_pool.nil?)
-                @@threads[Thread.current] = Time.now
-                run_pool.proc.call
-                @@threads[Thread.current] = Time.now
-            else
-                @@thread_stopper.wait if Pool.max_queue_size < 1
-            end
-        end
-        
-        # Starts the master thread for Pool maintanence
-        def Pool.start_watcher
-            @@pool_thread = Thread.new{
-                until(@@kill) do
-                @@threads.each{|t| Logger.log("Thread: #{t} Status: #{t.status}")}
-                    sleep_time = 0
-                    begin
-                        waiters = Pool.waiting_threads
-                        unless(waiters.empty?)
-                            waiters.each do |thread|
-                                time = Time.now.to_i - @@threads[thread].to_i
-                                sleep_time = (@@max_thread_life - time).to_i if sleep_time = 0 || (@@max_thread_life - time).to_i < sleep_time
-                                if(time > @@max_thread_life)
-                                    Pool.delete_thread(thread)
-                                elsif([nil, false, 'aborting'].include?(thread.status))
-                                    Pool.delete_thread(thread)
-                                end
-                            end
-                        else
-                            if(Pool.max_queue_size > 0)
-                                Pool.add_thread
-                            end
-                        end
-                    rescue Object => boom
-                        Logger.log("Pool watcher caught an error (ignoring): #{boom}\n#{boom.backtrace.join("\n")}")
+                begin
+                    Timeout::timeout(@@max_exec_time) do
+                        run_pool.proc.call
                     end
-                    sleep_time = 1 if sleep_time == 0
-                    sleep_time = nil if sleep_time < 0
-                    Logger.log("Pool watcher thread is now sleeping for: #{sleep_time.nil? ? 'forever' : "#{sleep_time} seconds"}")
-                    @@watcher_timer.wait(sleep_time)
+                rescue Timeout::Error => boom
+                    Logger.log("Thread reached maximum execution time (#{@max_exec_time}) processing pool item")
+                rescue Object => boom
+                    Logger.log("Thread encountered error processing pool item: #{boom}")
                 end
-            } if @@pool_thread.nil?
+            end
         end
         
         # Forces sleeping threads to wake up
-        def Pool.wakeup_threads
-            @@watcher_timer.wakeup
-            @@thread_stopper.wakeup
-        end
-        
-        # Returns list of threads currently waiting for an action to process
-        def Pool.waiting_threads
-            waiting = []
-            @@threads.each_pair do |thread,time|
-                waiting << thread if @@thread_stopper.thread_waiting?(thread)
-            end
-            return waiting
+        def Pool.process
+            sleep(0.1)
+            Pool.add_thread if Pool.max_queue_size > 0
+            Logger.log("Current number of threads: #{@@threads.size}")
+            Logger.log("Total number of threads in use system-wide: #{Thread.list.size}")
         end
         
         # Adds a Pool to the master Pool list        
         def Pool.add_pool(pool)
             @@pools << pool
-            @@lock.synchronize do
-                Pool.start_watcher
-            end
         end
         
         # Removes a Pool from the master Pool list
         def Pool.remove_pool(pool)
             @@pools.delete(pool)
-            @@kill = true if @@pools.empty?
+            sleep(0.1)
+            @@threads.each{|t| t.kill} if @@pools.empty?
         end
         
         # Modified Queue to properly interact with Pool
@@ -206,14 +123,14 @@ module ModSpox
             def <<(val)
                 @lock.synchronize do
                     super
-                    Pool.wakeup_threads
+                    Pool.process
                 end
             end
             
             def push(val)
                 @lock.synchronize do
                     super
-                    Pool.wakeup_threads
+                    Pool.process
                 end
             end
             
