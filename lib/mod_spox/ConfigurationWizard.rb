@@ -27,7 +27,8 @@ module ModSpox
             @config << {:id => :admin_nick, :string => 'Administrator nick: ', :regex => '[a-zA-Z].*', :default => nil, :value => nil, :echo => true}
             @config << {:id => :admin_password, :string => 'Administrator password: ', :regex => '.+', :default => nil, :value => nil, :echo => false}
             @config << {:id => :plugin_directory, :string => 'Plugin directory (bot must have write priviliges): ', :regex => '.+', :default => nil, :echo => true}
-            @config << {:id => :trigger, :string => 'Trigger character for plugins: ', :regex => '.', :default => '!', :value => nil, :echo => true}            
+            @config << {:id => :trigger, :string => 'Trigger character for plugins: ', :regex => '.', :default => '!', :value => nil, :echo => true}
+            @config << {:id => :memcache, :string => 'Use memcache (EXPERIMENTAL): ', :regex => '(yes|no)', :default => 'no', :value => nil, :echo => true}            
             @stuck_visible = true
             begin
                 require 'termios'
@@ -66,7 +67,7 @@ module ModSpox
         def save_configuration
             config = BaseConfig.new(BotConfig[:userconfigpath])
             @config.each{|value|
-                config[value[:id]] = value[:value] if value[:id].to_s =~ /^db/
+                config[value[:id]] = value[:value] if value[:id].to_s =~ /^(db|memcache)/
             }
             config.write_configuration
             initialize_bot
