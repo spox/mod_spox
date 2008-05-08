@@ -12,6 +12,15 @@ module ModSpox
             
             set_cache Database.cache, :ttl => 3600 unless Database.cache.nil?
             
+            def Channel.locate(string, create = true)
+                chan = nil
+                if(Database.type == :pgsql)
+                    chan = Channel.filter('name = lower(?)', string).first
+                end
+                chan = Channel.find_or_create(:name => string) if !chan && create
+                return chan
+            end
+            
             # Modes for this channel
             def channel_modes
                 ChannelMode.filter(:channel_id => pk)

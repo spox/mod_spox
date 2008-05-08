@@ -18,6 +18,15 @@ module ModSpox
             
             set_cache Database.cache, :ttl => 3600 unless Database.cache.nil?
             
+            def Nick.locate(string, create = true)
+                nick = nil
+                if(Database.type == :pgsql)
+                    nick = Nick.filter('nick = lower(?)', string).first
+                end
+                nick = Nick.find_or_create(:nick => string) if !nick && create
+                return nick
+            end
+            
             def visible=(val)
                 unless(val)
                     update_with_params :username => nil

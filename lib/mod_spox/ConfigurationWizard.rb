@@ -118,7 +118,7 @@ module ModSpox
             return response
         end
         
-        # output:: text to send before user input
+        # output:: varchar(255) to send before user input
         # regex:: pattern user input must match (^ and $ not need. applied automatically)
         # echo:: echo user's input
         # default:: default value if no value is entered
@@ -144,23 +144,24 @@ module ModSpox
                     Database.db << "CREATE TABLE IF NOT EXISTS nick_modes (id integer primary key auto_increment not null, mode varchar(255) not null, nick_id int not null references nicks, channel_id int references channels, unique index nick_modes_nick_id_channel_id_index (nick_id, channel_id))"
                     Database.db << "CREATE TABLE IF NOT EXISTS servers (id int not null auto_increment primary key, host varchar(255) not null, port int not null default 6667, priority int not null default 0, connected boolean not null default false, unique index servers_server_port_index (server, port))"
                     Database.db << "CREATE TABLE IF NOT EXISTS settings (id int not null auto_increment primary key, name varchar(255) not null unique, value text)"
-                    Database.db << "CREATE TABLE IF NOT EXISTS signatures (id int not null auto_increment primary key, signature varchar(255) not null, params varchar(255), group_id int default null references groups, method varchar(255) not null, plugin varchar(255) not null, description text, requirement enum('public', 'private', 'both') default 'both' not null)"
+                    Database.db << "CREATE TABLE IF NOT EXISTS signatures (id int not null auto_increment primary key, signature varchar(255) not null, params varchar(255), group_id int default null references groups, method varchar(255) not null, plugin varchar(255) not null, description varchar(255), requirement enum('public', 'private', 'both') default 'both' not null)"
                     Database.db << "CREATE TABLE IF NOT EXISTS triggers (id int not null auto_increment primary key, `trigger` varchar(255) unique not null, active boolean not null default false)"
                     Database.db << "CREATE TABLE IF NOT EXISTS groups (id int not null auto_increment primary key, name varchar(255) not null unique)"
                     Database.db << "CREATE TABLE IF NOT EXISTS auth_groups (auth_id int not null references auths, group_id int not null references groups, primary key(auth_id, group_id))"
                 when :pgsql
-                    Database.db << "CREATE TABLE nicks (id serial not null primary key, nick text unique not null, username text, real_name text, address text, source text, connected_at timestamp, connected_to text, seconds_idle integer, visible boolean not null default false, away boolean not null default false, botnick boolean not null default false)"
-                    Database.db << "CREATE TABLE channels (id serial not null primary key, name text unique not null, password text, autojoin boolean not null default false, topic text, quiet boolean not null default false, parked boolean not null default false)"
-                    Database.db << "CREATE TABLE auths (id serial not null primary key, password text, services boolean not null default false, mask text unique, authed boolean not null default false, nick_id integer unique references nicks)"
-                    Database.db << "CREATE TABLE groups (id serial not null primary key, name text unique not null)"
-                    Database.db << "CREATE TABLE channel_modes (id serial not null primary key, mode text not null, channel_id integer unique not null references channels)"
-                    Database.db << "CREATE TABLE configs (id serial not null primary key, name text unique not null, value text)"
+                    Database.db << "CREATE TABLE nicks (id serial not null primary key, nick varchar(255) unique not null, username varchar(255), real_name varchar(255), address varchar(255), source varchar(255), connected_at timestamp, connected_to varchar(255), seconds_idle integer, visible boolean not null default false, away boolean not null default false, botnick boolean not null default false)"
+                    Database.db << "CREATE INDEX nick_nicks_lower on nicks (lower(nick))"
+                    Database.db << "CREATE TABLE channels (id serial not null primary key, name varchar(255) unique not null, password varchar(255), autojoin boolean not null default false, topic varchar(255), quiet boolean not null default false, parked boolean not null default false)"
+                    Database.db << "CREATE TABLE auths (id serial not null primary key, password varchar(255), services boolean not null default false, mask varchar(255) unique, authed boolean not null default false, nick_id integer unique references nicks)"
+                    Database.db << "CREATE TABLE groups (id serial not null primary key, name varchar(255) unique not null)"
+                    Database.db << "CREATE TABLE channel_modes (id serial not null primary key, mode varchar(255) not null, channel_id integer unique not null references channels)"
+                    Database.db << "CREATE TABLE configs (id serial not null primary key, name varchar(255) unique not null, value text)"
                     Database.db << "CREATE TABLE nick_channels (channel_id integer not null references channels, nick_id integer not null references nicks, primary key(nick_id, channel_id))"
-                    Database.db << "CREATE TABLE nick_modes (id serial not null primary key, mode text not null, nick_id integer not null references nicks, channel_id integer references channels, unique (nick_id, channel_id))"
-                    Database.db << "CREATE TABLE servers (id serial not null primary key, host text not null, port integer not null default 6667, priority integer not null default 0, connected boolean not null default false, unique (host, port))"
-                    Database.db << "CREATE TABLE signatures (id serial not null primary key, signature text not null, params text, group_id integer default null references groups, method text not null, plugin text not null, description text, requirement text default 'both' not null)"
-                    Database.db << "CREATE TABLE settings (id serial not null primary key, name text unique not null, value text)"
-                    Database.db << "CREATE TABLE triggers (id serial not null primary key, trigger text unique not null, active boolean not null default false)"
+                    Database.db << "CREATE TABLE nick_modes (id serial not null primary key, mode varchar(255) not null, nick_id integer not null references nicks, channel_id integer references channels, unique (nick_id, channel_id))"
+                    Database.db << "CREATE TABLE servers (id serial not null primary key, host varchar(255) not null, port integer not null default 6667, priority integer not null default 0, connected boolean not null default false, unique (host, port))"
+                    Database.db << "CREATE TABLE signatures (id serial not null primary key, signature varchar(255) not null, params varchar(255), group_id integer default null references groups, method varchar(255) not null, plugin varchar(255) not null, description varchar(255), requirement varchar(255) default 'both' not null)"
+                    Database.db << "CREATE TABLE settings (id serial not null primary key, name varchar(255) unique not null, value varchar(255))"
+                    Database.db << "CREATE TABLE triggers (id serial not null primary key, trigger varchar(255) unique not null, active boolean not null default false)"
                     Database.db << "CREATE TABLE auth_groups (auth_id integer not null references auths, group_id integer not null references groups, primary key (auth_id, group_id))"
                 when :sqlite
                     Database.db << "CREATE TABLE if not exists nicks (id integer PRIMARY KEY AUTOINCREMENT, nick string UNIQUE NOT NULL COLLATE NOCASE, username string, real_name string, address string, source string, connected_at timestamp, connected_to string, seconds_idle integer, visible boolean NOT NULL DEFAULT 'f', away boolean NOT NULL DEFAULT 'f', botnick boolean NOT NULL DEFAULT 'f')"
@@ -174,7 +175,7 @@ module ModSpox
                     Database.db << "CREATE TABLE if not exists servers (id integer primary key autoincrement, host string NOT NULL, port integer NOT NULL DEFAULT 6667, priority integer NOT NULL DEFAULT 0, connected boolean NOT NULL DEFAULT 'f')"
                     Database.db << "CREATE UNIQUE INDEX if not exists servers_host_port_index on servers (host, port)"
                     Database.db << "CREATE TABLE if not exists settings (id integer PRIMARY KEY AUTOINCREMENT, name string UNIQUE NOT NULL, value text)"
-                    Database.db << "CREATE TABLE if not exists signatures (id integer PRIMARY KEY AUTOINCREMENT, signature string NOT NULL UNIQUE, params string, group_id integer DEFAULT NULL REFERENCES groups, method string NOT NULL, plugin string NOT NULL, description text, requirement text not null default 'both')"
+                    Database.db << "CREATE TABLE if not exists signatures (id integer PRIMARY KEY AUTOINCREMENT, signature string NOT NULL UNIQUE, params string, group_id integer DEFAULT NULL REFERENCES groups, method string NOT NULL, plugin string NOT NULL, description varchar(255), requirement varchar(255) not null default 'both')"
                     Database.db << "CREATE TABLE if not exists triggers (id integer PRIMARY KEY AUTOINCREMENT, trigger string UNIQUE NOT NULL, active boolean NOT NULL DEFAULT 'f')"            
                     Database.db << "CREATE TABLE if not exists groups (id integer PRIMARY KEY AUTOINCREMENT, name string UNIQUE NOT NULL COLLATE NOCASE)"
                     Database.db << "CREATE TABLE if not exists auth_groups(auth_id integer REFERENCES auths, group_id integer REFERENCES groups)"
