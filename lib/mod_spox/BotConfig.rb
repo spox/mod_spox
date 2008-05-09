@@ -21,7 +21,7 @@ module ModSpox
             }
             if(gem)
                 p = gem.full_gem_path
-                up = Etc.getpwnam(Etc.getlogin).dir
+                up = $MOD_SPOX_PATH.nil? ? Etc.getpwnam(Etc.getlogin).dir : $MOD_SPOX_PATH
                 @@config = {:basepath => p,
                            :libpath => "#{p}/lib/mod_spox",
                            :datapath => "#{p}/data/mod_spox",

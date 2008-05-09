@@ -15,11 +15,12 @@
 begin
     require 'fastthread'
 rescue Object => boom
-    puts "WARNING: fastthread gem was not found"
+    # ignore if not found #
 end
 
 $BOTVERSION='0.0.3'
 $VERBOSITY = 0
+$MOD_SPOX_PATH = nil
 
 begin
     require 'mod_spox/Loader'
@@ -33,7 +34,8 @@ opts = GetoptLong.new(
     ['--config', '-c', GetoptLong::NO_ARGUMENT],
     ['--debug', '-d', GetoptLong::OPTIONAL_ARGUMENT],
     ['--version', '-v', GetoptLong::NO_ARGUMENT],
-    ['--help', '-h', GetoptLong::NO_ARGUMENT]
+    ['--help', '-h', GetoptLong::NO_ARGUMENT],
+    ['--path', '-p', GetoptLong::REQUIRED_ARGUMENT]
 )
 verbose = 0
 opts.each do |opt, arg|
@@ -58,6 +60,8 @@ opts.each do |opt, arg|
             wizard = ConfigurationWizard.new
             wizard.run
             exit
+        when '--path'
+            $MOD_SPOX_PATH = arg
     end
 end
 
