@@ -18,7 +18,7 @@ rescue Object => boom
     # ignore if not found #
 end
 
-$BOTVERSION='0.0.3'
+$BOTVERSION='0.0.4'
 $VERBOSITY = 0
 $MOD_SPOX_PATH = nil
 

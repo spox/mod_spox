@@ -1,3 +1,20 @@
+0.0.4 Release (Alpha status)
+    * Signatures now encoded when stored
+    * SQLite lockup fixed on new version of sequel
+    * Timer messages now have IDs
+    * Removed blocks from sequel usage to remove dependency on ParseTree
+        * This was done to enable jruby support
+        * mod_spox will currently load into jruby but is not currently working
+    * Added experimental memcache support (very buggy)
+    * New plugins:
+        * ChatLogger - Logs chatting to database. Provides a seen and lastspoke trigger
+        * Topten - Provides stats on user's chatting
+    * The bot as well as plugins have all been updated to work with Sequel 2.0 (removed deprecated)
+    * Processing pool has been reworked. 
+        * Currently testing to see how memory is consumed. 
+        * New version will play nicely with jruby thread pools
+    * Various small fixes and updates
+
 0.0.3 Release (Alpha status)
     * New features available from the following new plugins:
         * AOLSpeak
