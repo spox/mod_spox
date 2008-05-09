@@ -54,5 +54,54 @@ module ModSpox
                 raise "Failed to process URL. #{boom}"
             end
         end
+        
+        # string:: name of target
+        # Locates target model and returns it. String can be a nick
+        # or channel name. If the string given does not match the required
+        # pattern for a channel or nick, the string is returned.
+        def Helpers.find_model(string, create=true)
+            @@channel_cache = {} unless Helpers.class_variable_defined?(:@@channel_cache)
+            @@nick_cache = {} unless Helpers.class_variable_defined?(:@@nick_cache)
+            if(string =~ /^[A-Za-z\|\\\{\}\[\]\^\`~\_\-]+[A-Za-z0-9\|\\\{\}\[\]\^\`~\_\-]*$/)
+                Logger.log("Model: #{string} -> Nick")
+                nick = nil
+                if(@@nick_cache.has_key?(string.to_sym))
+                    begin
+                        nick = Models::Nick[@@nick_cache[string.to_sym]]
+                        Logger.log("Handler cache hit for nick: #{string}", 30)
+                    rescue Object => boom
+                        Logger.log("Failed to grab cached nick: #{boom}")
+                    end
+                end
+                unless(nick)
+                    nick = Models::Nick.locate(string, create)
+                    @@nick_cache[string.to_sym] = nick.pk if nick.is_a?(Models::Nick)
+                    Logger.log("Nick was retrieved from database")
+                end
+                return nick
+            elsif(string =~ /^[&#+!]/)
+                Logger.log("Model: #{string} -> Channel")
+                if(@@channel_cache.has_key?(string.to_sym))
+                    begin
+                        channel = Models::Channel[@@channel_cache[string.to_sym]]
+                        Logger.log("Handler cache hit for channel: #{string}", 30)
+                    rescue Object => boom
+                        Logger.log("Failed to grab cached channel: #{boom}")
+                    end
+                end
+                unless(channel)
+                    channel = Models::Channel.locate(string, create)
+                    @@channel_cache[string.to_sym] = channel.pk if channel.is_a?(Models::Channel)
+                    Logger.log("Channel was retrieved from database")
+                end
+                return channel
+            elsif(model = Models::Server.filter(:host => string, :connected => true).first)
+                Logger.log("Model: #{string} -> Server")
+                return model
+            else
+                Logger.log("FAIL Model: #{string} -> No match")
+                return string
+            end
+        end
     end
 end
