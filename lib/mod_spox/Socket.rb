@@ -80,7 +80,7 @@ module ModSpox
         # Sends a string to the IRC server
         def write(message)
             return if message.nil?
-            @socket.puts(message) #send(message + "\n", 0)
+            @socket.puts(message + "\n") #send(message + "\n", 0)
             Logger.log("<< #{message}", 5)
             @last_send = Time.new
             @sent += 1

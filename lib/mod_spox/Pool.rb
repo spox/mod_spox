@@ -56,8 +56,6 @@ module ModSpox
                 until(Pool.max_queue_size < 1 || @@kill) do
                     Pool.schedule_thread
                 end
-                Logger.log("Found myself in thread array") if @@threads.include?(Thread.current)
-                Logger.log("Failed to find myself in thread array") unless @@threads.include?(Thread.current)
                 @@threads.delete(Thread.current)
             end
         end
