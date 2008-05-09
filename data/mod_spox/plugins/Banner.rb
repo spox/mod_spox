@@ -308,8 +308,8 @@ class Banner < ModSpox::Plugin
                     end
                 end
                 BanMask.filter('bantime < ?', 1).destroy
-                next_ban_record = BanRecord.filter('remaining > ?', 0).order(:remaining.ASC).first
-                next_mask_record = BanMask.filter('bantime > ?', 0).order(:bantime.ASC).first
+                next_ban_record = BanRecord.filter('remaining > ?', 0).order(:remaining).first
+                next_mask_record = BanMask.filter('bantime > ?', 0).order(:bantime).first
                 if(next_ban_record && next_mask_record)
                     time = next_ban_record.bantime < next_mask_record.bantime ? next_ban_record.bantime : next_mask_record.bantime
                 elsif(next_ban_record)

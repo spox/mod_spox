@@ -24,8 +24,8 @@ class Roulette < ModSpox::Plugin
         if(result)
             output = []
             result.each do |res|
-                percent = sprintf('%.2d', ((res.total / total.to_f) * 100))
-                output << "chamber #{res.chamber}: #{percent}% (#{res.total})"
+                percent = sprintf('%.2d', ((res[:total].to_f / total.to_f) * 100.0))
+                output << "chamber #{res.chamber}: #{percent}% (#{res[:total]})"
             end
             reply m.replyto, "\2Chamber stats:\2 #{output.join(', ')}"
         else
@@ -75,7 +75,7 @@ class Roulette < ModSpox::Plugin
     def topten(message, params)
         return unless message.is_public?
         ds = Database.db[:infos].left_outer_join(:games, :id => :game_id)
-        ds.select!(:nick_id, :COUNT[:win] => :wins).where!(:channel_id => message.target.pk, :win => true).group!(:nick_id).order!(:wins.DESC).limit!(10)
+        ds.select!(:nick_id, :COUNT[:win] => :wins).where!(:channel_id => message.target.pk, :win => true).group!(:nick_id).reverse_order!(:wins).limit!(10)
         Logger.log(ds.sql)
         ids = ds.map(:nick_id)
         top = []
@@ -183,7 +183,7 @@ class Roulette < ModSpox::Plugin
     def kill_nick(nick, channel)
         unless(@banner.nil?)
             begin
-                @banner.ban(nick, channel, '*BANG*', true, false)
+                @banner.ban(nick, channel, 30, '*BANG*', true, false)
             rescue Banner::NotOperator => boom
                 reply(channel, "#{nick.nick}: *BANG*")
             rescue Object => boom

@@ -44,39 +44,40 @@ class ChatLogger < ModSpox::Plugin
         type = 'action' if message.is_action?
         if(message.is_public?)
             PublicLog.new(:message => message.message, :type => type, :sender => message.source.pk,
-                :channel => message.target.pk, :received => Time.now).save
+                :channel => message.target.pk, :received => message.time).save
         else
             PrivateLog.new(:message => message.message, :type => type, :sender => message.source.pk,
-                :receiver => message.target.pk, :received => Time.now).save
+                :receiver => message.target.pk, :received => message.time).save
         end
     end
     
     def log_join(message)
-        PublicLog.new(:type => 'join', :sender => message.nick.pk, :channel => message.channel.pk, :received => Time.now).save
+        PublicLog.new(:type => 'join', :sender => message.nick.pk, :channel => message.channel.pk, :received => message.time).save
     end
     
     def log_part(message)
         PublicLog.new(:message => message.reason, :type => 'part', :sender => message.nick.pk,
-            :channel => message.channel.pk, :received => Time.now).save
+            :channel => message.channel.pk, :received => message.time).save
     end
     
     def log_quit(message)
-        PublicLog.new(:message => message.message, :type => 'quit', :sender => message.nick.pk, :received => Time.now).save
+        PublicLog.new(:message => message.message, :type => 'quit', :sender => message.nick.pk, :received => message.time).save
     end
     
     def log_kick(message)
         PublicLog.new(:message => "#{message.kickee.pk}|#{message.reason}", :type => 'kick', :sender => message.kicker.pk,
-            :channel => message.channel.pk, :received => Time.now).save
+            :channel => message.channel.pk, :received => message.time).save
     end
     
+    # TODO: Fix this
     def log_mode(message)
-        if(message.for_channel?)
-            PublicLog.new(:message => message.mode, :type => 'mode', :sender => message.source.pk,
-                :channel => message.channel.pk, :received => Time.now).save
-        else
-            PrivateLog.new(:message => message.mode, :type => 'mode', :sender => message.source.pk,
-                :receiver => message.target.pk, :received => Time.now).save
-        end
+#         if(message.for_channel?)
+#             PublicLog.new(:message => message.mode, :type => 'mode', :sender => message.source.pk,
+#                 :channel => message.channel.pk, :received => message.time).save
+#         else
+#             PrivateLog.new(:message => message.mode, :type => 'mode', :sender => message.source.pk,
+#                 :receiver => message.target.pk, :received => message.time).save
+#         end
     end
     
     def seen(m, p)

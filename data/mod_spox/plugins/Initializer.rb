@@ -33,7 +33,7 @@ class Initializer < ModSpox::Plugin
     private
     
     def populate_servers
-        Models::Server.order(:priority.DESC).each{|s|
+        Models::Server.reverse_order(:priority).each{|s|
             @servers << s
         }
     end
