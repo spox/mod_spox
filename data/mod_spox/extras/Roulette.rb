@@ -4,15 +4,33 @@ class Roulette < ModSpox::Plugin
     
     def initialize(pipeline)
         super(pipeline)
-        Signature.find_or_create(:signature => 'roulette', :plugin => name, :method => 'roulette')
-        Signature.find_or_create(:signature => 'suicide', :plugin => name, :method => 'suicide')
-        Signature.find_or_create(:signature => 'shoot (\S+)', :plugin => name, :method => 'shoot').params = [:nick]
-        Signature.find_or_create(:signature => 'roulette topten', :plugin => name, :method => 'topten')
-        Signature.find_or_create(:signature => 'roulette stats ?(\S+)?', :plugin => name, :method => 'stats').params = [:nick]
+        Signature.find_or_create(:signature => 'roulette', :plugin => name, :method => 'roulette', :requirement => 'public')
+        Signature.find_or_create(:signature => 'suicide', :plugin => name, :method => 'suicide', :requirement => 'public')
+        Signature.find_or_create(:signature => 'shoot (\S+)', :plugin => name, :method => 'shoot', :requirement => 'public').params = [:nick]
+        Signature.find_or_create(:signature => 'roulette topten', :plugin => name, :method => 'topten', :requirement => 'public')
+        Signature.find_or_create(:signature => 'roulette stats ?(\S+)?', :plugin => name, :method => 'stats', :requirement => 'public').params = [:nick]
+        Signature.find_or_create(:signature => 'roulette chambers', :plugin => name, :method => 'chambers', :requirement => 'public')
         Game.create_table unless Game.table_exists?
         Info.create_table unless Info.table_exists?
         @banner = nil
         @pipeline.hook(self, :get_banner, :Internal_PluginResponse)
+    end
+    
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # Display chamber statistics
+    def chambers(m, p)
+        total = Game.all.size
+        result = Game.group(:chamber).select(:chamber, :COUNT[:chamber] => :total).reverse_order(:total)
+        if(result)
+            output = []
+            result.each do |res|
+                percent = sprintf('%.2d', ((res.total / total.to_f) * 100))
+                output << "chamber #{res.chamber}: #{percent}% (#{res.total})"
+            end
+            reply m.replyto, "\2Chamber stats:\2 #{output.join(', ')}"
+        else
+            reply m.replyto, "\2Error:\2 No games found"
+        end
     end
     
     # message:: ModSpox::Messages::Internal::PluginResponse
@@ -166,7 +184,7 @@ class Roulette < ModSpox::Plugin
         unless(@banner.nil?)
             begin
                 @banner.ban(nick, channel, '*BANG*', true, false)
-            rescue NotOperator => boom
+            rescue Banner::NotOperator => boom
                 reply(channel, "#{nick.nick}: *BANG*")
             rescue Object => boom
                 Logger.log("Error: Roulette ban generated an unexpected error: #{boom}")
