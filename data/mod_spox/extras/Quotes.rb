@@ -27,11 +27,11 @@ class Quotes < ModSpox::Plugin
                 reg = true
             end
         else
-            ids = Quote.map(:id)
+            ids = Quote.select(:id).map(:id)
             quote = Quote[ids[rand(ids.size - 1)].to_i]
         end
         if(quote)
-            reply message.replyto, "\2[\2#{quote.pk}\2|\2#{quote.added.year}/#{quote.added.month}/#{quote.added.day}\2]:\2 #{reg ? quote.quote.gsub(/(#{params[:term]})/, "\2\\1\2") : quote.quote}"
+            reply message.replyto, "\2[\2#{quote.pk}\2|\2#{quote.added.year}/#{sprintf('%02d', quote.added.month)}/#{sprintf('%02d', quote.added.day)}\2]:\2 #{reg ? quote.quote.gsub(/(#{params[:term]})/, "\2\\1\2") : quote.quote}"
         else
             reply message.replyto, "\2Error:\2 Failed to find quote"
         end

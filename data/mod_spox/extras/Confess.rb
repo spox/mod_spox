@@ -46,7 +46,7 @@ class Confess < ModSpox::Plugin
                 reg = true
             end
         else
-            ids = Confession.map(:id)
+            ids = Confession.select(:id).map(:id)
             c = Confession[ids[rand(ids.size - 1)].to_i]
         end
         if(c)
