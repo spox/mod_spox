@@ -126,7 +126,8 @@ module ModSpox
              :Outgoing_Whois => :whois, :Internal_EstablishConnection => :bot_connect,
              :Internal_StatusRequest => :status, :Internal_ChangeNick => :set_nick,
              :Internal_NickRequest => :get_nick, :Internal_HaltBot => :halt,
-             :Internal_Disconnected => :disconnected, :Internal_TimerClear => :clear_timer
+             :Internal_Disconnected => :disconnected, :Internal_TimerClear => :clear_timer,
+             :Outgoing_Raw => :raw
              }.each_pair{ |type,method| @pipeline.hook(self, method, type) }
         end
         
@@ -457,6 +458,12 @@ module ModSpox
             nick = message.nick.is_a?(Models::Nick) ? message.nick.nick : message.nick
             @socket << "ISON #{nick}"
         end 
+        
+        # message:: Messages::Outoing::Raw message
+        # Send raw message to server
+        def raw(message)
+            @socket << message.message
+        end
         
         private
         
