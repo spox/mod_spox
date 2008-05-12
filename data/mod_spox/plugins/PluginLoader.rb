@@ -11,8 +11,8 @@ class PluginLoader < ModSpox::Plugin
             :group_id => admin.pk, :description => 'Load the given plugin').params = [:plugin]
         Models::Signature.find_or_create(:signature => 'plugins unload (\S+)', :plugin => name, :method => 'unload_plugin',
             :group_id => admin.pk, :description => 'Unload given plugin').params = [:plugin]
-        Models::Signature.find_or_create(:signature => 'plugins reload', :plugin => name, :method => 'reload_plugin',
-            :group_id => admin.pk, :description => 'Reload plugins')
+        Models::Signature.find_or_create(:signature => 'plugins reload ?(\S+)?', :plugin => name, :method => 'reload_plugin',
+            :group_id => admin.pk, :description => 'Reload single plugin or all plugins if names not provided').params = [:plugin]
         @pipeline.hook(self, :get_module, :Internal_PluginModuleResponse)
         @plugins_mod = nil
     end
@@ -65,8 +65,23 @@ class PluginLoader < ModSpox::Plugin
     # params:: matching signature params
     # Reloads plugins    
     def reload_plugin(message, params)
-        @pipeline << Messages::Internal::PluginReload.new
-        @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, 'Okay')
+        if(params[:plugin])
+            users = plugin_discovery(BotConfig[:userpluginpath])
+            extras = plugin_discovery(BotConfig[:pluginextraspath])
+            fresh = nil
+            stale = nil
+            users.each_pair{|name, path| stale = path if name == params[:plugin]}
+            extras.each_pair{|name, path| fresh = path if name = params[:plugin]}
+            if(fresh && stale)
+                @pipeline << Messages::Internal::PluginReload.new(fresh, stale)
+                reply message.replyto, "Reloading #{params[:plugin]}"
+            else
+                reply message.replyto, "\2Error:\2 Failed to find new and stale versions of: #{params[:plugin]}"
+            end
+        else
+            @pipeline << Messages::Internal::PluginReload.new
+            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, 'Full plugin reload requested')
+        end
     end
     
     # message:: ModSpox::Messages::Internal::PluginModuleResponse

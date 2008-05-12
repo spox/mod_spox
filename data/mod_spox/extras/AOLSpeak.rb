@@ -28,7 +28,7 @@ class AOLSpeak < ModSpox::Plugin
         else
             channel = message.target
         end
-        nick = Models::Nick.filter(:nick => params[:nick]).first
+        nick = Helpers.find_model(params[:nick], false)
         if(channel && nick)
             @banner.ban(nick, channel, 60, @aolspeak[rand(@aolspeak.size) - 1], invite=false, show_time=false)
         else

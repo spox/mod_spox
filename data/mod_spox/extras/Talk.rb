@@ -22,20 +22,12 @@ class Talk < ModSpox::Plugin
     private
     
     def send_p(message, params, action=false)
-        target = find_target(params[:target])
+        target = Helpers.find_model(params[:target], false)
         if(target.nil?)
             reply message.replyto, "\2Error:\2 Failed to locate target: #{params[:target]}"
         else
-            @pipeline << Messages::Outgoing::Privmsg.new(target, params[:text], action)
+            @pipeline << Messages::Outgoing::Privmsg.new(target, 'eat me ' + params[:text], action)
         end
-    end
-    
-    def find_target(string)
-        result = Channel.filter(:name => string).first
-        return result if result
-        result = Nick.filter(:nick => string).first
-        return result if result
-        return nil
     end
 
 end

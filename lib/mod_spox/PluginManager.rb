@@ -22,9 +22,20 @@ module ModSpox
         
         # message:: Messages::Internal::PluginReload
         # Destroys and reinitializes plugins
-        def reload_plugins(mesasge=nil)
-            unload_plugins
-            load_plugins
+        def reload_plugins(message=nil)
+            if(message.fresh && message.stale)
+                names = discover_plugins(message.stale)
+                names.each do |name| 
+                    Logger.log("Removing #{name} from the plugins module")
+                    @plugins_module.send(:remove_const, name)
+                end
+                FileUtils.remove_file(message.stale)
+                FileUtils.copy(message.fresh, BotConfig[:userpluginpath])
+                @plugins_module.module_eval(IO.readlines(message.fresh).join("\n"))
+            else
+                unload_plugins
+                load_plugins
+            end
         end
         
         # Destroys plugins
@@ -38,7 +49,7 @@ module ModSpox
             begin
                 path = !message.name ? BotConfig[:userpluginpath] : "#{BotConfig[:userpluginpath]}/#{message.name}"
                 FileUtils.copy(message.path, path)
-                reload_plugins
+                @plugins_module.module_eval(IO.readlines(path).join("\n"))
                 @pipeline << Messages::Internal::PluginLoadResponse.new(message.requester, true)
                 Logger.log("Loaded new plugin: #{message.path}", 10)
             rescue Object => boom
@@ -51,11 +62,21 @@ module ModSpox
         # Unloads a plugin
         def unload_plugin(message)
             begin
+                names = discover_plugins(message.path)
                 unless(message.name.nil?)
                     FileUtils.copy(message.path, "#{BotConfig[:userpluginpath]}/#{message.name}")
                 end
                 FileUtils.remove_file(message.path)
-                reload_plugins
+                unless(names.nil?)
+                    names.each do |name| 
+                        Logger.log("Removing #{name} from the plugins module")
+                        @plugins_module.send(:remove_const, name)
+                    end
+                    Logger.log('Plugin was unloaded without a full reload', 99)
+                else
+                    reload_plugins
+                    Logger.log('Plugins were reloaded on the unload plugin command', 99)
+                end
                 @pipeline << Messages::Internal::PluginUnloadResponse.new(message.requester, true)
                 Logger.log("Unloaded plugin: #{message.path}", 10)
             rescue Object => boom
@@ -118,6 +139,23 @@ module ModSpox
             Models::Signature.delete_all
             @plugins_module = Module.new
             @pipeline << Messages::Internal::TimerClear.new
+        end
+        
+        # path:: path to plugin
+        # Find class names of any plugins within the file at given path
+        def discover_plugins(path)
+            temp = Module.new
+            begin
+                temp.module_eval(IO.readlines(path).join("\n"))
+                klasses = []
+                temp.constants.each do |const|
+                    klass = temp.const_get(const)
+                    klasses << const if klass < Plugin
+                end
+                return klasses
+            rescue Object => boom
+                return nil
+            end     
         end
     
     end

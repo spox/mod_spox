@@ -61,7 +61,7 @@ class Roulette < ModSpox::Plugin
     def shoot(message, params)
         return unless message.is_public?
         cur_game = game(message.target)
-        nick = Nick.filter(:nick => params[:nick])
+        nick = Helpers.find_model(params[:nick], false)
         if(cur_game.shots == 1 && nick && Info.filter(:game_id => cur_game.pk, :nick_id => nick.pk))
             do_shot(nick, message.target)
         else
@@ -96,7 +96,7 @@ class Roulette < ModSpox::Plugin
     def stats(message, params)
         return unless message.is_public?
         if(params[:nick])
-            nick = Nick.filter(:nick => params[:nick]).first
+            nick =  Helpers.find_model(params[:nick], false)
             unless(nick)
                 reply(message.replyto, "\2Error:\2 Failed to find record of #{params[:nick]}")
                 return

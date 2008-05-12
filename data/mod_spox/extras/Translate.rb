@@ -16,7 +16,7 @@ class Translate < ModSpox::Plugin
     
     def auto_add(message, params)
         return unless message.is_public?
-        nick = Nick.filter(:nick => params[:nick]).first
+        nick = Helpers.find_model(params[:nick], false)
         if(nick && nick.channels.include?(message.target))
             @watchers[message.target.pk] = {} unless @watchers.has_key?(message.target.pk)
             @watchers[message.target.pk][nick.pk] = params[:lang] unless @watchers[message.target.pk].has_key?(nick.pk)
@@ -29,7 +29,7 @@ class Translate < ModSpox::Plugin
     
     def auto_remove(message, params)
         return unless message.is_public?
-        nick = Nick.filter(:nick => params[:nick]).first
+        nick = Helpers.find_model(params[:nick], false)
         if(nick)
             if(@watchers.has_key?(message.target.pk))
                 @watchers[message.target.pk].delete(nick.pk) if @watchers[message.target.pk].has_key?(nick.pk)
@@ -54,7 +54,7 @@ class Translate < ModSpox::Plugin
                 reply message.replyto, "\2Translation (#{message.source.nick}):\2 #{do_translation("#{@watchers[message.target.pk][message.source.pk]}en", message.message)}"
             elsif(message.message =~ /^(\S+)[:,]/)
                 Logger.log("Matched a nick: #{$1}")
-                nick = Nick.filter(:nick => $1).first
+                nick = Helpers.find_model($1, false)
                 return unless nick
                 if(@watchers[message.target.pk].has_key?(nick.pk))
                     reply message.replyto, "\2(#{do_translation("en|#{@watchers[message.target.pk][nick.pk]}", 'translation')})\2 #{do_translation("en|#{@watchers[message.target.pk][nick.pk]}", message.message)}"

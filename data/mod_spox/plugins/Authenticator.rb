@@ -159,7 +159,7 @@ class Authenticator < ModSpox::Plugin
     # params:: Signature parameters
     # Display info for given nick
     def nick_info(message, params)
-        nick = Models::Nick.filter(:nick => params[:nick]).first
+        nick = Helpers.find_model(params[:nick], false)
         if(nick)
             info = []
             info << "\2INFO [#{nick.nick}]:\2"
@@ -204,7 +204,7 @@ class Authenticator < ModSpox::Plugin
     # Remove given nick from authenticationg group
     def unset_nick(message, params)
         group = Models::Group.filter(:name => params[:group]).first
-        nick = Models::Nick.filter(:nick => params[:nick]).first
+        nick = Helpers.find_model(params[:nick], false)
         if(group && nick)
             nick.remove_group(group)
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Removed #{params[:nick]} from the #{params[:group]} authentication group.")
