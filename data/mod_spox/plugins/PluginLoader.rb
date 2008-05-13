@@ -71,7 +71,7 @@ class PluginLoader < ModSpox::Plugin
             fresh = nil
             stale = nil
             users.each_pair{|name, path| stale = path if name == params[:plugin]}
-            extras.each_pair{|name, path| fresh = path if name = params[:plugin]}
+            extras.each_pair{|name, path| fresh = path if name == params[:plugin]}
             if(fresh && stale)
                 @pipeline << Messages::Internal::PluginReload.new(fresh, stale)
                 reply message.replyto, "Reloading #{params[:plugin]}"

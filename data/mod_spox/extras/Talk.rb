@@ -26,7 +26,7 @@ class Talk < ModSpox::Plugin
         if(target.nil?)
             reply message.replyto, "\2Error:\2 Failed to locate target: #{params[:target]}"
         else
-            @pipeline << Messages::Outgoing::Privmsg.new(target, 'eat me ' + params[:text], action)
+            @pipeline << Messages::Outgoing::Privmsg.new(target, params[:text], action)
         end
     end
 
