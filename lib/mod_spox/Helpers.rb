@@ -60,8 +60,7 @@ module ModSpox
         # or channel name. If the string given does not match the required
         # pattern for a channel or nick, the string is returned.
         def Helpers.find_model(string, create=true)
-            @@channel_cache = {} unless Helpers.class_variable_defined?(:@@channel_cache)
-            @@nick_cache = {} unless Helpers.class_variable_defined?(:@@nick_cache)
+            Helpers.initialize_caches
             if(string =~ /^[A-Za-z\|\\\{\}\[\]\^\`~\_\-]+[A-Za-z0-9\|\\\{\}\[\]\^\`~\_\-]*$/)
                 Logger.log("Model: #{string} -> Nick")
                 nick = nil
@@ -102,6 +101,11 @@ module ModSpox
                 Logger.log("FAIL Model: #{string} -> No match")
                 return string
             end
+        end
+        
+        def Helpers.initialize_caches
+            @@nick_cache = Cache.new(30) unless Helpers.class_variable_defined?(:@@nick_cache)
+            @@channel_cache = Cache.new(10) unless Helpers.class_variable_defined?(:@@channel_cache)
         end
     end
 end
