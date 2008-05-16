@@ -31,7 +31,7 @@ module ModSpox
             begin
                 processor
             rescue Object => boom
-                Logger.log("Pool encountered an error processing code block: #{boom}")
+                Logger.log("Pool encountered an error processing code block: #{boom}", 99)
             end
         end
 
