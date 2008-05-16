@@ -13,6 +13,7 @@ module ModSpox
                     chan = $1
                     nicks = $2
                     @names[chan] = Array.new unless @names[chan]
+                    @raw[chan] = Array.new unless @raw[chan]
                     if(@raw[chan])
                         @raw[chan] << string
                     else
@@ -22,7 +23,7 @@ module ModSpox
                     return nil
                 elsif(string =~ /#{RPL_ENDOFNAMES}.*?(\S+) :/)
                     chan = $1
-                    @raw[chan] << string
+                    @raw[chan] << string if @raw.has_key?(chan)
                     channel = find_model(chan)
                     nicks = Array.new
                     ops = Array.new
