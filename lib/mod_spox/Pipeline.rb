@@ -36,7 +36,7 @@ module ModSpox
         # Unhooks a plugin from the pipeline (This does not unhook
         # it from the standard hooks)
         def unhook_plugin(plugin)
-            Logger.log("Plugin #{plugin.name} unhooking from plugin", 10)
+            Logger.log("Plugin #{plugin.name} unhooking from pipeline", 10)
             @plugins.delete(plugin.name.to_sym)
             @hooks.each_pair do |type, things|
                 things.delete(plugin.name.to_sym) if things.has_key?(plugin.name.to_sym)
