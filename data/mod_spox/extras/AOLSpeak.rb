@@ -30,7 +30,7 @@ class AOLSpeak < ModSpox::Plugin
         end
         nick = Helpers.find_model(params[:nick], false)
         if(channel && nick)
-            @banner.ban(nick, channel, 60, @aolspeak[rand(@aolspeak.size) - 1], invite=false, show_time=false)
+            @banner.plugin.ban(nick, channel, 60, @aolspeak[rand(@aolspeak.size) - 1], invite=false, show_time=false)
         else
             reply message.replyto, "\2Error:\2 Failed to find channel: #{params[:channel]}" unless channel
             reply message.replyto, "\2Error:\2 Failed to find nick: #{params[:nick]}" unless nick

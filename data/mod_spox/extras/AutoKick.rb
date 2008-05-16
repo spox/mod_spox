@@ -69,7 +69,7 @@ class AutoKick < ModSpox::Plugin
                 reg = Regexp.new(pattern)
                 unless(reg.match(message.message).nil?)
                     record = AutoKickRecord.filter(:pattern => pattern).first
-                    @banner.ban(message.source, message.target, record.bantime, record.message, invite=false, show_time=true)
+                    @banner.plugin.ban(message.source, message.target, record.bantime, record.message, invite=false, show_time=true)
                 end
             end 
         end

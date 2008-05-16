@@ -113,8 +113,11 @@ module ModSpox
         
         # Destroys plugins
         def unload_plugins
-            @plugins.each_pair{|sym, plugin| plugin.destroy; @pipeline.unhook_plugin(plugin)}
-            @plugins.clear
+            @plugins.each_pair do |sym, holder|
+                holder.plugin.destroy
+                @pipeline.unhook_plugin(holder.plugin)
+                Models::Signature.filter(:plugin => holder.plugin.name).destroy
+            end
             Models::Signature.delete_all
             @plugins_module = Module.new
             @pipeline << Messages::Internal::TimerClear.new
@@ -130,17 +133,18 @@ module ModSpox
                 begin
                     plugins.each do |plugin|
                         klass = @plugins_module.const_get(plugin)
-                        @plugins[plugin.to_sym] = klass.new(@pipeline)
+                        if(@plugins.has_key?(plugin.to_sym))
+                            @plugins[plugin.to_sym].set_plugin(klass.new(@pipeline))
+                        else
+                            @plugins[plugin.to_sym] = PluginHolder.new(klass.new(@pipeline))
+                        end
                         Logger.log("Properly initialized new plugin: #{plugin}", 25)
                     end
                     Logger.log("All plugins found at: #{path} have been loaded")
                 rescue Object => boom
-                    Logger.log("Plugin loading failed: #{boom}", 25)
+                    Logger.log("Plugin loading failed: #{boom}\n#{boom.backtrace.join("\n")}", 25)
                     Logger.log("All constants loaded from file: #{path} will now be unloaded")
-                    consts = discover_consts(path)
-                    consts.each do |const|
-                        @plugins_module.send(:remove_const, const)
-                    end
+                    do_unload(path)
                 end
             else
                 raise PluginFileNotFound.new("Failed to find file at: #{path}")
@@ -152,11 +156,15 @@ module ModSpox
         def do_unload(path)
             if(File.exists?(path))
                 discover_plugins(path).each do |plugin|
-                    @plugins[plugin.to_sym].destroy if @plugins.has_key?(plugin.to_sym)
-                    @pipeline.unhook_plugin(@plugins[plugin.to_sym])
-                    @plugins.delete(plugin.to_sym)
+                    if(@plugins.has_key?(plugin.to_sym))
+                        @plugins[plugin.to_sym].plugin.destroy 
+                        @pipeline.unhook_plugin(@plugins[plugin.to_sym].plugin)
+                        @plugins[plugin.to_sym].set_plugin = nil
+                    end
+                    Models::Signature.filter(:plugin => plugin).destroy
                 end
                 discover_consts(path).each do |const|
+                    Logger.log("Removing constant: #{const}")
                     @plugins_module.send(:remove_const, const)
                 end
                 Logger.log("Removed all constants found in file: #{path}")

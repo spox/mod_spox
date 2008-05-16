@@ -183,7 +183,7 @@ class Roulette < ModSpox::Plugin
     def kill_nick(nick, channel)
         unless(@banner.nil?)
             begin
-                @banner.ban(nick, channel, 30, '*BANG*', true, false)
+                @banner.plugin.ban(nick, channel, 30, '*BANG*', true, false)
             rescue Banner::NotOperator => boom
                 reply(channel, "#{nick.nick}: *BANG*")
             rescue Object => boom
