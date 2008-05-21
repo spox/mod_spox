@@ -7,7 +7,12 @@ module ModSpox
         end
         
         def [](key)
-            return @cache.has_key?(key.to_sym) ? @cache[key.to_sym] : nil
+            if(@cache.has_key?(key.to_sym))
+                @times[key.to_sym] = Time.now
+                return @cache[key.to_sym]
+            else
+                return nil
+            end
         end
         
         def has_key?(key)
@@ -28,6 +33,7 @@ module ModSpox
         
         def delete(key)
             @cache.delete(key.to_sym) if @cache.has_key?(key.to_sym)
+            @times.delete(key.to_sym) if @times.has_key?(key.to_sym)
         end
         
         def oldest_key
