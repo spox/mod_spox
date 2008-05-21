@@ -34,6 +34,7 @@ module ModSpox
             @check_burst = 0
             @pause = false
             @sendq = @queue
+            @lock = Mutex.new
             start_pool
         end
         
@@ -118,15 +119,18 @@ module ModSpox
         
         # Starts the thread for sending messages to the server
         def processor
-            write(@sendq.pop)
-            if((Time.now.to_i - @time_check) > @burst_in)
-                @time_check = nil
-                @check_burst = 0
-            elsif((Time.now.to_i - @time_check) >= @burst_in && @check_burst >= @burst)
-                sleep(@delay)
-                @time_check = nil
-                @check_burst = 0
-            end    
+            @lock.synchronize do
+                write(@sendq.pop)
+                if((Time.now.to_i - @time_check) > @burst_in)
+                    @time_check = nil
+                    @check_burst = 0
+                elsif((Time.now.to_i - @time_check) <= @burst_in && @check_burst >= @burst)
+                    Logger.log("Burst limit hit. Output paused for: #{@delay} seconds", 70)
+                    sleep(@delay)
+                    @time_check = nil
+                    @check_burst = 0
+                end
+            end
         end
         
         # Starts the thread for reading messages from the server
