@@ -9,6 +9,7 @@ module ModSpox
                     return Messages::Incoming::LuserUnknown.new(string, $1.to_i)
                 else
                     Logger.log('Failed to match RPL_LUSERUNKNOWN message')
+                    return nil
                 end
             end
         end

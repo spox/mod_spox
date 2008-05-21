@@ -12,17 +12,19 @@ module ModSpox
                 if(string =~ /^:(\S+) #{RPL_MOTDSTART.to_s}.*?:-\s?(\S+)/)
                     @motds[$1] = Array.new
                     @raw[$1] = [string]
-                    return
+                    return nil
                 elsif(string =~ /^:(\S+) #{RPL_MOTD.to_s}.*?:-\s?(.+)$/)
                     @motds[$1] << $2
                     @raw[$1] << string
-                    return
+                    return nil
                 elsif(string =~ /^:(\S+) #{RPL_ENDOFMOTD.to_s}/)
                     @raw[$1] << string
                     message = Messages::Incoming::Motd.new(@raw[$1].join("\n"), @motds[$1].join("\n"), $1)
                     @motds.delete($1)
                     @raw.delete($1)
                     return message
+                else
+                    return nil
                 end
             end
         end

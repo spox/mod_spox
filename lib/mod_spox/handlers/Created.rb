@@ -9,6 +9,7 @@ module ModSpox
                     return Messages::Incoming::Created.new(string, $1)
                 else
                     Logger.log('Failed to parse RPL_CREATED message')
+                    return nil
                 end
             end
         end

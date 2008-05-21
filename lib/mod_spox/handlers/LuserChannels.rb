@@ -9,6 +9,7 @@ module ModSpox
                     return Messages::Incoming::LuserChannels.new(string, $1.to_i)
                 else
                     Logger.log('Failed to match RPL_LUSERCHANNELS message')
+                    return nil
                 end
             end
         end

@@ -14,6 +14,7 @@ module ModSpox
                     return Messages::Incoming::Quit.new(string, nick, reason)
                 else
                     Logger.log('Failed to parse KICK message')
+                    return nil
                 end
             end
         end

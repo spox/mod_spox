@@ -21,6 +21,7 @@ module ModSpox
                     return Messages::Incoming::Privmsg.new(string, source, target, message)
                 else
                     Logger.log('Failed to match PRIVMSG message')
+                    return nil
                 end
             end
         end

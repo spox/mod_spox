@@ -9,6 +9,7 @@ module ModSpox
                     return Messages::Incoming::NickInUse.new(string, $1)
                 else
                     Logger.log('Failed to parse RPL_NICKNAMEINUSE message')
+                    return nil
                 end
             end
         end

@@ -21,6 +21,7 @@ module ModSpox
                     return Messages::Incoming::TopicInfo.new(string, channel, nick, time)
                 else
                     Logger.log('Failed to parse TOPIC type string')
+                    return nil
                 end                    
             end
         end

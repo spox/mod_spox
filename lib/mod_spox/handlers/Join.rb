@@ -20,9 +20,11 @@ module ModSpox
                         return Messages::Incoming::Join.new(string, channel, nick)
                     else
                         Logger.log('Failed to parse source on JOIN message')
+                        return nil
                     end
                 else
                     Logger.log('Failed to parse JOIN message')
+                    return nil
                 end
             end
         end

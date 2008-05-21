@@ -8,6 +8,8 @@ module ModSpox
             def process(string)
                 if(string =~ /:Try server (\S+), port (.+)$/)
                     return Messages::Incoming::Bounce.new(string, $1, $2)
+                else
+                    return nil
                 end
             end
         end

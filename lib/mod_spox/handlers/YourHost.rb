@@ -10,6 +10,7 @@ module ModSpox
                     return Messages::Incoming::YourHost.new(string, $1, $2)
                 else
                     Logger.log('Failed to match Your Host message')
+                    return nil
                 end
             end
         end

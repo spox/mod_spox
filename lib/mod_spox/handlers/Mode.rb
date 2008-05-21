@@ -47,6 +47,7 @@ module ModSpox
                 rescue Object => boom
                     Logger.log("Failed to process MODE message. Reason: #{boom}")
                 end
+                return nil
             end
         end
     end

@@ -24,9 +24,11 @@ module ModSpox
                         return Messages::Incoming::Welcome.new(string, server, message, nick, username, hostname)
                     else
                         Logger.log('Failed to match user string in welcome message')
+                        return nil
                     end
                 else
                     Logger.log('Failed to match welcome message')
+                    return nil
                 end
             end
         end

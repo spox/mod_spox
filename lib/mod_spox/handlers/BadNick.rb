@@ -9,6 +9,7 @@ module ModSpox
                     return Messages::Incoming::BadNick.new(string, $1)
                 else
                     Logger.log('Failed to process RPL_ERRORONEOUSNICK message')
+                    return nil
                 end
             end
         end

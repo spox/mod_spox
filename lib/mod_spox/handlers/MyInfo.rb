@@ -14,6 +14,7 @@ module ModSpox
                     return Messages::Incoming::MyInfo.new(string, servername, version, usermodes, channelmodes)
                 else
                     Logger.log('Failed to match My Info message')
+                    return nil
                 end
             end
         end

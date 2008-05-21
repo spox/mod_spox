@@ -12,6 +12,7 @@ module ModSpox
                     return Messages::Incoming::Invite.new(string, source, target, channel)
                 else
                     Logger.log('Failed to parse INVITE message')
+                    return nil
                 end
             end
         end

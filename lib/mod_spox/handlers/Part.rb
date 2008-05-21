@@ -12,6 +12,7 @@ module ModSpox
                     return Messages::Incoming::Part.new(string, channel, nick, $3)
                 else
                     Logger.log('Failed to parse PART message')
+                    return nil
                 end
             end
         end

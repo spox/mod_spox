@@ -48,6 +48,8 @@ module ModSpox
                     @names.delete(chan)
                     @raw.delete(chan)
                     return Messages::Incoming::Names.new(raw, channel, nicks, ops, voice)
+                else
+                    return nil
                 end
             end
         end

@@ -25,6 +25,7 @@ module ModSpox
                     return Messages::Incoming::Notice.new(string, source, target, message)
                 else
                     Logger.log('Failed to match NOTICE message')
+                    return nil
                 end
             end
         end

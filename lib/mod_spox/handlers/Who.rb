@@ -44,6 +44,7 @@ module ModSpox
                             Models::NickMode.filter(:channel_id => channel.pk, :nick_id => nick.pk).each{|m| m.destroy}
                         end
                     end
+                    return nil
                 elsif(string =~ /#{RPL_ENDOFWHO}\s\S+\s(\S+)\s/)
                     location = $1
                     loc = find_model(location)
@@ -54,8 +55,8 @@ module ModSpox
                     return message
                 else
                     Logger.log('Failed to match RPL_WHO type message')
+                    return nil
                 end
-                return nil
             end
         end
     end
