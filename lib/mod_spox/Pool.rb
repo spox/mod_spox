@@ -92,10 +92,7 @@ module ModSpox
         
         # Forces sleeping threads to wake up
         def Pool.process
-            sleep(0.1)
             Pool.add_thread if Pool.max_queue_size > 0
-            Logger.log("Current number of threads: #{@@threads.size}")
-            Logger.log("Total number of threads in use system-wide: #{Thread.list.size}")
         end
         
         # Adds a Pool to the master Pool list        
@@ -120,16 +117,16 @@ module ModSpox
             
             def <<(val)
                 @lock.synchronize do
-                    super
-                    Pool.process
+                    super                    
                 end
+                Pool.process
             end
             
             def push(val)
                 @lock.synchronize do
                     super
-                    Pool.process
                 end
+                Pool.process
             end
             
             def pop
