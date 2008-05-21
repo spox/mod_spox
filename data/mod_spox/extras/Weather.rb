@@ -40,10 +40,11 @@ class Weather < ModSpox::Plugin
                     end
                     i += 1
                 end
-                reply message.replyto, "Weather for: \2#{location}\2"
-                reply message.replyto, "Current Temp: #{curtemp} - Feels like: #{feeltemp}"
-                reply message.replyto, "[UV Index: #{uv.gsub(/&.+?;/, '')}][Wind: #{wind.gsub(/&.+?;/, '')}][Humiditiy: #{humid.gsub(/&.+?;/, '')}][Pressure: #{pressure.gsub(/&.+?;/, '')}][Dew Point: #{dewpoint.gsub(/&.+?;/, '')}][Visibility: #{visibility.gsub(/&.+?;/, '')}]"
-                reply message.replyto, future.values_at(0..2).join(' ')
+                output = ["Weather for: \2#{location}\2"]
+                output << "Current Temp: #{curtemp} - Feels like: #{feeltemp}"
+                output << "[UV Index: #{uv.gsub(/&.+?;/, '')}][Wind: #{wind.gsub(/&.+?;/, '')}][Humiditiy: #{humid.gsub(/&.+?;/, '')}][Pressure: #{pressure.gsub(/&.+?;/, '')}][Dew Point: #{dewpoint.gsub(/&.+?;/, '')}][Visibility: #{visibility.gsub(/&.+?;/, '')}]"
+                output << future.values_at(0..2).join(' ')
+                reply message.replyto, output
             else
                 reply message.replyto, "Failed to retrieve weather data."
             end

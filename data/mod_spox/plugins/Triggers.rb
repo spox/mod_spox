@@ -16,10 +16,11 @@ include Messages::Outgoing
     def active(message, params)
         triggers = Models::Trigger.filter(:active => true)
         if(triggers)
-            @pipeline << Privmsg.new(message.replyto, "\2Currently active triggers:\2")
+            output = ["\2Currently active triggers:\2"]
             triggers.each do |t|
-                @pipeline << Privmsg.new(message.replyto, "#{t.pk}: #{t.trigger}")
+                output << "#{t.pk}: #{t.trigger}"
             end
+            reply message.replyto, output
         else
             @pipeline << Privmsg.new(message.replyto, 'No triggers are currently active')
         end
@@ -28,10 +29,11 @@ include Messages::Outgoing
     def list(message, params)
         triggers = Models::Trigger.all
         if(triggers)
-            @pipeline << Privmsg.new(message.replyto, "\2Trigger listing:\2")
+            output = ["\2Trigger listing:\2"]
             triggers.each do |t|
-                @pipeline << Privmsg.new(message.replyto, "#{t.pk}: #{t.trigger}  ->  \2#{t.active ? "activated" : "not activated"}\2")
+                output << "#{t.pk}: #{t.trigger}  ->  \2#{t.active ? "activated" : "not activated"}\2"
             end
+            reply message.replyto, output
         else
             @pipeline << Privmsg.new(message.replyto, 'No triggers found')
         end

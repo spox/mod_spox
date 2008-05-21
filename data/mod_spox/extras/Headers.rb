@@ -36,11 +36,12 @@ class Headers < ModSpox::Plugin
                 con = Net::HTTP.new(location, port)
                 con.use_ssl = secure
                 response = con.get(page, nil)
-                reply message.replyto, "Response code: #{response.code}"
+                output = ["Response code: #{response.code}"]
                 response.each{|key,val|
-                    reply message.replyto, "#{key}: #{val}"
+                    output << "#{key}: #{val}"
                 }
-                reply message.replyto, "Header listing complete"
+                output << "Header listing complete"
+                reply message.replyto, output
             rescue Object => boom
                 reply message.replyto, "Error retrieving headers: #{boom}"
             end

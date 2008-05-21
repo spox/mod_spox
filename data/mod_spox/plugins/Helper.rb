@@ -11,7 +11,7 @@ class Helper < ModSpox::Plugin
     end
     
     def default_help(message, params)
-        plugins = Signature.map(:plugin)
+        plugins = Signature.select(:plugin).map(:plugin)
         plugins.uniq!
         reply message.replyto, "Plugins currently available for help: #{plugins.join(', ')}"
         reply message.replyto, "Request help on a plugin: !help Plugin"

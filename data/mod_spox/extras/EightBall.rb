@@ -25,6 +25,7 @@ class EightBall < ModSpox::Plugin
     
     def eightball(message, params)
         @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, 'shakes magic 8 ball...', true)
+        sleep(1)
         reply message.replyto, "#{message.source.nick}: #{@responses[rand(@responses.size) - 1]}"
     end
 

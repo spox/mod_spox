@@ -21,10 +21,11 @@ class PluginLoader < ModSpox::Plugin
     # params:: matching signature params
     # Output currently available plugins for loading
     def available_plugins(message, params)
-        @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "\2Currently available plugins:\2")
+        output = ["\2Currently available plugins:\2"]
         find_plugins.each_pair do | plugin, path |
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "\2#{plugin}:\2 #{path}")
+            output << "\2#{plugin}:\2 #{path}"
         end
+        reply message.replyto, output
     end
     
     # message:: ModSpox::Messages::Incoming::Privmsg

@@ -190,11 +190,12 @@ class PhpFuncLookup < ModSpox::Plugin
             desc.gsub!(/[\r\n]/, ' ')
             desc.gsub!(/<.+?>/, ' ')
             desc = CGI::unescapeHTML(desc.gsub(/\s+/, ' '))
-            reply m.replyto, "\2PHP Superglobal\2"
-            reply m.replyto, "\2#{name}:\2 #{desc}"
+            output = ["\2PHP Superglobal\2"]
+            output << "\2#{name}:\2 #{desc}"
         else
-            reply m.replyto, "No superglobal found matching: #{name}"
+            output = "No superglobal found matching: #{name}"
         end
+        reply m.replyto, output
     end
     
     def parse_wildcard(m, name)
@@ -218,8 +219,9 @@ class PhpFuncLookup < ModSpox::Plugin
             end
         end
         matches.sort!
-        reply m.replyto, "Lots of matching functions. Truncating list to 20 results."
-        reply m.replyto, matches.values_at(0..19).join(', ')
+        output = ["Lots of matching functions. Truncating list to 20 results."]
+        output << matches.values_at(0..19).join(', ')
+        reply m.replyto, output
     end
     
     def parse_function(m, name, filename)
@@ -231,19 +233,20 @@ class PhpFuncLookup < ModSpox::Plugin
         versions = CGI::unescapeHTML(versions)
         proto = CGI::unescapeHTML(proto.gsub(/<.+?>/, ' ').gsub(/[\s]+/, ' '))
         desc = CGI::unescapeHTML(desc.gsub(/<.+?>/, ' ').gsub(/[\s]+/, ' '))
-        reply m.replyto, versions
-        reply m.replyto, "\2#{proto}\2"
-        reply m.replyto, desc
-        reply m.replyto, "http://www.php.net/manual/en/#{filename.gsub(/\.html$/, '.php')}"
+        output = [versions]
+        output << "\2#{proto}\2"
+        output << desc
+        output << "http://www.php.net/manual/en/#{filename.gsub(/\.html$/, '.php')}"
+        reply m.replyto, output
     end
 
     def parse_operator(m, name)
         Logger.log "parse_operator name=#{name}"
         name.downcase!
         type, title, ejemplo = @ops[name]
-        reply m.replyto, "\2#{name}\2 is the \2#{title.to_a.join("\2 or \2")}\2 operator"
+        output = ["\2#{name}\2 is the \2#{title.to_a.join("\2 or \2")}\2 operator"]
         type.to_a.each do |t|
-            reply m.replyto, "http://php.net/manual/en/language.operators.#{t}.php"
+            output << "http://php.net/manual/en/language.operators.#{t}.php"
         end
     end
     

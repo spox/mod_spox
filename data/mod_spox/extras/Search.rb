@@ -22,10 +22,11 @@ class Search < ModSpox::Plugin
                 title = CGI::unescapeHTML(title)
                 results.push [title, url]
             end
-            @pipeline << Privmsg.new(message.replyto, "Search results for \2#{params[:terms]}:\2")
+            output = ["Search results for \2#{params[:terms]}:\2"]
             results.slice(0, limit).each do |title, url|
-                @pipeline << Privmsg.new(message.replyto, "#{title} -> #{Helpers.tinyurl(url)} [#{url.scan(/^http:\/\/.+?\//)[0]}]")
+                output << "#{title} -> #{Helpers.tinyurl(url)} [#{url.scan(/^http:\/\/.+?\//)[0]}]"
             end
+            reply message.replyto, output
         rescue Object => boom
             @pipeline << Privmsg.new(message.replyto, "Failed to find any results for: #{params[:terms]} Reason: #{boom}")
         end
