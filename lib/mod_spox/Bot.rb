@@ -274,7 +274,15 @@ module ModSpox
             target = message.target.name if message.target.is_a?(Models::Channel)
             target = message.target.nick if message.target.is_a?(Models::Nick)
             target = message.target unless target
-            @socket << "PRIVMSG #{target} :#{message.is_action? ? "\cAACTION #{message.message}\cA" : message.message}"
+            messages = message.message.is_a?(Array) ? message.message : [message.message]
+            messages.each do |content|
+                while(content.size > 450)
+                    output = content[0..449]
+                    content.slice!(450, content.size)
+                    @socket << "PRIVMSG #{target} :#{message.is_action? ? "\cAACTION #{output}\cA" : output}"
+                end
+                @socket << "PRIVMSG #{target} :#{message.is_action? ? "\cAACTION #{content}\cA" : content}"
+            end
         end
 
         # message:: Messages::Outgoing::Notice message
