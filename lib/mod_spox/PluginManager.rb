@@ -159,7 +159,7 @@ module ModSpox
                     if(@plugins.has_key?(plugin.to_sym))
                         @plugins[plugin.to_sym].plugin.destroy 
                         @pipeline.unhook_plugin(@plugins[plugin.to_sym].plugin)
-                        @plugins[plugin.to_sym].set_plugin = nil
+                        @plugins[plugin.to_sym].set_plugin(nil)
                     end
                     Models::Signature.filter(:plugin => plugin).destroy
                 end
