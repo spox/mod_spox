@@ -40,24 +40,14 @@ module ModSpox
             # Stop waiting
             def wakeup
                 return if @threads.empty?
-                @threads.each do |thread|
-                    if(thread.status == 'sleep')
-                        Logger.log("Sending wakeup for thread: #{thread}", 5)
-                        thread.run
-                        Logger.log("Status of thread to wakeup: #{thread.status}", 5)
-                        Logger.log("Calling thread is: #{Thread.current}", 5)
-                    else
-                        Logger.log("Thread to wakeup has been killed: #{thread}")
-                    end
-                    @threads.delete(thread)
-                end
+                @threads.each{|t|t.wakeup}
+                @threads.clear
             end
             
             # Start waiting
             def wait
                 @threads << Thread.current
-                Logger.log("Stopping execution of thread: #{Thread.current}", 5)
-                Thread.stop
+                sleep
             end
             
             # Returns if a thread is currently waiting in this monitor
