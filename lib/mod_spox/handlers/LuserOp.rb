@@ -1,3 +1,4 @@
+require 'mod_spox/handlers/Handler'
 module ModSpox
     module Handlers
         class LuserOp < Handler

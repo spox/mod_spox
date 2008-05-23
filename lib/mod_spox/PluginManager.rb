@@ -1,4 +1,10 @@
-require 'fileutils'
+['fileutils',
+ 'mod_spox/Logger',
+ 'mod_spox/Pipeline',
+ 'mod_spox/models/Models',
+ 'mod_spox/messages/Messages',
+ 'mod_spox/Plugin',
+ 'mod_spox/PluginHolder'].each{|f|require f}
 module ModSpox
 
     class PluginManager

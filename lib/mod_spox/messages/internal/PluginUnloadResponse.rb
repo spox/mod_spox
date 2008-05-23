@@ -1,3 +1,4 @@
+require 'mod_spox/messages/internal/PluginLoadResponse'
 module ModSpox
     module Messages
         module Internal

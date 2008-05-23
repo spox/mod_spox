@@ -1,3 +1,14 @@
+['mod_spox/Logger',
+ 'mod_spox/Socket',
+ 'mod_spox/Pipeline',
+ 'mod_spox/PluginManager',
+ 'mod_spox/MessageFactory',
+ 'mod_spox/BaseConfig',
+ 'mod_spox/Timer',
+ 'mod_spox/messages/Messages',
+ 'mod_spox/models/Models',
+ 'mod_spox/Monitors',
+ 'mod_spox/Helpers'].each{|f|require f}
 module ModSpox
 
     class Bot

@@ -1,3 +1,6 @@
+['mod_spox/Pipeline',
+ 'mod_spox/Logger',
+ 'mod_spox/Exceptions'].each{|f|require f}
 module ModSpox
     class Plugin
         def initialize(pipeline)

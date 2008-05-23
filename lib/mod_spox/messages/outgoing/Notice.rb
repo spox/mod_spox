@@ -1,3 +1,4 @@
+require 'mod_spox/messages/outgoing/Privmsg'
 module ModSpox
     module Messages
         module Outgoing

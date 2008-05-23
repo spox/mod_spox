@@ -1,3 +1,5 @@
+require 'mod_spox/Logger'
+
 module ModSpox
 
     class Action

@@ -1,5 +1,11 @@
-require 'timeout'
-require 'net/http'
+['timeout',
+ 'net/http',
+ 'mod_spox/models/Nick',
+ 'mod_spox/models/Channel',
+ 'mod_spox/models/Server',
+ 'mod_spox/Cache',
+ 'mod_spox/Logger'].each{|f|require f}
+
 module ModSpox
     module Helpers
         # secs:: number of seconds

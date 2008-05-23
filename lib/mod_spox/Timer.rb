@@ -1,3 +1,10 @@
+['mod_spox/Logger',
+ 'mod_spox/Pipeline',
+ 'mod_spox/Pool',
+ 'mod_spox/Action',
+ 'mod_spox/Exceptions',
+ 'mod_spox/Monitors'].each{|f|require f}
+
 module ModSpox
 
     class Timer < Pool

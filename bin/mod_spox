@@ -66,5 +66,7 @@ opts.each do |opt, arg|
 end
 
 initialize_bot
+require 'mod_spox/Bot'
+
 bot = Bot.new
 bot.run

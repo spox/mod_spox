@@ -1,3 +1,7 @@
+['mod_spox/Logger',
+ 'mod_spox/Exceptions',
+ 'mod_spox/Monitors'].each{|f|require f}
+ 
 module ModSpox
 
     # The Pool class is used to reduce thread creation. It provides

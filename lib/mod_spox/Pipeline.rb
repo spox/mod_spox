@@ -1,3 +1,7 @@
+['mod_spox/models/Models.rb',
+ 'mod_spox/Logger',
+ 'mod_spox/Pool',
+ 'mod_spox/Exceptions'].each{|f|require f}
 module ModSpox
 
     class Pipeline < Pool

@@ -1,5 +1,9 @@
-['etc', 'mod_spox/Loader',
- 'mod_spox/BotConfig',  'mod_spox/BaseConfig'].each{|f|require f}
+['etc', 
+ 'mod_spox/Database',
+ 'mod_spox/BotConfig',
+ 'mod_spox/BaseConfig'
+ 'mod_spox/models/Models',
+ 'mod_spox/Helpers'].each{|f|require f}
 
 
 module ModSpox

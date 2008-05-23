@@ -1,3 +1,5 @@
+require 'mod_spox/Pool'
+
 module ModSpox
 
     class Logger
@@ -45,7 +47,6 @@ module ModSpox
             super()
             @fd = fd
             start_pool
-            puts "Log writer has been created and is ready to go"
         end
         
         def log(message)

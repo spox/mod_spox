@@ -1,3 +1,6 @@
+require 'etc'
+require 'mod_spox/Exceptions'
+
 module ModSpox
 
     class BotConfig
