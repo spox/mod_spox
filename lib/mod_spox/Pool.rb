@@ -1,6 +1,7 @@
 ['mod_spox/Logger',
  'mod_spox/Exceptions',
- 'mod_spox/Monitors'].each{|f|require f}
+ 'mod_spox/Monitors',
+ 'timeout'].each{|f|require f}
  
 module ModSpox
 
@@ -58,21 +59,20 @@ module ModSpox
         # Maximum number of threads to process Pool
         @@max_threads = 10
         # Maxium wait time (max time for threads to wait for new action to process)
-        @@max_wait_time = 120
+        @@max_wait_time = 20
         # Monitor for threads to wait in
-        @@stop_point = Monitors::Boolean.new
+        @@stop_point = Monitors::Timer.new
         # Informs threads to halt
         @@kill = false
         
         # Adds a new thread to the pool
         def Pool.add_thread(force=false)
+            puts "Size of pool threads: #{@@threads.size}"
             if(force || @@threads.size < @@max_threads)
                 thr = Thread.new do
-                    until(@@kill) do
-                        Pool.schedule_thread
-                    end
+                    Pool.schedule_thread
                 end
-                @@threads << {:thread => thr, :time => Time.now}
+                @@threads << thr
             end
             @@stop_point.wakeup
         end
@@ -94,12 +94,13 @@ module ModSpox
                     run_pool = pool if (run_pool.nil? && pool.queue.size > 0) || (!run_pool.nil? && (run_pool.queue.size < pool.queue.size))
                 end
             end
-            unless(run_pool.nil?)
+            if(run_pool.nil?)
+                @@threads.delete(Thread.current)
+                return
+            else
                 begin
                     Timeout::timeout(@@max_exec_time) do
-                        Pool.clock_thread(Thread.current)
                         run_pool.proc.call
-                        Pool.clean
                     end
                 rescue Timeout::Error => boom
                     Logger.log("Thread reached maximum execution time (#{@max_exec_time}) processing pool item")
@@ -107,7 +108,16 @@ module ModSpox
                     Logger.log("Thread encountered error processing pool item: #{boom}")
                 end
             end
-            @@stop_point.wait if Pool.max_queue_size < 1
+            start = Time.now
+            @@stop_point.wait(@@max_wait_time) if Pool.max_queue_size < 1
+            if((Time.now - start).to_i < @@max_wait_time)
+                Pool.schedule_thread
+            else
+                @@threads.delete(Thread.current)
+                @@threads.each do |thread|
+                    @@threads.delete(thread) unless thread.alive?
+                end
+            end
         end
         
         # Forces sleeping threads to wake up
@@ -130,29 +140,6 @@ module ModSpox
                 @@stop_point.wakeup
                 sleep(0.1)
                 @@threads.each{|t| t.kill if t.alive?}
-            end
-        end
-        
-        # Stamp the last active time for thread
-        def Pool.clock_thread(thread)
-            @@threads.each do |holder|
-                if(thread == holder[:thread])
-                    holder[:time] = Time.now 
-                end
-            end
-        end
-        
-        # Clean pool of any stagnant threads
-        def Pool.clean
-            @@threads.each do |holder|
-                if((Time.now.to_i - holder[:time].to_i).to_i >= @@max_wait_time)
-                    @@stop_point.remove_thread(holder[:thread])
-                    holder[:thread].kill
-                    @@threads.delete(holder)
-                elsif(!holder[:thread].alive?)
-                    @@stop_point.remove_thread(holder[:thread])
-                    @@threads.delete(holder)
-                end
             end
         end
         

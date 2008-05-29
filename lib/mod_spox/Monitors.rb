@@ -12,7 +12,13 @@ module ModSpox
             
             # Force the monitor to wake everyone up
             def wakeup
-                @threads.each{|t|t.wakeup}
+                @threads.each do |t|
+                    begin
+                        t.wakeup
+                    rescue Object => boom
+                        # thread was dead #
+                    end
+                end
                 @threads.clear
             end
             
@@ -40,7 +46,13 @@ module ModSpox
             # Stop waiting
             def wakeup
                 return if @threads.empty?
-                @threads.each{|t|t.wakeup}
+                @threads.each do |t|
+                    begin
+                        t.wakeup
+                    rescue Object => boom
+                        # thread was dead #
+                    end
+                end
                 @threads.clear
             end
             
