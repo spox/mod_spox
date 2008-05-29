@@ -19,10 +19,12 @@ module ModSpox
             @monitor = Monitors::Timer.new
             @thread = nil
             @stop_timer = false
+            @owners = {}
             {:Internal_TimerAdd => :add_message,
-             :Internal_TimerRemove => :remove_message}.each_pair{|type,method|
+             :Internal_TimerRemove => :remove_message,
+             :Internal_TimerClear => :clear}.each_pair do |type,method|
                 @pipeline.hook(self, method, type)
-            }
+            end
             start_pool
         end
         
@@ -37,6 +39,8 @@ module ModSpox
         def add_message(message)
             Logger.log("New block is being added to the timer", 15)
             action = add(message.period, message.once, message.data, &message.block)
+            @owners[message.requester.name.to_sym] = [] unless @owners.has_key?(message.requester.name.to_sym)
+            @owners[message.requester.name.to_sym] << action
             begin
                 @pipeline << Messages::Internal::TimerResponse.new(message.requester, action, true, message.id)
                 Logger.log("New block was successfully added to the timer", 15)
@@ -109,9 +113,18 @@ module ModSpox
         end
         
         # Clears all actions in the timer's queue
-        def clear
-            @queue.clear
-            @timers.clear
+        def clear(message=nil)
+            if(message.nil? || message.plugin.nil?)
+                @queue.clear
+                @timers.clear
+                @owners.clear
+            else
+                if(@owners.has_key?(message.plugin))
+                    @owners[message.plugin].each do |action|
+                        remove(action)
+                    end
+                end
+            end
         end
         
         private
