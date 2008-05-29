@@ -1,3 +1,4 @@
+require 'mod_spox/messages/incoming/Message'
 module ModSpox
     module Messages
         module Incoming

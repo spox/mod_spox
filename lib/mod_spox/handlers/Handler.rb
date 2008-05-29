@@ -1,3 +1,4 @@
+require 'mod_spox/rfc2812'
 module ModSpox
     module Handlers
     
