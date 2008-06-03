@@ -92,8 +92,20 @@ module ModSpox
         
         # Repopulate the active signatures list
         def populate_signatures(m=nil)
-            @signatures = []
-            Models::Signature.all.each{|s|@signatures << s}
+            @signatures = {}
+            Models::Signature.all.each do |s|
+                Logger.log("Signature being processed: #{s.signature}")
+                c = s.signature[0].chr.downcase
+                if(c =~ /^[a-z]$/)
+                    type = c.to_sym
+                elsif(c =~ /^[0-9]$/)
+                    type = :digit
+                else
+                    type = :other
+                end
+                @signatures[type] = [] unless @signatures[type]
+                @signatures[type] << s
+            end
         end
         
         private
@@ -137,7 +149,15 @@ module ModSpox
             @triggers.each{|t| trigger = t if message.message =~ /^#{t}/}
             if(!trigger.nil? || message.addressed?)
                 Logger.log("Message has matched against a known trigger", 15)
-                @signatures.each do |sig|
+                c = message.addressed? ? message.message[0].chr.downcase : message.message[1].chr.downcase
+                if(c =~ /^[a-z]$/)
+                    type = c.to_sym
+                elsif(c =~ /^[0-9]$/)
+                    type = :digit
+                else
+                    type = :other
+                end
+                @signatures[type].each do |sig|
                     Logger.log("Matching against: #{trigger}#{sig.signature}")
                     res = message.message.scan(/^#{trigger}#{sig.signature}$/)
                     if(res.size > 0)
