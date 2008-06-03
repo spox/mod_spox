@@ -67,7 +67,6 @@ module ModSpox
         
         # Adds a new thread to the pool
         def Pool.add_thread(force=false)
-            puts "Size of pool threads: #{@@threads.size}"
             if(force || @@threads.size < @@max_threads)
                 thr = Thread.new do
                     Pool.schedule_thread
