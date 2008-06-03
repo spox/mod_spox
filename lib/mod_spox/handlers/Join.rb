@@ -10,12 +10,13 @@ module ModSpox
                     source = $1
                     chan = $2
                     if(source =~ /^(.+?)!(.+?)@(.+)$/)
+                        do_save = false
                         nick = find_model($1)
-                        nick.username = $2
-                        nick.address = $3
-                        nick.source = source
-                        nick.visible = true
-                        nick.save
+                        nick.username = $2 && do_save = true unless nick.username == $2
+                        nick.address = $3 && do_save = true unless nick.address == $3
+                        nick.source = source && do_save = true unless nick.source = source
+                        nick.visible = true && do_save = true unless nick.visible == true
+                        nick.save if do_save
                         channel = find_model(chan)
                         channel.nick_add(nick)
                         return Messages::Incoming::Join.new(string, channel, nick)

@@ -14,10 +14,11 @@ module ModSpox
                     if(base_source =~ /\!/)
                         source = find_model(base_source.gsub(/!.+$/, ''))
                         if(base_source =~ /!(.+)@(.+)$/)
-                            source.username = $1
-                            source.address = $2
-                            source.source = base_source
-                            source.save
+                            do_save = false
+                            source.username = $1 && do_save = true unless source.username == $1
+                            source.address = $2 && do_save = true unless source.address == $2
+                            source.source = base_source && do_save = true unless source.source == base_source
+                            source.save if do_save
                         end
                         target = find_model(target)
                     else
