@@ -37,16 +37,30 @@ module ModSpox
             @@writer.log(message) unless @@severity < severity
         end
         
+        def self.kill
+            @@writer.kill
+        end
+        
     end
     
-    class LogWriter < Pool
+    class LogWriter
     
         attr_reader :fd
         
         def initialize(fd)
-            super()
             @fd = fd
-            start_pool
+            @kill = false
+            @queue = Queue.new
+            @thread = Thread.new do
+                until(@kill)
+                    processor
+                end
+            end
+        end
+        
+        def kill
+            @kill = true
+            @queue << "Logger has been told to shut down"
         end
         
         def log(message)
