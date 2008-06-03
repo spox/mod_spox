@@ -118,8 +118,8 @@ module ModSpox
         end
         
         def Helpers.initialize_caches
-            @@nick_cache = Cache.new(30) unless Helpers.class_variable_defined?(:@@nick_cache)
-            @@channel_cache = Cache.new(10) unless Helpers.class_variable_defined?(:@@channel_cache)
+            @@nick_cache = Cache.new(20) unless Helpers.class_variable_defined?(:@@nick_cache)
+            @@channel_cache = Cache.new(5) unless Helpers.class_variable_defined?(:@@channel_cache)
         end
     end
 end
