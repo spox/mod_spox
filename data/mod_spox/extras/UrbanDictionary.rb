@@ -22,6 +22,7 @@ class UrbanDictionary < ModSpox::Plugin
                 udict = SOAP::RPC::Driver.new(site, 'urn:UrbanSearch')
                 udict.add_method('lookup', 'key', 'term')
                 defs = udict.lookup(key, params[:term])
+                output = []
                 if defs.size < result + 1
                     @pipeline << Privmsg.new(message.replyto, "Error: Definition number #{result+1} for term: #{params[:term]} not found.")
                 else
