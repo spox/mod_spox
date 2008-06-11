@@ -104,7 +104,7 @@ module ModSpox
         # Retrieves a string from the server
         def read
             message = @socket.gets
-            if(message.nil?) # || message =~ /^ERROR/)
+            if(message.nil? || @socket.closed?) # || message =~ /^ERROR/)
                 @pipeline << Messages::Internal::Disconnected.new
                 shutdown
                 server = Models::Server.find_or_create(:host => @server, :port => @port)
