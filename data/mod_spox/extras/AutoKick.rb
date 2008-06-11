@@ -34,17 +34,12 @@ class AutoKick < ModSpox::Plugin
     
     def add(message, params)
         if(params[:channel])
-            channel = Channel.filter(:name => params[:channel])
+            channel = Channel.filter(:name => params[:channel]).first
         else
             channel = message.target
         end
         if(channel)
-            record = AutoKickRecord.new
-            record.channel_id = channel.pk
-            record.pattern = params[:regex]
-            record.message = params[:message]
-            record.bantime = params[:time]
-            record.save
+            record = AutoKickRecord.find_or_create(:pattern => params[:regex], :message => params[:message], :bantime => params[:time].to_i, :channel_id => channel.pk)
             reply message.replyto, "New autokick rule has been created"
             do_listen
         else
