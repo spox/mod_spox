@@ -289,7 +289,7 @@ module ModSpox
             messages.each do |content|
                 while(content.size > 450)
                     output = content[0..449]
-                    content.slice!(450, content.size)
+                    content.slice!(0, 449) #(450, content.size)
                     @socket << "PRIVMSG #{target} :#{message.is_action? ? "\cAACTION #{output}\cA" : output}"
                 end
                 @socket << "PRIVMSG #{target} :#{message.is_action? ? "\cAACTION #{content}\cA" : content}"
