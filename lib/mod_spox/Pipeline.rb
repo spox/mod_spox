@@ -14,6 +14,7 @@ module ModSpox
             @hooks = Hash.new
             @plugins = Hash.new
             @admin = Models::Group.filter(:name => 'admin').first
+            @populate_lock = Mutex.new
             populate_triggers
             populate_signatures
             hook(self, :populate_triggers, :Internal_TriggersUpdate)
@@ -86,25 +87,31 @@ module ModSpox
         
         # Repopulate the active trigger list
         def populate_triggers(m=nil)
-            @triggers = []
-            Models::Trigger.filter(:active => true).each{|t|@triggers << t.trigger}
+            @populate_lock.synchronize do
+                @triggers = []
+                Models::Trigger.filter(:active => true).each{|t|@triggers << t.trigger}
+            end
         end
         
         # Repopulate the active signatures list
         def populate_signatures(m=nil)
-            @signatures = {}
-            Models::Signature.all.each do |s|
-                Logger.log("Signature being processed: #{s.signature}")
-                c = s.signature[0].chr.downcase
-                if(c =~ /^[a-z]$/)
-                    type = c.to_sym
-                elsif(c =~ /^[0-9]$/)
-                    type = :digit
-                else
-                    type = :other
+            @populate_lock.synchronize do
+                @signatures = {}
+                Models::Signature.all.each do |s|
+                    Logger.log("Signature being processed: #{s.signature}")
+                    c = s.signature[0].chr.downcase
+                    if(c =~ /^[a-z]$/)
+                        type = c.to_sym
+                    elsif(c =~ /^[0-9]$/)
+                        type = :digit
+                    else
+                        type = :other
+                    end
+                    @signatures[type] = [] unless @signatures[type]
+                    unless @signatures.include?(s)
+                        @signatures[type] << s
+                    end
                 end
-                @signatures[type] = [] unless @signatures[type]
-                @signatures[type] << s
             end
         end
         
@@ -157,6 +164,7 @@ module ModSpox
                 else
                     type = :other
                 end
+                return unless @signatures[type]
                 @signatures[type].each do |sig|
                     Logger.log("Matching against: #{trigger}#{sig.signature}")
                     res = message.message.scan(/^#{trigger}#{sig.signature}$/)
