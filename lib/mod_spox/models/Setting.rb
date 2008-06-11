@@ -1,5 +1,3 @@
-require 'base64'
-
 module ModSpox
     module Models
         # Attributes provided by model:
@@ -11,11 +9,11 @@ module ModSpox
         class Setting < Sequel::Model(:settings)
             
             def value=(val)
-                update_values(:value => Base64.encode64(Marshal.dump(val)))
+                update_values(:value => [Marshal.dump(val)].pack('m'))
             end
             
             def value
-                return values[:value] ? Marshal.load(Base64.decode64(values[:value])) : nil
+                return values[:value] ? Marshal.load(values[:value].unpack('m')[0]) : nil
             end
             
             # key:: name of the setting
@@ -33,7 +31,7 @@ module ModSpox
             def self.[]=(key, val)
                 key = key.to_s if key.is_a?(Symbol)
                 model = Setting.find_or_create(:name => key)
-                model.update_with_params(:value => Base64.encode64(Marshal.dump(val)))
+                model.update_with_params(:value => [Marshal.dump(val)].pack('m'))
             end
         end
     end
