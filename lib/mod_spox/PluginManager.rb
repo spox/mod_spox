@@ -23,23 +23,26 @@ module ModSpox
             @pipeline.hook(self, :send_modules, :Internal_PluginModuleRequest)
             @pipeline.hook(self, :plugin_request, :Internal_PluginRequest)
             @plugins_module = Module.new
+            @plugin_lock = Mutex.new
             load_plugins
         end
         
         # message:: Messages::Internal::PluginReload
         # Destroys and reinitializes plugins
         def reload_plugins(message=nil)
-            if(message.fresh && message.stale)
-                do_unload(message.stale)
-                FileUtils.remove_file(message.stale)
-                FileUtils.copy(message.fresh, BotConfig[:userpluginpath])
-                do_load(message.stale)
-                Logger.log("Completed reload of plugin: #{message.stale}")
-            else
-                unload_plugins
-                load_plugins
+            @plugin_lock.synchronize do
+                if(message.fresh && message.stale)
+                    do_unload(message.stale)
+                    FileUtils.remove_file(message.stale)
+                    FileUtils.copy(message.fresh, BotConfig[:userpluginpath])
+                    do_load(message.stale)
+                    Logger.log("Completed reload of plugin: #{message.stale}")
+                else
+                    unload_plugins
+                    load_plugins
+                end
+                @pipeline << Messages::Internal::SignaturesUpdate.new
             end
-            @pipeline << Messages::Internal::SignaturesUpdate.new
         end
         
         # Destroys plugins
@@ -103,6 +106,7 @@ module ModSpox
         # Loads and initializes plugins
         def load_plugins
             @pipeline << Messages::Internal::TimerClear.new
+            Models::Signature.destroy_all
             [BotConfig[:pluginpath], BotConfig[:userpluginpath]].each do |path|
                 Dir.new(path).each do |file|
                     if(file =~ /^[^\.].+\.rb$/)
@@ -122,9 +126,8 @@ module ModSpox
             @plugins.each_pair do |sym, holder|
                 holder.plugin.destroy
                 @pipeline.unhook_plugin(holder.plugin)
-                Models::Signature.filter(:plugin => holder.plugin.name).destroy
             end
-            Models::Signature.delete_all
+            Models::Signature.destroy_all
             @plugins_module = Module.new
             @pipeline << Messages::Internal::TimerClear.new
         end
@@ -166,6 +169,7 @@ module ModSpox
                         @plugins[plugin.to_sym].plugin.destroy 
                         @pipeline.unhook_plugin(@plugins[plugin.to_sym].plugin)
                         @plugins[plugin.to_sym].set_plugin(nil)
+                        @pipeline << Messages::Internal::TimerClear.new(plugin.to_sym)
                     end
                     Models::Signature.filter(:plugin => plugin).destroy
                 end

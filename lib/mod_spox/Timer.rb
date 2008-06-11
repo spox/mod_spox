@@ -20,6 +20,7 @@ module ModSpox
             @thread = nil
             @stop_timer = false
             @owners = {}
+            @owners_lock = Mutex.new
             {:Internal_TimerAdd => :add_message,
              :Internal_TimerRemove => :remove_message,
              :Internal_TimerClear => :clear}.each_pair do |type,method|
@@ -38,9 +39,12 @@ module ModSpox
         # Add a recurring code block
         def add_message(message)
             Logger.log("New block is being added to the timer", 15)
-            action = add(message.period, message.once, message.data, &message.block)
-            @owners[message.requester.name.to_sym] = [] unless @owners.has_key?(message.requester.name.to_sym)
-            @owners[message.requester.name.to_sym] << action
+            action = nil
+            @owners_lock.synchronize do
+                action = add(message.period, message.once, message.data, &message.block)
+                @owners[message.requester.name.to_sym] = [] unless @owners.has_key?(message.requester.name.to_sym)
+                @owners[message.requester.name.to_sym] << action
+            end
             begin
                 @pipeline << Messages::Internal::TimerResponse.new(message.requester, action, true, message.id)
                 Logger.log("New block was successfully added to the timer", 15)
@@ -119,9 +123,11 @@ module ModSpox
                 @timers.clear
                 @owners.clear
             else
-                if(@owners.has_key?(message.plugin))
-                    @owners[message.plugin].each do |action|
-                        remove(action)
+                @owners_lock.synchronize do
+                    if(@owners.has_key?(message.plugin))
+                        @owners[message.plugin].each do |action|
+                            remove(action)
+                        end
                     end
                 end
             end
