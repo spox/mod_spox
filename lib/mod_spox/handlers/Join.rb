@@ -12,10 +12,22 @@ module ModSpox
                     if(source =~ /^(.+?)!(.+?)@(.+)$/)
                         do_save = false
                         nick = find_model($1)
-                        nick.username = $2 && do_save = true unless nick.username == $2
-                        nick.address = $3 && do_save = true unless nick.address == $3
-                        nick.source = source && do_save = true unless nick.source = source
-                        nick.visible = true && do_save = true unless nick.visible == true
+                        unless(nick.username == $2)
+                            nick.username == $2
+                            do_save = true
+                        end
+                        unless(nick.address == $3)
+                            nick.address = $3
+                            do_save = true
+                        end
+                        unless(nick.source == source)
+                            nick.source = source
+                            do_save = true
+                        end
+                        unless(nick.visible == true)
+                            nick.visible = true
+                            do_save = true
+                        end
                         nick.save if do_save
                         channel = find_model(chan)
                         channel.nick_add(nick)
