@@ -120,6 +120,15 @@ module ModSpox
                 return false
             end
             
+            # channel:: Models::Channel
+            # Return if nick is voiced in given channel
+            def is_voice?(channel)
+                NickMode.filter(:channel_id => channel.pk, :nick_id => pk).each do |mode|
+                    return true if mode.mode == 'v'
+                end
+                return false
+            end
+            
             # Purge all nick information
             def self.clean
                 Nick.set(:username => nil, :real_name => nil, :address => nil,
