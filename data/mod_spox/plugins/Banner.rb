@@ -23,12 +23,25 @@ class Banner < ModSpox::Plugin
             :description => 'List all currently active bans generated from the bot')
         Signature.find_or_create(:signature => 'banlist remove (\d+)', :plugin => name, :method => 'ban_remove', :group_id => admin.pk,
             :description => 'Remove a current ban').params = [:id]
+        Signature.find_or_create(:signature => 'exempt mode ([ov]) ?(\S+)?', :plugin => name, :method => 'exempt_mode', :group_id => admin.pk,
+            :description => 'Exempt given modes from kick. Apply to all channels if one is not provided').params = [:mode, :channel]
+        Signature.find_or_create(:signature => 'exempt nick (\S+) ?(\S+)?', :plugin => name, :method => 'exempt_nick', :group_id => admin.pk,
+            :description => 'Exempt a nick from kicks globally or per channel').params = [:nick, :channel]
+        Signature.find_or_create(:signature => 'exempt source (\S+)', :plugin => name, :method => 'exempt_source', :group_id => admin.pk,
+            :description => 'Exempt a source from kicks globally or per channel').params = [:source, :channel]
+        Signature.find_or_create(:signature => 'exempt list (nick|mode|source)', :plugin => name, :method => 'exempt_list', :group_id => admin.pk,
+            :description => 'List current exemptions of given type').params = [:type]
+        Signature.find_or_create(:signature => 'exempt remove (nick|mode|source) (\d+)', :plugin => name, :method => 'exempt_remove', :group_id => admin.pk,
+            :description => 'Remove exemption from given type').params = [:type, :id]
         @pipeline.hook(self, :mode_check, :Incoming_Mode)
         @pipeline.hook(self, :join_check, :Incoming_Join)
         @pipeline.hook(self, :who_check, :Incoming_Who)
         @pipeline.hook(self, :get_action, :Internal_TimerResponse)
         BanRecord.create_table unless BanRecord.table_exists?
         BanMask.create_table unless BanMask.table_exists?
+        BanNickExempt.create_table unless BanNickExempt.table_exists?
+        BanModeExempt.create_table unless BanModeExempt.table_exists?
+        BanSourceExempt.create_table unless BanSourceExempt.table_exists?
         @actions = []
         @up_sync = Mutex.new
         @timer_sync = Mutex.new
@@ -86,6 +99,8 @@ class Banner < ModSpox::Plugin
             raise NotOperator.new("I am not an operator in #{channel.name}")
         elsif(!nick.channels.include?(channel))
             raise NotInChannel.new("#{nick.nick} is not in channel: #{channel.name}")
+        elsif(check_exempt(nick, channel))
+            raise BanExemption.new("This nick is exempt from bans: #{nick.nick}")
         else
             mask = nick.source.nil? || nick.source.empty? ? "#{nick.nick}!*@*" : "*!*@#{nick.address}"
             BanRecord.new(:nick_id => nick.pk, :bantime => time.to_i, :remaining => time.to_i,
@@ -332,6 +347,144 @@ class Banner < ModSpox::Plugin
         end
     end
     
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: parameters
+    # Add ban exemption for a given mode
+    def exempt_mode(message, params)
+        response = nil
+        if(params[:channel])
+            channel = Helpers.find_model(params[:channel])
+            if(channel.is_a?(Models::Channel))
+                BanModeExempt.find_or_create(:channel_id => channel.pk, :mode => params[:mode])
+                response = 'Mode exemption has been added'
+            else
+                response = "Failed to find given channel: #{params[:channel]}"
+            end
+        else
+            BanModeExempt.find_or_create(:channel_id => nil, :mode => params[:mode])
+            response = 'Mode exemption has been added'
+        end
+        reply message.replyto, response
+    end
+    
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: parameters
+    # Add ban exemption for a given nick
+    def exempt_nick(message, params)
+        response = ''
+        nick = Helpers.find_model(params[:nick])
+        unless(nick.is_a?(Models::Nick))
+            reply message.replyto, "\2Error:\2 Failed to find record of: #{params[:nick]}"
+            return 
+        end
+        channel = params[:channel] ? Helpers.find_model(params[:channel]) : nil
+        if(channel)
+            if(channel.is_a?(Models::Channel))
+                BanNickExempt.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
+                response = "Nick exemption for \2#{params[:nick]}\2 has been added to channel: \2#{params[:channel]}\2"
+            else
+                response = "Failed to find given channel: #{params[:channel]}"
+            end
+        else
+            BanNickExempt.find_or_create(:nick_id => nick.pk)
+            response = "Nick exemption for \2#{params[:nick]}\2 has been added for all channels"
+        end
+        reply message.replyto, response
+    end
+
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: parameters
+    # Add ban exemption for sources matching a given mask
+    def exempt_source(message, params)
+        channel = params[:channel] ? Helpers.find_model(params[:channel]) : nil
+        response = ''
+        if(channel)
+            if(channel.is_a?(Models::Channel))
+                BanSourceExempt.find_or_create(:channel_id => channel.pk, :source => params[:source])
+                reponse = "Added exempt source: #{params[:source]} to channel: #{params[:channel]}"
+            else
+                response = "Failed to find given channel: #{params[:channel]}"
+            end
+        else
+            BanSourceExempt.find_or_create(:channel_id => nil, :source => params[:source])
+            response = "Added global exemption for source: #{params[:source]}"
+        end
+        reply message.replyto, response
+    end
+    
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: parameters
+    # List given type of current ban exemptions    
+    def exempt_list(message, params)
+        output = []
+        if(params[:type] == 'nick')
+            output << 'Current nick exemptions:'
+            BanNickExempt.all.each do |record|
+                if(record.channel)
+                    output << "\2#{record.pk}:\2 \2#{record.nick.nick}\2 is exempt in \2#{record.channel.name}\2"
+                else
+                    output << "\2#{record.pk}:\2 \2#{record.nick.nick}\2 is exempt in \2all\2 channels"
+                end
+            end
+        elsif(params[:type] == 'mode')
+            output << 'Current mode exemptions:'
+            BanModeExempt.all.each do |record|
+                mode = record.mode == 'o' ? 'operator' : 'voice'
+                if(record.channel)
+                    output << "\2#{record.pk}:\2 mode: \2#{mode}\2 is exempt in \2#{record.channel.name}\2"
+                else
+                    output << "\2#{record.pk}:\2 mode: \2#{mode}\2 is exempt in \2all\2 channels"
+                end
+            end
+        elsif(params[:type] == 'source')
+            output << 'Current source exemptions:'
+            BanSourceExempt.all.each do |record|
+                if(record.channel)
+                    output << "\2#{record.pk}:\2 sources matching: #{record.source} are exempt in \2#{record.channel.name}\2"
+                else
+                    output << "\2#{record.pk}:\2 sources matching: #{record.source} are exempt in \2all\2 channels"
+                end
+            end
+        end
+        reply message.replyto, output
+    end
+
+    # message:: ModSpox::Messages::Incoming::Privmsg
+    # params:: parameters
+    # Remove given exemption from given list
+    def exempt_remove(message, params)
+        response = 'Exemption has been removed'
+        record = nil
+        case params[:type]
+            when 'nick'
+                record = BanNickExempt[params[:id].to_i]
+            when 'mode'
+                record = BanModeExempt[params[:id].to_i]
+            when 'source'
+                record = BanSourceExempt[params[:id].to_i]
+        end
+        if(record)
+            record.destroy
+        else
+            response = "Failed to find exemption of type: #{params[:type]} with ID: #{params[:id]}"
+        end
+        reply message.replyto, response
+    end
+    
+    # nick:: ModSpox::Models::Nick
+    # channel:: ModSpox::Models::Channel
+    # Check if nick is currently exempt from bans
+    def check_exempt(nick, channel)
+        return true unless BanNickExempt.filter('nick_id = ? AND (channel_id = ? OR channel_id is null)', nick.pk, channel.pk).first.nil?
+        return true if !BanModeExempt.filter("mode = 'o' AND (channel_id = ? OR channel_id is null)", channel.pk).first.nil? && nick.is_op?(channel)
+        return true if !BanModeExempt.filter("mode = 'v' AND (channel_id = ? OR channel_id is null)", channel.pk).first.nil? && nick.is_voice?(channel)
+        BanSourceExempt.filter('channel_id = ? OR channel_id is null', channel.pk).each do |record|
+            regex = Regexp.new(record.source)
+            return true unless regex.match(nick.source).nil?
+        end
+        return false
+    end
+    
     class BanRecord < Sequel::Model
         set_schema do
             primary_key :id
@@ -346,7 +499,7 @@ class Banner < ModSpox::Plugin
         end
         
         before_create do
-            set :stamp => Time.now
+            update_values(:stamp => Time.now)
         end
         
         def channel
@@ -383,10 +536,62 @@ class Banner < ModSpox::Plugin
         end
     end
     
+    class BanNickExempt < Sequel::Model
+        set_schema do
+            primary_key :id
+            foreign_key :nick_id, :table => :nicks, :null => false
+            foreign_key :channel_id, :table => :channels
+        end
+        
+        def nick
+            return Models::Nick[nick_id]
+        end
+        
+        def channel
+            return Models::Channel[channel_id]
+        end
+    end
+    
+    class BanSourceExempt < Sequel::Model
+        set_schema do
+            primary_key :id
+            varchar :source, :null => false
+            foreign_key :channel_id, :table => :channels
+        end
+        
+        def channel
+            return Models::Channel[channel_id]
+        end
+        
+        def mask
+            return values[:source] ? Marshal.load(values[:source].unpack('m')[0]) : nil
+        end
+        
+        def mask=(val)
+            update_values(:source => [Marshal.dump(val)].pack('m'))
+        end
+        
+    end
+    
+    class BanModeExempt < Sequel::Model
+        set_schema do
+            primary_key :id
+            varchar :mode, :null => false
+            foreign_key :channel_id, :table => :channels, :unique => true
+        end
+        
+        def channel
+            return Models::Channel[channel_id]
+        end        
+    end
+    
     class NotOperator < Exceptions::BotException
     end
     
     class NotInChannel < Exceptions::BotException
+    end
+    
+    class BanExemption < Exceptions::BotException
     end
 
 end
