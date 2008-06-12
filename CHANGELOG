@@ -1,3 +1,19 @@
+0.0.5 Release (Alpha status)
+    * Added new RAW message type for outgoing messages
+    * Ability to load/unload/reload individual plugins
+    * Plugins that fail to load are completely removed 
+    * memcache support
+    * PluginHolder introduced to reduce instances of stale plugins
+    * Faster signature matching
+    * Updated threading for better performance
+    * Removed Base64 dependency
+    * Ban exemptions available
+    * New AutoMode plugin
+    * Fixed connection monitoring
+    * Removed lazying loading of classes/modules
+    * Output bursting is now working properly
+    * Added multiline support in Privmsgs to allow ordered output
+
 0.0.4 Release (Alpha status)
     * Signatures now encoded when stored
     * SQLite lockup fixed on new version of sequel
