@@ -55,7 +55,11 @@ module ModSpox
         def load_plugin(message)
             begin
                 path = !message.name ? "#{BotConfig[:userpluginpath]}/#{message.path.gsub(/^.+\//, '')}" : "#{BotConfig[:userpluginpath]}/#{message.name}"
-                FileUtils.copy(message.path, path)
+                begin
+                    File.symlink(message.path, path)
+                rescue NotImplemented => boom
+                    FileUtils.copy(message.path, path)
+                end
                 do_load(path)
                 @pipeline << Messages::Internal::PluginLoadResponse.new(message.requester, true)
                 Logger.log("Loaded new plugin: #{message.path}", 10)
@@ -71,10 +75,12 @@ module ModSpox
         def unload_plugin(message)
             begin
                 do_unload(message.path)
-                unless(message.name.nil?)
-                    FileUtils.copy(message.path, "#{BotConfig[:userpluginpath]}/#{message.name}")
+                unless(File.symlink?(message.path))
+                    unless(message.name.nil?)
+                        FileUtils.copy(message.path, "#{BotConfig[:userpluginpath]}/#{message.name}")
+                    end
                 end
-                FileUtils.remove_file(message.path)
+                File.delete(message.path)
                 @pipeline << Messages::Internal::PluginUnloadResponse.new(message.requester, true)
                 Logger.log("Unloaded plugin: #{message.path}", 10)
             rescue Object => boom
