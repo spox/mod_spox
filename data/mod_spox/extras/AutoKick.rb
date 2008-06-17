@@ -61,7 +61,7 @@ class AutoKick < ModSpox::Plugin
     def listener(message)
         if(@map.keys.include?(message.target.pk))
             @map[message.target.pk].each do |pattern|
-                reg = Regexp.new(pattern)
+                reg = Regexp.new(pattern, Regexp::IGNORECASE)
                 unless(reg.match(message.message).nil?)
                     record = AutoKickRecord.filter(:pattern => pattern).first
                     @banner.plugin.ban(message.source, message.target, record.bantime, record.message, invite=false, show_time=true)
