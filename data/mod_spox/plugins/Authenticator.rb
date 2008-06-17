@@ -9,7 +9,7 @@ class Authenticator < ModSpox::Plugin
         Models::Signature.find_or_create(:signature => 'auth mask add (\S+) (\S+)', :plugin => name, :method => 'add_mask',
             :group_id => group.pk, :description => 'Add authentication mask and set initial group').params = [:mask, :group]
         Models::Signature.find_or_create(:signature => 'auth mask set (\d+) (.+)', :plugin => name, :method => 'set_mask_groups',
-            :group_id => group.pk, :description => 'Set groups for the given mask').params = [:id, :group_ids]
+            :group_id => group.pk, :description => 'Set groups for the given mask').params = [:id, :groups]
         Models::Signature.find_or_create(:signature => 'auth mask unset (\d+) (.+)', :plugin => name, :method => 'del_mask_groups',
             :group_id => group.pk, :description => 'Remove groups for the given mask').params = [:id, :groups]
         Models::Signature.find_or_create(:signature => 'auth mask remove (\d+)', :plugin => name, :method => 'remove_mask',
