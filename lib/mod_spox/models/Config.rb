@@ -23,7 +23,7 @@ module ModSpox
             def self.[]=(key, val)
                 key = key.to_s if key.is_a?(Symbol)
                 model = Config.find_or_create(:name => key)
-                model.value = val
+                model.update_with_params(:value => val)
                 model.save
             end
         end

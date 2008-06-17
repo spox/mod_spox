@@ -8,12 +8,20 @@ module ModSpox
             # mask:: Mask to authenticate source against
             # authed:: Nick has authenticated
         class Auth < Sequel::Model(:auths)
+        
+            before_destroy :clear_auth_groups
+            
+            # Clear relations before destroying
+            def clear_auth_groups
+                AuthGroup.filter(:auth_id => pk).destroy
+            end
             
             # Nick associated with this Auth
             def nick
                 Nick[nick_id]
             end
             
+            # Is nick identified with services
             def services
                 s = values[:services]
                 if(s == 0 || s == '0' || !s)
