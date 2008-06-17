@@ -1,9 +1,7 @@
 ['etc', 
  'mod_spox/Database',
  'mod_spox/BotConfig',
- 'mod_spox/BaseConfig'
- 'mod_spox/models/Models',
- 'mod_spox/Helpers'].each{|f|require f}
+ 'mod_spox/BaseConfig'].each{|f|require f}
 
 
 module ModSpox
@@ -75,6 +73,8 @@ module ModSpox
             }
             config.write_configuration
             initialize_bot
+            require  'mod_spox/models/Models'
+            require 'mod_spox/Helpers'
             create_databases
             #Migrators.constants.each{|m| Migrators.const_get(m).apply(Database.db, :up)}
             @config.each{|value|
@@ -87,7 +87,7 @@ module ModSpox
             a.password = find(:admin_password)
             a.save
             t = Models::Trigger.find_or_create(:trigger => find(:trigger))
-            t.active = true
+            t.update_with_params(:active => true)
             t.save
         end
         
