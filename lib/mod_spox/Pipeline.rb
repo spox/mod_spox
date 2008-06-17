@@ -156,7 +156,7 @@ module ModSpox
             @triggers.each{|t| trigger = t if message.message =~ /^#{t}/}
             if(!trigger.nil? || message.addressed?)
                 Logger.log("Message has matched against a known trigger", 15)
-                c = message.addressed? ? message.message[0].chr.downcase : message.message[1].chr.downcase
+                c = (message.addressed? && trigger.nil?) ? message.message[0].chr.downcase : message.message[1].chr.downcase
                 if(c =~ /^[a-z]$/)
                     type = c.to_sym
                 elsif(c =~ /^[0-9]$/)
