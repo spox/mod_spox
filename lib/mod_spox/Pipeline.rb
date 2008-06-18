@@ -153,10 +153,10 @@ module ModSpox
         def parse(message)
             return unless message.kind_of?(Messages::Incoming::Privmsg) || message.kind_of?(Messages::Incoming::Notice)
             trigger = nil
-            @triggers.each{|t| trigger = t if message.message =~ /^#{t}/}
+            @triggers.each{|t| trigger = t if message.message =~ /^#{Regexp.escape(t)}/}
             if(!trigger.nil? || message.addressed?)
                 Logger.log("Message has matched against a known trigger", 15)
-                c = (message.addressed? && trigger.nil?) ? message.message[0].chr.downcase : message.message[1].chr.downcase
+                c = (message.addressed? && trigger.nil?) ? message.message[0].chr.downcase : message.message[trigger.length].chr.downcase
                 if(c =~ /^[a-z]$/)
                     type = c.to_sym
                 elsif(c =~ /^[0-9]$/)
@@ -167,7 +167,8 @@ module ModSpox
                 return unless @signatures[type]
                 @signatures[type].each do |sig|
                     Logger.log("Matching against: #{trigger}#{sig.signature}")
-                    res = message.message.scan(/^#{trigger}#{sig.signature}$/)
+                    esc_trig = trigger.nil? ? '' : Regexp.escape(trigger)
+                    res = message.message.scan(/^#{esc_trig}#{sig.signature}$/)
                     if(res.size > 0)
                         next unless message.source.auth_groups.include?(sig.group) || message.source.auth_groups.include?(@admin) ||sig.group.nil?
                         next if sig.requirement == 'private' && message.is_public?
