@@ -187,6 +187,7 @@ class Roulette < ModSpox::Plugin
             rescue Banner::NotOperator => boom
                 reply(channel, "#{nick.nick}: *BANG*")
             rescue Object => boom
+                reply(channel, "#{nick.nick}: *BANG*")
                 Logger.log("Error: Roulette ban generated an unexpected error: #{boom}")
             end
         else
