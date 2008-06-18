@@ -57,7 +57,7 @@ module ModSpox
                 path = !message.name ? "#{BotConfig[:userpluginpath]}/#{message.path.gsub(/^.+\//, '')}" : "#{BotConfig[:userpluginpath]}/#{message.name}"
                 begin
                     File.symlink(message.path, path)
-                rescue NotImplemented => boom
+                rescue NotImplementedError => boom
                     FileUtils.copy(message.path, path)
                 end
                 do_load(path)
@@ -130,7 +130,7 @@ module ModSpox
         # Destroys plugins
         def unload_plugins
             @plugins.each_pair do |sym, holder|
-                holder.plugin.destroy
+                holder.plugin.destroy unless holder.plugin.nil?
                 @pipeline.unhook_plugin(holder.plugin)
             end
             Models::Signature.destroy_all
