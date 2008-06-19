@@ -201,7 +201,7 @@ class Roulette < ModSpox::Plugin
         @pipeline << Messages::Internal::PluginRequest.new(self, 'Banner') if @banner.nil?
         game = Game.filter('shots > ?', 0).filter('channel_id = ?', channel.pk).first
         unless(game)
-            chamber = rand(5) + 1
+            chamber = rand(6) + 1
             game = Game.new(:chamber => chamber, :shots => chamber, :channel_id => channel.pk)
             game.save
         end
