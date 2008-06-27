@@ -14,11 +14,36 @@ class AutoKick < ModSpox::Plugin
             :group_id => group.pk, :description => 'Add a new autokick rule').params = [:time, :regex, :message]
         Signature.find_or_create(:signature => 'autokick remove (\d+)', :plugin => name, :method => 'remove',
             :group_id => group.pk, :description => 'Remove an autokick rule').params = [:id]
+        Signature.find_or_create(:signature => 'autokick colors ?(on|off)?', :plugin => name, :method => 'colors',
+            :group_id => group.pk, :description => 'Kick user for using colors', :requirement => 'public').params = [:action]
         @pipeline.hook(self, :banner_watch, :Internal_PluginResponse)
         @banner = nil
         @map = nil
+        @colors = Setting[:colorkick]
+        @colors = Array.new if @colors.nil?
         AutoKickRecord.create_table unless AutoKickRecord.table_exists?
         do_listen
+    end
+    
+    def colors(message, params)
+        if(params[:action])
+            if(params[:action] == 'on')
+                if(@colors.include?(message.target.pk))
+                    reply message.replyto, 'Colored autokick is already enabled'
+                else
+                    @colors << message.target.pk
+                    Setting[:colorkick] = @colors
+                    reply message.replyto, 'Colored autokick has been enabled'
+                end
+            else
+                @colors.delete(message.target.pk)
+                Setting[:colorkick] = @colors
+                reply message.replyto, 'Colored autokick has been disabled'
+            end
+        else
+            status = @colors.include?(message.target.pk) ? 'on' : 'off'
+            reply message.replyto, "Colored autokick is currently \2#{status}\2"
+        end
     end
     
     def list(message, params)
@@ -64,9 +89,14 @@ class AutoKick < ModSpox::Plugin
                 reg = Regexp.new(pattern, Regexp::IGNORECASE)
                 unless(reg.match(message.message).nil?)
                     record = AutoKickRecord.filter(:pattern => pattern).first
-                    @banner.plugin.ban(message.source, message.target, record.bantime, record.message, invite=false, show_time=true)
+                    @banner.plugin.ban(message.source, message.target, record.bantime, record.message, false, true)
                 end
             end 
+        end
+        if(@colors.include?(message.target.pk))
+            if(message.is_colored?)
+                @banner.plugin.ban(message.source, message.target, 60, 'No color codes allowed', false, true)
+            end
         end
     end
     
