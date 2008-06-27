@@ -219,8 +219,12 @@ class PhpFuncLookup < ModSpox::Plugin
             end
         end
         matches.sort!
-        output = ["Lots of matching functions. Truncating list to 20 results."]
-        output << matches.values_at(0..19).join(', ')
+        output = matches.size > 20 ? ["Lots of matching functions. Truncating list to 20 results."] : []
+        if(matches.empty?)
+            output = "\2Error:\2 No matches found"
+        else
+            output << matches.values_at(0..19).join(', ')
+        end
         reply m.replyto, output
     end
     
