@@ -9,6 +9,8 @@ module ModSpox
                 @raw_cache = Hash.new
             end
             def process(string)
+            # :not.configured 352 mod_spox #foobar ~mod_spox 192.168.0.25 not.configured mod_spox H :0 mod_spox IRC bot
+            # :not.configured 352 mod_spox * ~mod_spox 192.168.0.25 not.configured mod_spox H :0 mod_spox IRC bot
                 if(string =~ /#{RPL_WHOREPLY}\s\S+\s(\S+|\*|\*\s\S+)\s(\S+)\s(\S+)\s(\S+)\s(\S+)\s(\S+)\s:(\d)\s(.+)$/)
                     # Items matched are as follows:
                     # 1: location
@@ -19,9 +21,7 @@ module ModSpox
                     # 6: info
                     # 7: hops
                     # 8: realname
-                    location = $1 unless $1.include?('*')
-                    location = $5 if $5 == '*'
-                    location = $1.gsub(/\*\s/, '') if location.include?('* ')
+                    location = $1 == '*' ? nil : $1
                     info = $6
                     nick = find_model($5)
                     nick.username = $2
@@ -30,11 +30,12 @@ module ModSpox
                     nick.connected_to = $4
                     nick.away = info =~ /G/ ? true : false
                     nick.save
-                    @cache[location] = Array.new unless @cache[location]
-                    @cache[location] << nick
-                    @raw_cache[location] = Array.new unless @raw_cache[location]
-                    @raw_cache[location] << string
-                    if(location[0].chr !~ /[A-Za-z]/)
+                    key = location.nil? ? nick.nick : location
+                    @cache[key] = Array.new unless @cache[location]
+                    @cache[key] << nick
+                    @raw_cache[key] = Array.new unless @raw_cache[location]
+                    @raw_cache[key] << string
+                    unless(location.nil?)
                         channel = find_model(location)
                         Models::NickChannel.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
                         if(info.include?('+'))
