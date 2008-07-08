@@ -24,8 +24,13 @@ class PhpCli < ModSpox::Plugin
             :description => 'Add or remove channel from allowing PHP command').params = [:action]
         Signature.find_or_create(:signature => 'php (?!on|off)(.+)', :plugin => name, :method => 'execute_php', :group_id => php.pk,
             :description => 'Execute PHP code').params = [:code]
-        Setting[:phpcli] = '' if Setting[:phpcli].nil?
-        @channels = Setting[:phpcli].split('|')
+        @channels = Setting.find(:name => 'phpcli')
+        if(@channels.nil?)
+            Logger.log("WE ARE NIL PEOPLE")
+            @channels = []
+        else
+            @channels = @channels.value
+        end
     end
     
     def set_channel(message, params)
@@ -33,7 +38,9 @@ class PhpCli < ModSpox::Plugin
         if(params[:action] == 'on')
             unless(@channels.include?(message.target.pk))
                 @channels << message.target.pk
-                Setting[:phpcli] = @channels.join('|')
+                tmp = Setting.find_or_create(:name => 'phpcli')
+                tmp.value = @channels
+                tmp.save
             end
             reply message.replyto, 'PHP command now active'
         else
@@ -41,7 +48,9 @@ class PhpCli < ModSpox::Plugin
                 reply message.replyto, 'PHP command is not currently active in this channel'
             else
                 @channels.delete(message.target.pk)
-                Setting[:phpcli] = @channels.join('|')
+                tmp = Setting.find_or_create(:name => 'phpcli')
+                tmp.value = @channels
+                tmp.save
                 reply message.replyto, 'PHP command is now disabled'
             end
         end
