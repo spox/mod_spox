@@ -31,7 +31,13 @@ class Bouncer < ModSpox::Plugin
         Logger.log("BOUNCER: Sending to #{@clients.size} clients")
             @clients.each do |client|
                 begin
-                    client[:connection].puts(message.raw_content + "\n")
+                    if(message.raw_content.is_a?(Array))
+                        message.raw_content.each do |m|
+                            client[:connection].puts(m + "\n")
+                        end
+                    else
+                        client[:connection].puts(message.raw_content + "\n")
+                    end
                 rescue Object => boom
                     client[:thread].kill if client[:thread].alive?
                     @clients.delete(client)
@@ -110,11 +116,14 @@ class Bouncer < ModSpox::Plugin
                                         until(con.closed?)
                                             Logger.log("WAITING FOR STUFF ON :#{con}")
                                             Kernel.select([con], nil, nil, nil)
-                                            #IO.select([con])
                                             Logger.log("Woken up and ready to read")
                                             string = con.gets
                                             Logger.log("BOUNCER GOT MESSAGE: #{string}")
-                                            @to_server << {:message => string, :socket => con}
+                                            if(string.empty?)
+                                                raise Exception.new("EMPTY STRING")
+                                            else
+                                                @to_server << {:message => string, :socket => con}
+                                            end
                                         end
                                         rescue Object => boom
                                         Logger.log("THREAD BOUNCER ERROR: #{boom}")
@@ -150,7 +159,7 @@ class Bouncer < ModSpox::Plugin
             while(@listener) do
                 info = @to_server.pop
                 Logger.log("Processing message: #{info[:message]}")
-                if(info[:message] =~ /^USER/i)
+                if(info[:message] =~ /^USER\s/i)
                     initialize_connection(info[:socket])
                 else
                     @pipeline << Messages::Outgoing::Raw.new(info[:message])
@@ -158,6 +167,12 @@ class Bouncer < ModSpox::Plugin
             end
         rescue Object => boom
             Logger.log("BOUNCER ERROR: #{boom}")
+            unless(@clients.empty?)
+                @clients.each do |socket|
+                    socket[:connection].close
+                    @clients.delete(socket)
+                end
+            end
         end
         end
     end
