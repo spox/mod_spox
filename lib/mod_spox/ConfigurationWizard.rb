@@ -164,7 +164,7 @@ module ModSpox
                     Database.db << "CREATE TABLE nick_modes (id serial not null primary key, mode varchar(255) not null, nick_id integer not null references nicks, channel_id integer references channels, unique (nick_id, channel_id))"
                     Database.db << "CREATE TABLE servers (id serial not null primary key, host varchar(255) not null, port integer not null default 6667, priority integer not null default 0, connected boolean not null default false, unique (host, port))"
                     Database.db << "CREATE TABLE signatures (id serial not null primary key, signature varchar(255) not null, params varchar(255), group_id integer default null references groups, method varchar(255) not null, plugin varchar(255) not null, description varchar(255), requirement varchar(255) default 'both' not null)"
-                    Database.db << "CREATE TABLE settings (id serial not null primary key, name varchar(255) unique not null, value varchar(255))"
+                    Database.db << "CREATE TABLE settings (id serial not null primary key, name varchar(255) unique not null, value text)"
                     Database.db << "CREATE TABLE triggers (id serial not null primary key, trigger varchar(255) unique not null, active boolean not null default false)"
                     Database.db << "CREATE TABLE auth_groups (auth_id integer not null references auths, group_id integer not null references groups, primary key (auth_id, group_id))"
                 when :sqlite

@@ -9,7 +9,7 @@ module ModSpox
         class Setting < Sequel::Model(:settings)
             
             def value=(val)
-                update_values(:value => [Marshal.dump(val)].pack('m'))
+                update_values(:value => [Marshal.dump(val.dup)].pack('m'))
             end
             
             def value
@@ -31,7 +31,7 @@ module ModSpox
             def self.[]=(key, val)
                 key = key.to_s if key.is_a?(Symbol)
                 model = Setting.find_or_create(:name => key)
-                model.update_with_params(:value => [Marshal.dump(val)].pack('m'))
+                model.update_with_params(:value => [Marshal.dump(val.dup)].pack('m'))
             end
         end
     end
