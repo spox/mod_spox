@@ -30,6 +30,14 @@ class Karma < ModSpox::Plugin
                 thing.downcase!
                 thing = thing[1..-2] if thing[0..0] == '(' && thing[-1..1] == ')'
                 adj = adj == '++' ? +1 : -1
+                things = [thing]
+                karma = Datatype::Karma.find_or_create(:thing => thing, :channel_id => message.target.pk)
+                Datatype::Alias.get_aliases(karma.pk).each do |id|
+                    things << Datatype::Karma[id].thing.downcase
+                end
+                if(things.include?(message.source.nick.downcase))
+                    adj = -1
+                end
                 karma = Datatype::Karma.find_or_create(:thing => thing, :channel_id => message.target.pk)
                 karma.score = karma.score + adj
                 karma.save
