@@ -155,7 +155,7 @@ module ModSpox
             trigger = nil
             @triggers.each{|t| trigger = t if message.message =~ /^#{Regexp.escape(t)}/}
             if(!trigger.nil? || message.addressed?)
-                return if !trigger.nil? && message.message.length == 1
+                return if !trigger.nil? && message.message.length == trigger.length
                 Logger.log("Message has matched against a known trigger", 15)
                 c = (message.addressed? && trigger.nil?) ? message.message[0].chr.downcase : message.message[trigger.length].chr.downcase
                 if(c =~ /^[a-z]$/)
