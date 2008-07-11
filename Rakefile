@@ -11,7 +11,7 @@ require 'rake/gempackagetask'
 
 NAME = 'mod_spox'
 RUBYFORGENAME = 'modspox'
-BOTVERSION = '0.0.5'
+BOTVERSION = '0.1.0'
 
 spec = Gem::Specification.new do |s|
     s.name = NAME

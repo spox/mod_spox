@@ -1,3 +1,23 @@
+0.1.0 Release (Beta status)
+    Core:
+    * Plugins use symlinks
+    * Updates for sequel library compatibility
+    * Fixed bug in configuration wizard causing failure
+    * Triggerless commands usable when directly privmsging the bot
+    * Triggers are escaped properly before applying regex match
+    * Fixed trigger matching error when only trigger is provided
+    * Fixed output error when multiple lines are sent for output
+    Plugins:
+    * Karma plugin updates
+        * Added aliasing
+        * Auto decrement on self karma whoring
+        * Added a karma fight trigger
+    * Authentication plugin fixed to allow adding new groups to existing masks
+    * AutoKick ignores case during regex matching
+    * Fixed Roulette to have 6 chambers (was previously using only 5)
+    * Added option to kick on colored messages to AutoKick plugin
+    * PhpCli plugin properly remembers what channels it is enabled on
+
 0.0.5 Release (Alpha status)
     * Added new RAW message type for outgoing messages
     * Ability to load/unload/reload individual plugins
