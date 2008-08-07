@@ -26,7 +26,7 @@ module ModSpox
         # Queues a message to send down pipeline
         def <<(message)
             Logger.log("Message added to pipeline queue: #{message}", 5)
-            @queue << message
+            message_processor(message)
         end
         
         # plugin:: Plugin to hook to pipeline
@@ -117,9 +117,22 @@ module ModSpox
         
         private
         
-        # Processes messages
         def processor
-            message = @queue.pop
+            action = @queue.pop
+            begin
+                Timeout::timeout(@timeout) do
+                    action.call
+                end
+            rescue Timeout::Error => boom
+                Logger.log("Pipeline caught timeout error. Execution lasted over: #{@timeout} seconds")
+                Thread.current.kill
+            rescue Object => boom
+                Logger.log("Pipeline caught an error while executing action: #{boom}")
+            end
+        end
+        
+        # Processes messages
+        def message_processor(message)
             begin
                 Logger.log("Pipeline is processing a message: #{message}", 10)
                 parse(message)
@@ -130,11 +143,9 @@ module ModSpox
                     if(@hooks.has_key?(type))
                         @hooks[type].each_value do |objects|
                             begin
-                                Timeout::timeout(@timeout) do
-                                    objects.each{|v| v[:object].send(v[:method].to_s, message) }
+                                objects.each do |v| 
+                                    @queue << Proc.new{ v[:object].send(v[:method].to_s, message) }
                                 end
-                            rescue Timeout::Error => boom
-                                Logger.log('Timeout reached while waiting for plugin to complete task')
                             rescue Object => boom
                                 Logger.log("Plugin threw exception while attempting to process message: #{boom}\n#{boom.backtrace.join("\n")}")
                             end
@@ -181,11 +192,7 @@ module ModSpox
                         end
                         if(@plugins.has_key?(sig.plugin.to_sym))
                             begin
-                                Timeout::timeout(@timeout) do
-                                    @plugins[sig.plugin.to_sym].send(sig.values[:method], message, params)
-                                end
-                            rescue Timeout::Error => boom
-                                Logger.log('Timeout reached while waiting for plugin to complete task')
+                                @queue << Proc.new{ @plugins[sig.plugin.to_sym].send(sig.values[:method], message, params) }
                             rescue Object => boom
                                 Logger.log("Plugin threw exception while attempting to process message: #{boom}\n#{boom.backtrace.join("\n")}")
                             end

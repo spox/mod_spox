@@ -23,12 +23,13 @@ class Quotes < ModSpox::Plugin
             if(params[:term] =~ /^\d+$/)
                 quote = Quote[params[:term].to_i]
             else
-                quote = Quote.filter(:quote => Regexp.new(params[:term])).first
+                ids = Quote.filter(:quote => Regexp.new(params[:term])).map(:id)
+                quote = Quote[ids[rand(ids.size)].to_i]
                 reg = true
             end
         else
             ids = Quote.select(:id).map(:id)
-            quote = Quote[ids[rand(ids.size - 1)].to_i]
+            quote = Quote[ids[rand(ids.size)].to_i]
         end
         if(quote)
             reply message.replyto, "\2[\2#{quote.pk}\2|\2#{quote.added.year}/#{sprintf('%02d', quote.added.month)}/#{sprintf('%02d', quote.added.day)}\2]:\2 #{reg ? quote.quote.gsub(/(#{params[:term]})/, "\2\\1\2") : quote.quote}"

@@ -164,7 +164,9 @@ class Authenticator < ModSpox::Plugin
             info = []
             info << "\2INFO [#{nick.nick}]:\2"
             groups = []
-            nick.auth_groups.each{|g| groups << g.name}
+            Models::AuthGroup.filter(:auth_id => nick.auth.pk).each do |ag|
+                groups << ag.group.name
+            end
             info << "Groups: #{groups.uniq.sort.join(', ')}."
             nick.auth.password.nil? ? info << 'Password has not been set.' : info << 'Password has been set.'
             nick.auth.services ? info << 'Nickserv ident is enabled.' : info << 'Nickserv ident is disabled.'
@@ -191,7 +193,7 @@ class Authenticator < ModSpox::Plugin
         group = Models::Group.filter(:name => params[:group]).first
         nick = Models::Nick.find_or_create(:nick => params[:nick])
         if(group)
-            nick.group = group
+            nick.auth.group = group
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Nick #{params[:nick]} has been added to the group: #{params[:group]}")
         else
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find authentication group: #{params[:group]}")

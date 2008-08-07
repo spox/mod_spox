@@ -17,7 +17,7 @@ class Confess < ModSpox::Plugin
             raise Exceptions::BotException.new("Missing required HTMLEntities library")
         end
         Confession.create_table unless Confession.table_exists?
-        Signature.find_or_create(:signature => 'confess ?(.+)?', :plugin => name, :method => 'confess',
+        Signature.find_or_create(:signature => 'confess ?(?!score|count|fetcher|\+\+|\-\-)(.+)?', :plugin => name, :method => 'confess',
             :description => 'Print a confession').params = [:term]
         Signature.find_or_create(:signature => 'confess(\+\+|\-\-) ?(\d+)?', :plugin => name, :method => 'score',
             :description => 'Score a confession').params = [:score, :id]
@@ -39,18 +39,25 @@ class Confess < ModSpox::Plugin
         c = nil
         reg = false
         if(params[:term])
+            return if params[:term] == 'count'
             if(params[:term] =~ /^\d+$/)
                 c = Confession[params[:term].to_i]
-            else
-                c = Confession.filter(:confession => Regexp.new(params[:term])).first
-                reg = true
-            end
+             else
+                 cs = Database.db[:confessions].full_text_search(:confession, params[:term].split(/\s+/), :language => 'english').map(:id)
+                 c = Confession[cs[rand(cs.size)].to_i]
+                 reg = true
+             end
         else
-            ids = Confession.select(:id).map(:id)
-            c = Confession[ids[rand(ids.size - 1)].to_i]
+            c = Confession[rand(Confession.count) + 1]
         end
         if(c)
-            reply message.replyto, "\2[#{c.pk}]\2: #{reg ? c.confession.gsub(/(#{params[:term]})/, "\2\\1\2") : c.confession}"
+            bolded = c.confession
+            if(reg)
+                params[:term].split(/\s+/).each do |term| 
+                    bolded.gsub!(/(#{Regexp.escape(term)})/, "\2\\1\2")
+                end
+            end
+            reply message.replyto, "\2[#{c.pk}]\2: #{bolded}"
             @last_confession[message.target.pk] = c.pk
         else
             reply message.replyto, "\2Error:\2 Failed to find confession"
@@ -85,7 +92,7 @@ class Confess < ModSpox::Plugin
     end
     
     def count(message, params)
-        reply message.replyto, "Current number of stored confessions: #{Confession.all.size}"
+        reply message.replyto, "Current number of stored confessions: #{Confession.count}"
     end
     
     def fetcher(message, params)
@@ -160,6 +167,7 @@ class Confess < ModSpox::Plugin
             integer :negative, :null => false, :default => 0
             float :score, :null => false, :default => 0
             primary_key :id
+            full_text_index :confession
         end
     end
 

@@ -13,6 +13,7 @@ module ModSpox
             super()
             @pipeline = pipeline
             @handlers = Hash.new
+            @lock = Mutex.new
             Logger.log("Created new factory queue: #{@queue}", 15)
             build_handlers
             start_pool
@@ -69,7 +70,9 @@ module ModSpox
         private
         
         def processor
-            parse_message(@queue.pop)
+            @lock.synchronize do
+                parse_message(@queue.pop)
+            end
         end
     
     end

@@ -16,6 +16,8 @@ module ModSpox
         # TODO: for nick field -> "tack a COLLATE NOCASE onto the columns"
         class Nick < Sequel::Model(:nicks)
             
+            Nick.after_save :clear_auth
+            
             set_cache Database.cache, :ttl => 3600 unless Database.cache.nil?
             
             def Nick.locate(string, create = true)
@@ -80,6 +82,11 @@ module ModSpox
             # Remove nick from given group
             def remove_group(group)
                 auth.remove_group(group)
+            end
+            
+            # Clear this nick's auth status
+            def clear_auth
+                auth.authed = false
             end
             
             # Modes associated with this nick

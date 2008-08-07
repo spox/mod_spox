@@ -28,7 +28,7 @@ class UrbanDictionary < ModSpox::Plugin
                 else
                     defin = defs[result].definition.length > 500 ? defs[result].definition.slice(0..500) + " *[CUT]*" : defs[result].definition
                     exp = defs[result].example.length > 500 ? defs[result].example.slice(0..500) + " *[CUT]*" : defs[result].example
-                    output << ["Definition for \2#{defs[result].word}:\2"]
+                    output << "Definition for \2#{defs[result].word}:\2"
                     output << defin
                     output << "\2Example usage:\2 #{exp}" if exp.length > 0
                     reply message.replyto, output

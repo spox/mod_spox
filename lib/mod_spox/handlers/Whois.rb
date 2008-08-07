@@ -20,46 +20,58 @@ module ModSpox
                     nick.username = $2
                     nick.address = $3
                     nick.real_name = $4
+                    nick.save_changes
                     @cache[$1] = Messages::Incoming::Whois.new(nick)
                     @cache[$1].raw_push(string)
                     return nil
                 elsif(string =~ /#{RPL_WHOISCHANNELS}\s\S+\s(\S+)\s:(.+)$/)
                     nick = $1
+                    @cache[nick] = Messages::Incoming::Whois.new(find_model(nick)) unless @cache[nick]
+                    @cache[$1].raw_push(string)
                     $2.split(/\s/).each{|chan|
                         channel = find_model(chan.gsub(/^[@\+]/, ''))
                         @cache[nick].channels_push(channel)
                         if(chan[0].chr == '@')
-                            Models::NickMode.find_or_create(:nick_id => @cache[nick].pk, :mode => 'o', :channel_id => channel.pk)
+                            Models::NickMode.find_or_create(:nick_id => @cache[nick].nick.pk, :mode => 'o', :channel_id => channel.pk)
                         elsif(chan[0].chr == '+')
-                            Models::NickMode.find_or_create(:nick_id => @cache[nick].pk, :mode => 'v', :channel_id => channel.pk)
+                            Models::NickMode.find_or_create(:nick_id => @cache[nick].nick.pk, :mode => 'v', :channel_id => channel.pk)
                         else
                             Models::NickMode.filter(:nick_id => @cache[nick].nick.pk, :channel_id => channel.pk).each{|m| m.destroy}
                         end
                     }
-                    @cache[$1].raw_push(string)
                     return nil
                 elsif(string =~ /#{RPL_WHOISSERVER}\s\S+\s(\S+)\s(\S+)\s:(.+)$/)
-                    @cache[$1].nick.connected_to = $2
-                    @cache[$1].raw_push(string)
+                    nick = $1
+                    @cache[nick] = Messages::Incoming::Whois.new(find_model(nick)) unless @cache[nick]
+                    @cache[nick].nick.connected_to = $2
+                    @cache[nick].raw_push(string)
                     return nil
                 elsif(string =~ /#{RPL_WHOISIDENTIFIED}\s\S+\s(\S+)\s/)
-                    @cache[$1].nick.auth.services_identified = true
-                    @cache[$1].raw_push(string)
+                    nick = $1
+                    @cache[nick] = Messages::Incoming::Whois.new(find_model(nick)) unless @cache[nick]
+                    @cache[nick].nick.auth.services_identified = true
+                    @cache[nick].raw_push(string)
                     return nil
                 elsif(string =~ /#{RPL_WHOISIDLE}\s\S+\s(\S+)\s(\d+)\s(\d+)\s:(.+?),(.+?)/)
-                    @cache[$1].nick.seconds_idle = $2.to_i
-                    @cache[$1].nick.connected_at = Time.at($3.to_i)
-                    @cache[$1].raw_push(string)
+                    nick = $1
+                    @cache[nick] = Messages::Incoming::Whois.new(find_model(nick)) unless @cache[nick]
+                    @cache[nick].nick.seconds_idle = $2.to_i
+                    @cache[nick].nick.connected_at = Time.at($3.to_i)
+                    @cache[nick].raw_push(string)
                     return nil
                 elsif(string =~ /#{RPL_WHOISOPERATOR}\s\S+\s(\S+)/)
-                    @cache[$1].raw_push(string)
+                    nick = $1
+                    @cache[nick] = Messages::Incoming::Whois.new(find_model(nick)) unless @cache[nick]
+                    @cache[nick].raw_push(string)
                     return nil
                 elsif(string =~ /#{RPL_ENDOFWHOIS}\s\S+\s(\S+)\s:/)
-                    @cache[$1].raw_push(string)
-                    message = @cache[$1]
+                    nick = $1
+                    @cache[nick] = Messages::Incoming::Whois.new(find_model(nick)) unless @cache[nick]
+                    @cache[nick].raw_push(string)
+                    message = @cache[nick]
                     message.lock
-                    @cache[$1].nick.save
-                    @cache.delete($1)
+                    @cache[nick].nick.save
+                    @cache.delete(nick)
                     return message
                 else
                     Logger.log('Failed to parse WHOIS type reply')
