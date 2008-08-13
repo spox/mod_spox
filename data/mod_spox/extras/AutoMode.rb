@@ -54,11 +54,8 @@ class AutoMode < ModSpox::Plugin
     end
     
     def voice(m, p)
-        record = ModeRecord.filter(:nick_id => m.source.pk, :channel_id => m.target.pk).first
-        if(record && record.voice)
-            @pipeline << Messages::Outgoing::ChannelMode.new(m.target, '+v', m.source.nick) if me.is_op?(m.target)
-        else
-            reply m.replyto, "\2Error:\2 You are not listed on the auto-voice list"
+        ModeRecord.filter(:nick_id => m.source.pk, :channel_id => m.target.pk).each do |record|
+            @pipeline << Messages::Outgoing::ChannelMode.new(m.target, '+v', m.source.nick) if me.is_op?(m.target) && record.voice
         end
     end
     
