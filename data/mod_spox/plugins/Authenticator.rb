@@ -34,6 +34,12 @@ class Authenticator < ModSpox::Plugin
             :group_id => group.pk, :description => 'List members of given group').params = [:group]
         Models::Signature.find_or_create(:signature => 'groups', :plugin => name, :method => 'show_groups',
             :description => 'Show user groups they are currently a member of')
+        @whois_cache = []
+        @nickserv_nicks = []
+        populate_nickserv
+        @pipeline.hook(self, :check_join, :Incoming_Join)
+        @pipeline.hook(self, :check_nicks, :Incoming_Who)
+        @pipeline.hook(self, :check_nicks, :Incoming_Names)
     end
     
     # message:: ModSpox::Messages::Incoming::Privmsg
@@ -255,6 +261,30 @@ class Authenticator < ModSpox::Plugin
         else
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find group named: #{params[:group]}")
         end
+    end
+    
+    # Populates array with nicks that authenticate by nickserv
+    def populate_nickserv
+        Models::Auth.filter('services = ?', true).each do |auth|
+            @nickserv_nicks << auth.nick.nick.downcase
+        end
+    end
+    
+    def check_nickserv(nick)
+        if(@nickserv_nicks.include?(nick.nick.downcase))
+            if(!nick.auth.authed && !@whois_cache.include?(nick.nick.downcase))
+                @pipeline << Messages::Outgoing::Whois.new(nick)
+                @whois_cache << nick.nick.downcase
+            end
+        end
+    end
+    
+    def check_join(message)
+        check_nickserv(message.nick)
+    end
+    
+    def check_nicks(message)
+        message.nicks.each{|nick| check_nickserv(nick) }
     end
 
 end
