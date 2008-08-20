@@ -1,10 +1,13 @@
+require 'socket'
+
 module ModSpox
     module Models
         # Attributes provided by model:
         # nick:: nick string
         # username:: username of the user
         # real_name:: real name of the user
-        # address:: hostname/ip of the user
+        # address:: ip of the user
+        # host:: hostname/ip of the user
         # source:: full source string of the user
         # connected_at:: time user connected
         # connected_to:: server user connected to
@@ -29,6 +32,17 @@ module ModSpox
                 return nick
             end
             
+            def address=(address)
+                begin
+                    info =  Object::Socket.getaddrinfo(address, nil)
+                    update_values :address => info[0][3]
+                    update_values :host => info[0][2]
+                rescue Object => boom
+                    update_values :address => address
+                    update_values :host => address
+                end
+            end
+            
             def visible=(val)
                 unless(val)
                     update_with_params :username => nil
@@ -45,7 +59,6 @@ module ModSpox
                     
             def source=(mask)
                 update_values :source => mask
-                auth.check_mask(mask)
             end
             
             # Auth model associated with nick
@@ -63,9 +76,11 @@ module ModSpox
                     groups = auth.groups
                 end
                 Auth.where('mask is not null').each do |a|
-                    Logger.log("Matching AUTH against #{a.mask}", 30)
-                    if(source =~ /#{a.mask}/)
-                        auth_ids << a.pk
+                    [source, "#{nick}!#{username}@#{host}", "#{nick}!#{username}@#{address}"].each do |chk_src|
+                        Logger.log("Matching AUTH - #{chk_src} against #{a.mask}", 30)
+                        if(chk_src =~ /#{a.mask}/)
+                            auth_ids << a.pk unless auth_ids.include?(a.pk)
+                        end
                     end
                 end
                 auth_ids.each{|id| AuthGroup.filter(:auth_id => id).each{|ag| group_ids << ag.group_id}}
