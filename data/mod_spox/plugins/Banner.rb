@@ -46,6 +46,10 @@ class Banner < ModSpox::Plugin
     end
     
     def destroy
+        reset_time
+    end
+    
+    def reset_time
         elapsed = Object::Time.now.to_i - @time.to_i
         BanRecord.filter('remaining > 0').update("remaining = remaining - #{elapsed}")
         BanMask.filter('bantime > 0').update("bantime = bantime - #{elapsed}")
@@ -101,11 +105,19 @@ class Banner < ModSpox::Plugin
         elsif(check_exempt(nick, channel))
             raise BanExemption.new("This nick is exempt from bans: #{nick.nick}")
         else
+            reset_time
             mask = nick.source.nil? || nick.source.empty? ? "#{nick.nick}!*@*" : "*!*@#{nick.address}"
-            record = BanRecord.new(:nick_id => nick.pk, :bantime => time.to_i, :remaining => time.to_i,
-                :invite => invite, :channel_id => channel.pk, :mask => mask)
-            record.save
-            @pipeline << Messages::Internal::TimerAdd.new(self, record.remaining){ clear_record(record.pk) }
+            record = BanRecord.filter(:nick_id => nick.pk, :channel_id => channel.pk, :mask => mask).first
+            if(record)
+                record.bantime = record.bantime + time.to_i
+                record.remaining = record.remaining + time.to_i
+                record.save
+            else
+                record = BanRecord.new(:nick_id => nick.pk, :bantime => time.to_i, :remaining => time.to_i,
+                    :invite => invite, :channel_id => channel.pk, :mask => mask)
+                record.save
+            end
+            @pipeline << Messages::Internal::TimerAdd.new(self, record.remaining, nil, true){ clear_record(record.pk) }
             message = reason ? reason : 'no soup for you!'
             message = "#{message} (Duration: #{Helpers.format_seconds(time.to_i)})" if show_time
             @pipeline << ChannelMode.new(channel, '+b', mask)
@@ -120,10 +132,11 @@ class Banner < ModSpox::Plugin
     # Bans all users who's source matches the given mask
     def mask_ban(mask, channel, message, time)
         raise NotInChannel.new("I am not in channel: #{channel.name}") unless me.channels.include?(channel)
+        reset_time
         record = BanMask.new(:mask => mask, :channel_id => channel.pk, :message => message, :bantime => time.to_i, :stamp => Object::Time.now)
         record.save
         check_masks
-        @pipeline << Messages::Internal::TimerAdd.new(self, record.remaining){ record.destroy }
+        @pipeline << Messages::Internal::TimerAdd.new(self, record.remaining, nil, true){ record.destroy }
     end
     
     # message:: ModSpox::Messages::Incoming::Privmsg
@@ -194,8 +207,7 @@ class Banner < ModSpox::Plugin
     def ban_remove(message, params)
         record = BanRecord[params[:id].to_i]
         if(record)
-            record.update_with_params(:remaining => 0)
-            reply(message.replyto, 'Okay')
+            clear_record(record.pk)
         else
             reply(message.replyto, "\2Error:\2 Failed to find ban record with ID: #{params[:id]}")
         end 
@@ -283,10 +295,10 @@ class Banner < ModSpox::Plugin
     
     def load_timer
         BanRecord.filter('removed = ? AND remaining > 0', false).each do |record|
-            @pipeline << Messages::Internal::TimerAdd.new(self, record.remaining){ clear_record(record.pk) }
+            @pipeline << Messages::Internal::TimerAdd.new(self, record.remaining, nil, true){ clear_record(record.pk) }
         end
         BanMask.filter('bantime > 0').each do |record|
-            @pipeline << Messages::Internal::TimerAdd.new(self, record.bantime){ record.destroy }
+            @pipeline << Messages::Internal::TimerAdd.new(self, record.bantime, nil, true){ record.destroy }
         end
     end
     
