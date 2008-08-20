@@ -133,7 +133,7 @@ class Authenticator < ModSpox::Plugin
     # params:: Signature parameters
     # Set nick authentication by NickServ
     def nick_ident(message, params)
-        nick = Models::Nick.find_or_create(:nick => params[:nick])
+        nick = Models::Nick.locate(params[:nick])
         if(params[:ident] == 'true')
             nick.auth.update_with_params(:services => true)
         else
@@ -147,7 +147,7 @@ class Authenticator < ModSpox::Plugin
     # params:: Signature parameters
     # Set password for given nick
     def nick_pass(message, params)
-        nick = Models::Nick.find_or_create(:nick => params[:nick])
+        nick = Models::Nick.locate(params[:nick])
         nick.auth.password = params[:password]
         @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Nick #{params[:nick]} has been updated. Password has been set.")
     end
@@ -156,7 +156,7 @@ class Authenticator < ModSpox::Plugin
     # params:: Signature parameters
     # Clear password field for given nick
     def nick_clear(message, params)
-        nick = Models::Nick.find_or_create(:nick => params[:nick])
+        nick = Models::Nick.locate(params[:nick])
         nick.auth.password = nil
         @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Nick #{params[:nick]} has been updated. Password has been set.")
     end
@@ -197,7 +197,7 @@ class Authenticator < ModSpox::Plugin
     # Add given nick to authentication group
     def set_nick(message, params)
         group = Models::Group.filter(:name => params[:group]).first
-        nick = Models::Nick.find_or_create(:nick => params[:nick])
+        nick = Models::Nick.locate(params[:nick])
         if(group)
             nick.auth.group = group
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Nick #{params[:nick]} has been added to the group: #{params[:group]}")

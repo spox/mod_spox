@@ -31,7 +31,7 @@ module ModSpox
                     voice = Array.new
                     raw = @raw[chan]
                     @names[chan].each{|n|
-                        nick = Models::Nick.find_or_create(:nick => n.gsub(/^[@+]/, ''))
+                        nick = Models::Nick.locate(n.gsub(/^[@+]/, ''))
                         nicks << nick
                         if(n[0].chr == '@')
                             ops << nick

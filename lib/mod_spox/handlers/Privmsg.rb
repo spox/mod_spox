@@ -13,7 +13,7 @@ module ModSpox
                     base_source = $1
                     source = find_model(base_source.gsub(/!.+$/, ''))
                     if(base_source =~ /!(.+)@(.+)$/)
-                        source.username == $1
+                        source.username = $1
                         source.address = $2
                         source.source = base_source
                         source.save_changes
