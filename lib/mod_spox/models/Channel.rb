@@ -12,12 +12,25 @@ module ModSpox
             
             set_cache Database.cache, :ttl => 3600 unless Database.cache.nil?
             
+            set_schema do
+                primary_key :id, :null => false
+                varchar :name, :null => false, :unique => true
+                varchar :password
+                boolean :autojoin, :null => false, :default => false
+                varchar :topic
+                boolean :quiet, :null => false, :default => false
+                boolean :parked, :null => false, :default => false
+            end
+            
+            def name=(chan_name)
+                update_values :name => chan_name.downcase
+            end
+            
             def Channel.locate(string, create = true)
-                chan = nil
-                if(Database.type == :pgsql)
-                    chan = Channel.filter('name = lower(?)', string).first
+                chan = Channel.filter(:name => string).first
+                if(!chan && create)
+                    chan = Channel.find_or_create(:name => string)
                 end
-                chan = Channel.find_or_create(:name => string) if !chan && create
                 return chan
             end
             

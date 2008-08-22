@@ -8,6 +8,17 @@ module ModSpox
         # description:: description of trigger
         class Signature < Sequel::Model(:signatures)
             
+            set_schema do
+                primary_key :id, :null => false
+                varchar :signature, :null => false
+                varchar :params
+                foreign_key :group_id, :table => :groups, :default => nil
+                varchar :method, :null => false
+                varchar :plugin, :null => false
+                varchar :description
+                varchar :requirement, :null => false, :default => 'both'
+            end
+            
             def params=(prms)
                 raise InvalidType.new('Parameter names must be provided in an array') unless prms.kind_of?(Array)
                 update_values(:params => prms.join('|'))

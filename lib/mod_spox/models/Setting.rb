@@ -8,6 +8,16 @@ module ModSpox
         # and stored for later retrieval
         class Setting < Sequel::Model(:settings)
             
+            set_schema do 
+                primary_key :id, :null => false
+                varchar :name, :null => false, :unique => true
+                text :value
+            end
+            
+            def name=(setting_name)
+                update_values :name => setting_name.downcase
+            end
+            
             def value=(val)
                 update_values(:value => [Marshal.dump(val.dup)].pack('m'))
             end

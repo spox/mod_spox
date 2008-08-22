@@ -23,12 +23,32 @@ module ModSpox
             
             set_cache Database.cache, :ttl => 3600 unless Database.cache.nil?
             
+            set_schema do
+                primary_key :id, :null => false
+                varchar :nick, :null => false, :unique => true
+                varchar :username
+                varchar :real_name
+                varchar :address
+                varchar :host
+                varchar :source
+                timestamp :connected_at
+                varchar :connected_to
+                integer :seconds_idle
+                boolean :visible, :null => false, :default => false
+                boolean :away, :null => false, :default => false
+                boolean :botnick, :null => false, :default => false
+            end
+            
+            def nick=(nick_name)
+                update_values :nick => nick_name.downcase
+            end
+            
             def Nick.locate(string, create = true)
                 nick = nil
-                if(Database.type == :pgsql)
-                    nick = Nick.filter('nick = lower(?)', string).first
+                nick = Nick.filter(:nick => string).first
+                if(!nick && create)
+                    nick = Nick.find_or_create(:nick => string)
                 end
-                nick = Nick.find_or_create(:nick => string) if !nick && create
                 return nick
             end
             

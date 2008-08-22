@@ -9,6 +9,16 @@ module ModSpox
         # you need to store an object, use the Setting model.
         class Config < Sequel::Model(:configs)
 
+            set_schema do
+                primary_key :id, :null => false
+                varchar :name, :null => false, :unique => true
+                varchar :value
+            end
+            
+            def name=(config_name)
+                update_values :name => config_name.downcase
+            end
+
             # key:: name of the config item
             # Returns the value of config item named the given key
             def self.[](key)

@@ -11,6 +11,15 @@ module ModSpox
         
             before_destroy :clear_auth_groups
             
+            set_schema do
+                primary_key :id, :null => false
+                varchar :password
+                boolean :services, :null => false, :default => false
+                varchar :mask, :unique => true, :default => nil
+                boolean :authed, :null => false, :default => false
+                foreign_key :nick_id, :unique => true, :table => :nicks
+            end
+            
             # Clear relations before destroying
             def clear_auth_groups
                 AuthGroup.filter(:auth_id => pk).destroy

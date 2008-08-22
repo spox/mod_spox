@@ -6,6 +6,12 @@ module ModSpox
             
             set_primary_key [:nick_id, :channel_id]
             
+            set_schema do
+                foreign_key :nick_id, :table => :nicks, :null => false
+                foreign_key :channel_id, :table => :channels, :null => false
+                primary_key [:nick_id, :channel_id]
+            end
+            
             after_save do
                 c = Channel[channel_id]
                 n = Nick[nick_id]
