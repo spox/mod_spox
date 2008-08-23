@@ -10,7 +10,7 @@ module ModSpox
                 primary_key :id, :null => false
                 varchar :host, :null => false
                 integer :port, :null => false, :default => 6667
-                integer :priority, :null => false :default => 0
+                integer :priority, :null => false, :default => 0
                 boolean :connected, :null => false, :default => false
                 index [:host, :port], :unique => true
             end

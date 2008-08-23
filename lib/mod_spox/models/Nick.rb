@@ -88,12 +88,26 @@ module ModSpox
             
             # AuthGroups nick is authed to
             def auth_groups
+                nickgroups = NickGroup.filter(:nick_id => pk)
+                if(nickgroups.size < 1)
+                    populate_groups
+                    nickgroups = NickGroup.filter(:nick_id => pk)
+                end
                 groups = []
+                NickGroup.filter(:nick_id => pk).each do | nickgroup |
+                    groups << nickgroup.group
+                end
+                return groups
+            end    
+            
+            def populate_groups
                 auth_ids = []
                 group_ids = []
                 auth = Auth.filter('nick_id = ?', pk).filter('authed = ?', true).first
                 if(auth)
-                    groups = auth.groups
+                    auth.groups.each do |group|
+                        NickGroup.find_or_create(:nick_id => pk, :group_id => group.pk)
+                    end
                 end
                 Auth.where('mask is not null').each do |a|
                     [source, "#{nick}!#{username}@#{host}", "#{nick}!#{username}@#{address}"].each do |chk_src|
@@ -104,9 +118,7 @@ module ModSpox
                     end
                 end
                 auth_ids.each{|id| AuthGroup.filter(:auth_id => id).each{|ag| group_ids << ag.group_id}}
-                group_ids.each{|id| groups << Group[id]}
-                groups.uniq!
-                return groups
+                group_ids.uniq.each{|id| NickGroup.find_or_create(:nick_id => pk, :group_id => id)}
             end
             
             # Set nick as member of given group
@@ -122,6 +134,7 @@ module ModSpox
             # Clear this nick's auth status
             def clear_auth
                 auth.authed = false
+                NickGroup.filter(:nick_id => pk).destroy
             end
             
             # Modes associated with this nick
@@ -177,6 +190,7 @@ module ModSpox
                                    :source => nil, :connected_at => nil, :connected_to => nil,
                                    :seconds_idle => nil, :away => false, :visible => false, :botnick => false)
                 NickMode.destroy_all
+                NickGroup.destroy_all
                 Auth.set(:authed => false)
             end
         

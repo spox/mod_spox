@@ -43,7 +43,7 @@ class Confess < ModSpox::Plugin
             if(params[:term] =~ /^\d+$/)
                 c = Confession[params[:term].to_i]
              else
-                 cs = Database.db[:confessions].full_text_search(:confession, params[:term].split(/\s+/), :language => 'english').map(:id)
+                 cs = Database.db[:confessions].full_text_search(:confession, params[:term].gsub(/\s+/, '.*'), :language => 'english').map(:id)
                  c = Confession[cs[rand(cs.size)].to_i]
                  reg = true
              end
@@ -54,7 +54,7 @@ class Confess < ModSpox::Plugin
             bolded = c.confession
             if(reg)
                 params[:term].split(/\s+/).each do |term| 
-                    bolded.gsub!(/(#{Regexp.escape(term)})/, "\2\\1\2")
+                    bolded.gsub!(/(#{Regexp.escape(term)})/i, "\2\\1\2")
                 end
             end
             reply message.replyto, "\2[#{c.pk}]\2: #{bolded}"

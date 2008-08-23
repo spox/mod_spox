@@ -8,6 +8,7 @@ module ModSpox
     # Loads all files needed by the bot
     def initialize_bot
         setup_adapter
+        check_upgrade
     end
     
     # Setup the DataMapper adapter
@@ -33,10 +34,27 @@ module ModSpox
                 Database.db = Sequel.open("postgres://#{config[:db_username]}:#{config[:db_password]}@#{config[:db_host]}/#{config[:db_database]}")
                 Database.type = :pgsql
             when 'sqlite'
-                puts "Openning sqlite file at: #{BotConfig[:userpath]}/mod_spox.db"
                 Database.db = Sequel.sqlite "#{BotConfig[:userpath]}/mod_spox.db"
                 Database.type = :sqlite
         end
     end
-
+    
+    # check if the bot has been upgraded
+    def check_upgrade
+        config = BaseConfig.new(BotConfig[:userconfigpath])
+        config[:plugin_upgrade] = 'no'
+        begin
+            do_upgrade(config) if config[:last_version] != $BOTVERSION
+        rescue Exceptions::UnknownKey => boom
+            do_upgrade(config)
+        end
+        config[:last_version] = $BOTVERSION
+    end
+    
+    # perform upgrade tasks
+    def do_upgrade(config)
+        Sequel::Migrator.apply(Database.db, BotConfig[:libpath] + '/migrations')
+        config[:plugin_upgrade] = 'yes'
+    end
+    
 end

@@ -107,6 +107,10 @@ module ModSpox
             @pipeline << response
         end
         
+        def upgrade_plugins
+            @plugins[:PluginLoader].extras_upgrade
+        end
+        
         private
         
         # Loads and initializes plugins

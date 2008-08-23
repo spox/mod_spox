@@ -107,7 +107,7 @@ class Banner < ModSpox::Plugin
         else
             reset_time
             mask = nick.source.nil? || nick.source.empty? ? "#{nick.nick}!*@*" : "*!*@#{nick.address}"
-            record = BanRecord.filter(:nick_id => nick.pk, :channel_id => channel.pk, :mask => mask).first
+            record = BanRecord.filter(:nick_id => nick.pk, :channel_id => channel.pk, :mask => mask, :removed => false).first
             if(record)
                 record.bantime = record.bantime + time.to_i
                 record.remaining = record.remaining + time.to_i
@@ -117,7 +117,7 @@ class Banner < ModSpox::Plugin
                     :invite => invite, :channel_id => channel.pk, :mask => mask)
                 record.save
             end
-            @pipeline << Messages::Internal::TimerAdd.new(self, record.remaining, nil, true){ clear_record(record.pk) }
+            @pipeline << Messages::Internal::TimerAdd.new(self, record.remaining, nil, true){ clear_record(record.pk, record.remaining) }
             message = reason ? reason : 'no soup for you!'
             message = "#{message} (Duration: #{Helpers.format_seconds(time.to_i)})" if show_time
             @pipeline << ChannelMode.new(channel, '+b', mask)
@@ -207,7 +207,7 @@ class Banner < ModSpox::Plugin
     def ban_remove(message, params)
         record = BanRecord[params[:id].to_i]
         if(record)
-            clear_record(record.pk)
+            clear_record(record.pk, nil)
         else
             reply(message.replyto, "\2Error:\2 Failed to find ban record with ID: #{params[:id]}")
         end 
@@ -276,7 +276,7 @@ class Banner < ModSpox::Plugin
         if(message.target == me && message.mode == '+o')
             check_masks
             BanRecord.filter('remaining < 1 AND removed = ?', false).each do |record|
-                clear_record(record.pk)
+                clear_record(record.pk, nil)
             end
         end
     end
@@ -295,21 +295,25 @@ class Banner < ModSpox::Plugin
     
     def load_timer
         BanRecord.filter('removed = ? AND remaining > 0', false).each do |record|
-            @pipeline << Messages::Internal::TimerAdd.new(self, record.remaining, nil, true){ clear_record(record.pk) }
+            @pipeline << Messages::Internal::TimerAdd.new(self, record.remaining, nil, true){ clear_record(record.pk, record.remaining) }
         end
         BanMask.filter('bantime > 0').each do |record|
             @pipeline << Messages::Internal::TimerAdd.new(self, record.bantime, nil, true){ record.destroy }
         end
     end
     
-    def clear_record(id)
+    def clear_record(id, slept=nil)
         record = BanRecord[id]
         return if !record || record.removed
-        record.remaining = 0
-        if(me.is_op?(record.channel))
-            @pipeline << ChannelMode.new(record.channel, '-b', record.mask)
-            record.removed = true
-            @pipeline << Invite.new(record.nick, record.channel) if record.invite
+        if(!slept.nil? && (record.remaining - slept).to_i > 0)
+            record.remaining = record.remaining - slept
+        else
+            record.remaining = 0
+            if(me.is_op?(record.channel))
+                @pipeline << ChannelMode.new(record.channel, '-b', record.mask)
+                record.removed = true
+                @pipeline << Invite.new(record.nick, record.channel) if record.invite
+            end
         end
         record.save
     end

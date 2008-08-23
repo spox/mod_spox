@@ -152,5 +152,23 @@ class PluginLoader < ModSpox::Plugin
         end
         return nil
     end
+    
+    # Upgrades extra plugins to latest version
+    def extras_upgrade
+        Logger.log("Starting plugin upgrade to current version: #{$BOTVERSION}")
+        loaded = plugin_list
+        plugins = find_plugins
+        available_plugins = plugin_discovery(BotConfig[:pluginextraspath])
+        plugin_list.each do |plugin|
+            @pipeline << Messages::Internal::PluginUnloadRequest.new(self, nil, plugin)
+        end
+        Logger.log('Waiting for all plugins to complete unloading...')
+        sleep(3)
+        Logger.log('Loading active plugins back into the bot')
+        loaded.each do |plugin|
+            @pipeline << Messages::Internal::PluginLoadRequest.new(self, plugins[plugin], nil)
+        end
+        Logger.log("Plugin upgrade is not complete. Upgraded to version: #{$BOTVERSION}")
+    end
 
 end

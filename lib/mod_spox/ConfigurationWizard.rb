@@ -75,8 +75,7 @@ module ModSpox
             initialize_bot
             require  'mod_spox/models/Models'
             require 'mod_spox/Helpers'
-            create_databases
-            #Migrators.constants.each{|m| Migrators.const_get(m).apply(Database.db, :up)}
+            Sequel::Migrator.apply(Database.db, BotConfig[:libpath] + '/migrations')
             @config.each{|value|
                 Models::Config[value[:id]] = value[:value] unless value[:id].to_s =~ /^(db|irc|admin|trigger)/
             }
@@ -134,56 +133,6 @@ module ModSpox
                 response = read_input(regex, default, echo)
             end
             return response
-        end
-        
-        def create_databases
-            case Database.type
-                when :mysql
-                    Database.db << "CREATE TABLE IF NOT EXISTS nicks (id int not null auto_increment primary key, nick varchar(255) unique not null, username varchar(255), real_name varchar(255), address varchar(255), host varchar(255), source varchar(255), connected_at timestamp, connected_to varchar(255), seconds_idle int, visible boolean not null default false, away boolean not null default false, botnick boolean not null default false)"
-                    Database.db << "CREATE TABLE IF NOT EXISTS channels (id int not null auto_increment primary key, name varchar(255) not null, password varchar(255), autojoin boolean not null default false, topic varchar(255), quiet boolean not null default false, parked boolean not null default false)"
-                    Database.db << "CREATE TABLE IF NOT EXISTS auths (id int not null auto_increment primary key, password varchar(255), services boolean not null default false, mask varchar(255) unique, authed boolean not null default false, nick_id int unique references nicks)"
-                    Database.db << "CREATE TABLE IF NOT EXISTS channel_modes (id int not null auto_increment primary key, mode varchar(255) not null, channel_id int unique not null references channels)"
-                    Database.db << "CREATE TABLE IF NOT EXISTS configs (id int not null auto_increment primary key, name varchar(255) unique not null, value varchar(255))"
-                    Database.db << "CREATE TABLE IF NOT EXISTS nick_channels (channel_id int not null unique references channels, nick_id int not null unique not null references nicks, primary key(channel_id, nick_id))"
-                    Database.db << "CREATE TABLE IF NOT EXISTS nick_modes (id integer primary key auto_increment not null, mode varchar(255) not null, nick_id int not null references nicks, channel_id int references channels, unique index nick_modes_nick_id_channel_id_index (nick_id, channel_id))"
-                    Database.db << "CREATE TABLE IF NOT EXISTS servers (id int not null auto_increment primary key, host varchar(255) not null, port int not null default 6667, priority int not null default 0, connected boolean not null default false, unique index servers_server_port_index (server, port))"
-                    Database.db << "CREATE TABLE IF NOT EXISTS settings (id int not null auto_increment primary key, name varchar(255) not null unique, value text)"
-                    Database.db << "CREATE TABLE IF NOT EXISTS signatures (id int not null auto_increment primary key, signature varchar(255) not null, params varchar(255), group_id int default null references groups, method varchar(255) not null, plugin varchar(255) not null, description varchar(255), requirement enum('public', 'private', 'both') default 'both' not null)"
-                    Database.db << "CREATE TABLE IF NOT EXISTS triggers (id int not null auto_increment primary key, `trigger` varchar(255) unique not null, active boolean not null default false)"
-                    Database.db << "CREATE TABLE IF NOT EXISTS groups (id int not null auto_increment primary key, name varchar(255) not null unique)"
-                    Database.db << "CREATE TABLE IF NOT EXISTS auth_groups (auth_id int not null references auths, group_id int not null references groups, primary key(auth_id, group_id))"
-                when :pgsql
-                    Database.db << "CREATE TABLE nicks (id serial not null primary key, nick varchar(255) unique not null, username varchar(255), real_name varchar(255), address varchar(255), host varchar(255), source varchar(255), connected_at timestamp, connected_to varchar(255), seconds_idle integer, visible boolean not null default false, away boolean not null default false, botnick boolean not null default false)"
-                    Database.db << "CREATE INDEX nick_nicks_lower on nicks (lower(nick))"
-                    Database.db << "CREATE TABLE channels (id serial not null primary key, name varchar(255) unique not null, password varchar(255), autojoin boolean not null default false, topic varchar(255), quiet boolean not null default false, parked boolean not null default false)"
-                    Database.db << "CREATE TABLE auths (id serial not null primary key, password varchar(255), services boolean not null default false, mask varchar(255) unique, authed boolean not null default false, nick_id integer unique references nicks)"
-                    Database.db << "CREATE TABLE groups (id serial not null primary key, name varchar(255) unique not null)"
-                    Database.db << "CREATE TABLE channel_modes (id serial not null primary key, mode varchar(255) not null, channel_id integer unique not null references channels)"
-                    Database.db << "CREATE TABLE configs (id serial not null primary key, name varchar(255) unique not null, value text)"
-                    Database.db << "CREATE TABLE nick_channels (channel_id integer not null references channels, nick_id integer not null references nicks, primary key(nick_id, channel_id))"
-                    Database.db << "CREATE TABLE nick_modes (id serial not null primary key, mode varchar(255) not null, nick_id integer not null references nicks, channel_id integer references channels, unique (nick_id, channel_id))"
-                    Database.db << "CREATE TABLE servers (id serial not null primary key, host varchar(255) not null, port integer not null default 6667, priority integer not null default 0, connected boolean not null default false, unique (host, port))"
-                    Database.db << "CREATE TABLE signatures (id serial not null primary key, signature varchar(255) not null, params varchar(255), group_id integer default null references groups, method varchar(255) not null, plugin varchar(255) not null, description varchar(255), requirement varchar(255) default 'both' not null)"
-                    Database.db << "CREATE TABLE settings (id serial not null primary key, name varchar(255) unique not null, value text)"
-                    Database.db << "CREATE TABLE triggers (id serial not null primary key, trigger varchar(255) unique not null, active boolean not null default false)"
-                    Database.db << "CREATE TABLE auth_groups (auth_id integer not null references auths, group_id integer not null references groups, primary key (auth_id, group_id))"
-                when :sqlite
-                    Database.db << "CREATE TABLE if not exists nicks (id integer PRIMARY KEY AUTOINCREMENT, nick string UNIQUE NOT NULL COLLATE NOCASE, username string, real_name string, address string, host string, source string, connected_at timestamp, connected_to string, seconds_idle integer, visible boolean NOT NULL DEFAULT 'f', away boolean NOT NULL DEFAULT 'f', botnick boolean NOT NULL DEFAULT 'f')"
-                    Database.db << "CREATE TABLE if not exists channels (id integer PRIMARY KEY AUTOINCREMENT, name string UNIQUE NOT NULL COLLATE NOCASE, password string, autojoin boolean NOT NULL DEFAULT 'f', topic string, quiet boolean NOT NULL DEFAULT 'f', parked boolean NOT NULL DEFAULT 'f')"
-                    Database.db << "CREATE TABLE if not exists auths (id integer PRIMARY KEY AUTOINCREMENT, password string, services boolean NOT NULL DEFAULT 'f', mask string UNIQUE, authed boolean NOT NULL DEFAULT 'f', nick_id integer UNIQUE REFERENCES nicks)"
-                    Database.db << "CREATE TABLE if not exists channel_modes (id integer PRIMARY KEY AUTOINCREMENT, mode string NOT NULL, channel_id integer UNIQUE NOT NULL REFERENCES channels)"
-                    Database.db << "CREATE TABLE if not exists configs (id integer PRIMARY KEY AUTOINCREMENT, name string UNIQUE NOT NULL, value string)"
-                    Database.db << "CREATE TABLE if not exists nick_channels (channel_id integer NOT NULL REFERENCES channels, nick_id integer NOT NULL REFERENCES nicks, primary key (channel_id, nick_id))"
-                    Database.db << "CREATE TABLE if not exists nick_modes (id integer PRIMARY KEY AUTOINCREMENT, mode string NOT NULL, nick_id integer NOT NULL REFERENCES nicks, channel_id integer REFERENCES channels)"
-                    Database.db << "CREATE UNIQUE INDEX if not exists nick_modes_nick_id_channel_id_index ON nick_modes (nick_id, channel_id)"
-                    Database.db << "CREATE TABLE if not exists servers (id integer primary key autoincrement, host string NOT NULL, port integer NOT NULL DEFAULT 6667, priority integer NOT NULL DEFAULT 0, connected boolean NOT NULL DEFAULT 'f')"
-                    Database.db << "CREATE UNIQUE INDEX if not exists servers_host_port_index on servers (host, port)"
-                    Database.db << "CREATE TABLE if not exists settings (id integer PRIMARY KEY AUTOINCREMENT, name string UNIQUE NOT NULL, value text)"
-                    Database.db << "CREATE TABLE if not exists signatures (id integer PRIMARY KEY AUTOINCREMENT, signature string NOT NULL UNIQUE, params string, group_id integer DEFAULT NULL REFERENCES groups, method string NOT NULL, plugin string NOT NULL, description varchar(255), requirement varchar(255) not null default 'both')"
-                    Database.db << "CREATE TABLE if not exists triggers (id integer PRIMARY KEY AUTOINCREMENT, trigger string UNIQUE NOT NULL, active boolean NOT NULL DEFAULT 'f')"            
-                    Database.db << "CREATE TABLE if not exists groups (id integer PRIMARY KEY AUTOINCREMENT, name string UNIQUE NOT NULL COLLATE NOCASE)"
-                    Database.db << "CREATE TABLE if not exists auth_groups(auth_id integer REFERENCES auths, group_id integer REFERENCES groups)"
-            end
         end
     
     end

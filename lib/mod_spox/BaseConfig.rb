@@ -23,6 +23,7 @@ module ModSpox
         def []=(key, value)
             key = key.to_sym unless key.is_a?(Symbol)
             @config[key] = value
+            write_configuration
         end
         
         # Parses the configuration file into a usable Hash
