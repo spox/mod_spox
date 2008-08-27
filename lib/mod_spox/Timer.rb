@@ -21,6 +21,8 @@ module ModSpox
             @stop_timer = false
             @owners = {}
             @owners_lock = Mutex.new
+            @add_lock = Monitors::Boolean.new
+            @adding = false
             {:Internal_TimerAdd => :add_message,
              :Internal_TimerRemove => :remove_message,
              :Internal_TimerClear => :clear}.each_pair do |type,method|
@@ -69,8 +71,12 @@ module ModSpox
         # Adds a new action to the timer
         def add(period, once=false, data=nil, &func)
             action = Action.new(self, period, data, once, &func)
-            @timers << action
+            @adding = true
             wakeup
+            sleep(0.01) until @add_lock.count > 0
+            @timers << action
+            @adding = false
+            @add_lock.wakeup
             return action
         end
         
@@ -103,7 +109,8 @@ module ModSpox
                     Logger.log("Timer is set to sleep for #{to_sleep.nil? ? 'forever' : "#{to_sleep} seconds"}", 15)
                     actual_sleep = @monitor.wait(to_sleep)
                     tick(actual_sleep)
-                    Logger.log("Timer was set to sleep for #{to_sleep.nil? ? 'forever' : "#{to_sleep} seconds"} seconds. Actual sleep time: #{actual_sleep} seconds", 15)
+                    Logger.log("Timer was set to sleep for #{to_sleep.nil? ? 'forever' : "#{to_sleep} seconds"}. Actual sleep time: #{actual_sleep} seconds", 15)
+                    @add_lock.wait if @adding
                 end
             }
         end

@@ -72,6 +72,11 @@ module ModSpox
             def remove_thread(thread)
                 @threads.delete(thread) if @threads.include?(thread)
             end
+            
+            # Returns the number of threads currently waiting in this monitor
+            def count
+                @threads.size
+            end
         
         end
     end

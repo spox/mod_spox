@@ -39,9 +39,10 @@ module ModSpox
             @plugin_manager = PluginManager.new(@pipeline)
             @plugin_manager.upgrade_plugins if @config[:plugin_upgrade] == 'yes'
             Logger.log('Main bot thread is now sleeping for 10 seconds to allow upgrade to conclude')
-            sleep(10)
+            sleep(10) if @config[:plugin_upgrade] == 'yes'
             Logger.log('Main bot thread sleep completed. Continuing loading.')
             @config[:plugin_upgrade] = 'no'
+            @config.write_configuration
             @shutdown = false
             @socket = nil
             @nick = nil

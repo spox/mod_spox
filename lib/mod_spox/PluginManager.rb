@@ -108,7 +108,7 @@ module ModSpox
         end
         
         def upgrade_plugins
-            @plugins[:PluginLoader].extras_upgrade
+            @plugins[:PluginLoader].plugin.extras_upgrade
         end
         
         private

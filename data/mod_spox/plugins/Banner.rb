@@ -53,6 +53,7 @@ class Banner < ModSpox::Plugin
         elapsed = Object::Time.now.to_i - @time.to_i
         BanRecord.filter('remaining > 0').update("remaining = remaining - #{elapsed}")
         BanMask.filter('bantime > 0').update("bantime = bantime - #{elapsed}")
+        @time = Object::Time.now
     end
     
     # message:: ModSpox::Messages::Incoming::Privmsg
@@ -118,6 +119,7 @@ class Banner < ModSpox::Plugin
                 record.save
             end
             @pipeline << Messages::Internal::TimerAdd.new(self, record.remaining, nil, true){ clear_record(record.pk, record.remaining) }
+            reset_time
             message = reason ? reason : 'no soup for you!'
             message = "#{message} (Duration: #{Helpers.format_seconds(time.to_i)})" if show_time
             @pipeline << ChannelMode.new(channel, '+b', mask)
@@ -137,6 +139,7 @@ class Banner < ModSpox::Plugin
         record.save
         check_masks
         @pipeline << Messages::Internal::TimerAdd.new(self, record.remaining, nil, true){ record.destroy }
+        reset_time
     end
     
     # message:: ModSpox::Messages::Incoming::Privmsg

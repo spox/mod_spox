@@ -39,8 +39,18 @@ module ModSpox
                 boolean :botnick, :null => false, :default => false
             end
             
+            # This method overrides the default filter method
+            # on the dataset. This is a pretty ugly hack to
+            # get the nick field to be searched properly.
+            def_dataset_method(:filter) do |arg|
+                return super unless arg.is_a?(Hash)
+                h = arg.dup
+                h[:nick].downcase! if h.has_key?(:nick)
+                super(h)
+            end
+            
             def nick=(nick_name)
-                update_values :nick => nick_name.downcase
+                values[:nick] = nick_name.downcase
             end
             
             def Nick.locate(string, create = true)
