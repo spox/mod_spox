@@ -16,7 +16,7 @@ class PluginLoader < ModSpox::Plugin
         @pipeline.hook(self, :get_module, :Internal_PluginModuleResponse)
         @plugins_mod = nil
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: matching signature params
     # Output currently available plugins for loading
@@ -27,7 +27,7 @@ class PluginLoader < ModSpox::Plugin
         end
         reply message.replyto, output
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: matching signature params
     # Output currently loaded plugins
@@ -39,15 +39,15 @@ class PluginLoader < ModSpox::Plugin
     # Load the given plugin
     def load_plugin(message, params)
         plugins = find_plugins
-        if(plugins.has_key?(params[:plugin]))
-            name = plugin_discovery(BotConfig[:pluginextraspath]).keys.include?(params[:plugin]) ? nil : "#{params[:plugin]}.rb"
-            @pipeline << Messages::Internal::PluginLoadRequest.new(self, plugins[params[:plugin]], name)
+        if(plugins.has_key?(params[:plugin].to_sym))
+            name = plugin_discovery(BotConfig[:pluginextraspath]).keys.include?(params[:plugin].to_sym) ? nil : "#{params[:plugin]}.rb"
+            @pipeline << Messages::Internal::PluginLoadRequest.new(self, plugins[params[:plugin].to_sym], name)
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Okay")
         else
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find plugin: #{params[:plugin]}")
         end
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: matching signature params
     # Unload the given plugin
@@ -61,10 +61,10 @@ class PluginLoader < ModSpox::Plugin
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find loaded plugin named: #{params[:plugin]}")
         end
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: matching signature params
-    # Reloads plugins    
+    # Reloads plugins
     def reload_plugin(message, params)
         if(params[:plugin])
             users = plugin_discovery(BotConfig[:userpluginpath])
@@ -84,7 +84,7 @@ class PluginLoader < ModSpox::Plugin
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, 'Full plugin reload requested')
         end
     end
-    
+
     # message:: ModSpox::Messages::Internal::PluginModuleResponse
     # Receives the plugins module
     def get_module(message)
@@ -92,7 +92,7 @@ class PluginLoader < ModSpox::Plugin
     end
 
     private
-    
+
     # Returns the list of currently loaded plugins
     def plugin_list
         plug = []
@@ -107,7 +107,7 @@ class PluginLoader < ModSpox::Plugin
         @plugins_mod = nil
         return plug
     end
-    
+
     # Finds available plugins for loading
     def find_plugins
         users = plugin_discovery(BotConfig[:userpluginpath])
@@ -118,7 +118,7 @@ class PluginLoader < ModSpox::Plugin
         end
         return plugins
     end
-    
+
     # path:: path to directory
     # Discovers any plugins within the files in the given path
     def plugin_discovery(path)
@@ -134,11 +134,12 @@ class PluginLoader < ModSpox::Plugin
                 end
             rescue Object => boom
                 Logger.log("Failed to parse file: #{path}/#{file}. Reason: #{boom}")
+                next
             end
         end
         return plugins
     end
-    
+
     # name:: plugin name
     # Returns the file path the given plugin originated from
     def loaded_path(name)
@@ -152,7 +153,7 @@ class PluginLoader < ModSpox::Plugin
         end
         return nil
     end
-    
+
     # Upgrades extra plugins to latest version
     def extras_upgrade
         Logger.log("Starting plugin upgrade to current version: #{$BOTVERSION}")
