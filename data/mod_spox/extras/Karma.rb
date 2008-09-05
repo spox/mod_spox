@@ -7,8 +7,8 @@ class Karma < ModSpox::Plugin
         Datatype::Karma.create_table unless Datatype::Karma.table_exists?
         Datatype::Alias.create_table unless Datatype::Alias.table_exists?
         alias_group = Models::Group.find_or_create(:name => 'alias')
-        Models::Signature.find_or_create(:signature => 'karma (\S+)', :plugin => name, :method => 'score', :description => 'Returns karma for given thing').params = [:thing]
-        Models::Signature.find_or_create(:signature => 'karma reset (\S+)', :plugin => name, :method => 'reset',
+        Models::Signature.find_or_create(:signature => 'karma (.+)', :plugin => name, :method => 'score', :description => 'Returns karma for given thing').params = [:thing]
+        Models::Signature.find_or_create(:signature => 'karma reset (.+)', :plugin => name, :method => 'reset',
             :group_id => Models::Group.filter(:name => 'admin').first.pk, :description => 'Reset a karma score').params = [:thing]
         Models::Signature.find_or_create(:signature => 'karma alias (\S+) (\S+)', :plugin => name, :method => 'aka',
             :group_id => alias_group.pk, :description => 'Alias a karma object to another karma object').params = [:thing, :thang]
@@ -75,7 +75,12 @@ class Karma < ModSpox::Plugin
         winner = thing_score > thang_score ? params[:thing] : params[:thang]
         loser = thing_score > thang_score ? params[:thang] : params[:thing]
         distance = (thing_score - thang_score).abs
-        reply message.replyto, "\2KARMA FIGHT RESULTS:\2 \2#{winner}\2 has beaten \2#{loser}\2 by a #{distance} point lead"
+        output = "\2KARMA FIGHT RESULTS:\2 "
+        if(distance > 0)
+            reply message.replyto, "\2#{winner}\2 has beaten \2#{loser}\2 #{distance > 50 ? 'like a redheaded step child' : ''} (+#{distance} points)"
+        else
+            reply message.replyto, "\2#{winner}\2 has tied \2#{loser}\2"
+        end
     end
     
     def aka(message, params)
