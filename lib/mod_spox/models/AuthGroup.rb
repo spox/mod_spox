@@ -1,6 +1,6 @@
 module ModSpox
     module Models
-        class AuthGroup < Sequel::Model(:auth_groups)
+        class AuthGroup < Sequel::Model
             set_primary_key [:group_id, :auth_id]
             
             set_schema do

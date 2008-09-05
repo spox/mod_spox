@@ -15,14 +15,13 @@ module ModSpox
         # visible:: can the bot see the user (is in a channel the bot is parked)
         # away:: is nick away
         # botnick:: is the nick of the bot
-         
-        # TODO: for nick field -> "tack a COLLATE NOCASE onto the columns"
-        class Nick < Sequel::Model(:nicks)
-            
+
+        class Nick < Sequel::Model
+
             Nick.after_save :clear_auth
-            
+
             set_cache Database.cache, :ttl => 3600 unless Database.cache.nil?
-            
+
             set_schema do
                 primary_key :id, :null => false
                 varchar :nick, :null => false, :unique => true
@@ -38,21 +37,20 @@ module ModSpox
                 boolean :away, :null => false, :default => false
                 boolean :botnick, :null => false, :default => false
             end
-            
+
             # This method overrides the default filter method
             # on the dataset. This is a pretty ugly hack to
             # get the nick field to be searched properly.
-            def_dataset_method(:filter) do |arg|
-                return super unless arg.is_a?(Hash)
-                h = arg.dup
-                h[:nick].downcase! if h.has_key?(:nick)
-                super(h)
-            end
-            
+#             def_dataset_method(:filter) do |arg|
+#                 return super unless arg.is_a?(Hash)
+#                 arg[:nick].downcase! if arg.has_key?(:nick)
+#                 super(arg)
+#             end
+
             def nick=(nick_name)
                 values[:nick] = nick_name.downcase
             end
-            
+
             def Nick.locate(string, create = true)
                 nick = nil
                 nick = Nick.filter(:nick => string).first
@@ -61,7 +59,7 @@ module ModSpox
                 end
                 return nick
             end
-            
+
             def address=(address)
                 begin
                     info =  Object::Socket.getaddrinfo(address, nil)
@@ -72,7 +70,7 @@ module ModSpox
                     update_values :host => address
                 end
             end
-            
+
             def visible=(val)
                 unless(val)
                     update_with_params :username => nil
@@ -86,16 +84,16 @@ module ModSpox
                 end
                 update_values :visible => val
             end
-                    
+
             def source=(mask)
                 update_values :source => mask
             end
-            
+
             # Auth model associated with nick
             def auth
                 Auth.find_or_create(:nick_id => pk)
             end
-            
+
             # AuthGroups nick is authed to
             def auth_groups
                 nickgroups = NickGroup.filter(:nick_id => pk)
@@ -108,8 +106,8 @@ module ModSpox
                     groups << nickgroup.group
                 end
                 return groups
-            end    
-            
+            end
+
             def populate_groups
                 auth_ids = []
                 group_ids = []
@@ -130,43 +128,43 @@ module ModSpox
                 auth_ids.each{|id| AuthGroup.filter(:auth_id => id).each{|ag| group_ids << ag.group_id}}
                 group_ids.uniq.each{|id| NickGroup.find_or_create(:nick_id => pk, :group_id => id)}
             end
-            
+
             # Set nick as member of given group
             def group=(group)
                 auth.group = group
             end
-            
+
             # Remove nick from given group
             def remove_group(group)
                 auth.remove_group(group)
             end
-            
+
             # Clear this nick's auth status
             def clear_auth
                 auth.authed = false
                 NickGroup.filter(:nick_id => pk).destroy
             end
-            
+
             # Modes associated with this nick
             def nick_modes
                 NickMode.filter(:nick_id => pk)
             end
-            
+
             # Add channel nick is found in
             def channel_add(channel)
                 NickChannel.find_or_create(:nick_id => pk, :channel_id => channel.pk)
             end
-            
+
             # Remove channel nick is no longer found in
             def channel_remove(channel)
                 NickChannel.filter(:nick_id => pk, :channel_id => channel.pk).first.destroy
             end
-            
+
             # Remove all channels
             def clear_channels
                 NickChannel.filter(:nick_id => pk).each{|o|o.destroy}
             end
-            
+
             # Channels nick is currently in
             def channels
                 chans = []
@@ -175,7 +173,7 @@ module ModSpox
                 end
                 return chans
             end
-            
+
             # channel:: Models::Channel
             # Return if nick is operator in given channel
             def is_op?(channel)
@@ -184,7 +182,7 @@ module ModSpox
                 end
                 return false
             end
-            
+
             # channel:: Models::Channel
             # Return if nick is voiced in given channel
             def is_voice?(channel)
@@ -193,17 +191,17 @@ module ModSpox
                 end
                 return false
             end
-            
+
             # Purge all nick information
             def self.clean
                 Nick.set(:username => nil, :real_name => nil, :address => nil,
                                    :source => nil, :connected_at => nil, :connected_to => nil,
                                    :seconds_idle => nil, :away => false, :visible => false, :botnick => false)
                 NickMode.destroy_all
-                NickGroup.destroy_all
+                #NickGroup.destroy_all
                 Auth.set(:authed => false)
             end
-        
+
         end
     end
 end

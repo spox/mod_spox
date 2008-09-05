@@ -7,7 +7,7 @@ module ModSpox
             # services:: Authentication by nickserv
             # mask:: Mask to authenticate source against
             # authed:: Nick has authenticated
-        class Auth < Sequel::Model(:auths)
+        class Auth < Sequel::Model
         
             before_destroy :clear_auth_groups
             

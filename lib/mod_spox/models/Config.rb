@@ -7,7 +7,7 @@ module ModSpox
         # It is important to note this model is for storing configuration
         # values only. It will only store strings, not complex objects. If
         # you need to store an object, use the Setting model.
-        class Config < Sequel::Model(:configs)
+        class Config < Sequel::Model
 
             set_schema do
                 primary_key :id, :null => false

@@ -5,7 +5,7 @@ module ModSpox
         # port:: port to connect to
         # priority:: priority of this entry (higher number == greater priority)
         # connected:: bot is connected to this server
-        class Server < Sequel::Model(:servers)
+        class Server < Sequel::Model
             set_schema do
                 primary_key :id, :null => false
                 varchar :host, :null => false

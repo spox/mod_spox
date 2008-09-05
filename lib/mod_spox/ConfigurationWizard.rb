@@ -130,6 +130,7 @@ module ModSpox
             until(response) do
                 print output
                 print "[#{default}]: " unless default.nil?
+                $stdout.flush
                 response = read_input(regex, default, echo)
             end
             return response

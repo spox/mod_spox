@@ -6,7 +6,7 @@ module ModSpox
         # 
         # This model can be used to store complex objects. These objects are dumped
         # and stored for later retrieval
-        class Setting < Sequel::Model(:settings)
+        class Setting < Sequel::Model
             
             set_schema do 
                 primary_key :id, :null => false

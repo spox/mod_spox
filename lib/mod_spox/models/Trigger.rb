@@ -3,7 +3,7 @@ module ModSpox
         # Attributes provided by model:
         # trigger:: trigger to match
         # active:: trigger is active
-        class Trigger < Sequel::Model(:triggers)
+        class Trigger < Sequel::Model
             set_schema do
                 primary_key :id, :null => false
                 varchar :trigger, :unique => true, :null => false

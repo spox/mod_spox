@@ -2,7 +2,7 @@ module ModSpox
     module Models
         # Attribute provided by model:
         # mode:: mode that is set
-        class ChannelMode < Sequel::Model(:channel_modes)
+        class ChannelMode < Sequel::Model
         
             set_schema do
                 primary_key :id, :null => false

@@ -1,6 +1,6 @@
 module ModSpox
     module Models
-        class Group < Sequel::Model(:groups)
+        class Group < Sequel::Model
         
             set_schema do
                 primary_key :id, :null => false

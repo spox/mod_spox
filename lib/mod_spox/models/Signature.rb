@@ -6,7 +6,7 @@ module ModSpox
         # method:: method to call when matched
         # plugin:: plugin to call when matched
         # description:: description of trigger
-        class Signature < Sequel::Model(:signatures)
+        class Signature < Sequel::Model
             
             set_schema do
                 primary_key :id, :null => false

@@ -2,7 +2,7 @@ module ModSpox
     module Models
         # Attributes provided by model:
         # mode:: Mode that is set
-        class NickMode < Sequel::Model(:nick_modes)
+        class NickMode < Sequel::Model
             
             set_schema do
                 primary_key :id, :null => false

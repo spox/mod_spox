@@ -2,9 +2,9 @@ module ModSpox
     module Models
         # This model is for internal use only to provide a
         # proper relation between Nick and Channel
-        class NickChannel < Sequel::Model(:nick_channels)
-            
-            set_primary_key [:nick_id, :channel_id]
+        class NickChannel < Sequel::Model
+        
+            include Models
             
             set_schema do
                 foreign_key :nick_id, :table => :nicks, :null => false

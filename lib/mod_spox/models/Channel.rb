@@ -8,7 +8,7 @@ module ModSpox
         # topic:: Channel topic
         # quiet:: Silence the bot in this channel
         # parked:: Bot is currently in this channel
-        class Channel < Sequel::Model(:channels)
+        class Channel < Sequel::Model
             
             set_cache Database.cache, :ttl => 3600 unless Database.cache.nil?
             
