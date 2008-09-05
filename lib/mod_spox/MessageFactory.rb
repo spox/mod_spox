@@ -1,12 +1,13 @@
 ['mod_spox/handlers/Handler',
  'mod_spox/Logger',
  'mod_spox/Pipeline',
- 'mod_spox/Pool'].each{|f|require f}
+ 'mod_spox/Pool',
+ 'mod_spox/DCCString'].each{|f|require f}
 
 module ModSpox
 
     class MessageFactory < Pool
-    
+
         # pipeline:: Message pipeline
         # Create a new MessageFactory
         def initialize(pipeline)
@@ -18,7 +19,7 @@ module ModSpox
             build_handlers
             start_pool
         end
-        
+
         # string:: server message to be parsed
         # Parses messages from server. This is placed in a queue to
         # be processed thus there is now wait for processing to be
@@ -26,7 +27,7 @@ module ModSpox
         def <<(string)
             @queue << string
         end
-        
+
         # Builds the message handlers. This will load all Messages and Handlers
         # found in the lib directory and then initialize all the Handlers
         def build_handlers
@@ -47,7 +48,7 @@ module ModSpox
             Logger.log("Handlers now available:", 15)
             @handlers.each_pair{|k,v| Logger.log("#{k} -> #{v}", 15)}
         end
-        
+
         # message:: server message
         # Parses the server message and passes it to the proper handler
         def parse_message(message)
@@ -66,15 +67,15 @@ module ModSpox
                 Logger.log("Failed to parse message from server: #{boom}\n#{boom.backtrace.join("\n")}")
             end
         end
-        
+
         private
-        
+
         def processor
             @lock.synchronize do
                 parse_message(@queue.pop)
             end
         end
-    
+
     end
 
 end
