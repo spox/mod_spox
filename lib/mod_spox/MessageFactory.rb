@@ -1,8 +1,7 @@
 ['mod_spox/handlers/Handler',
  'mod_spox/Logger',
  'mod_spox/Pipeline',
- 'mod_spox/Pool',
- 'mod_spox/DCCString'].each{|f|require f}
+ 'mod_spox/Pool'].each{|f|require f}
 
 module ModSpox
 
