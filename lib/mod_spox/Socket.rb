@@ -3,12 +3,13 @@
  'mod_spox/Exceptions',
  'mod_spox/messages/Messages',
  'mod_spox/models/Models',
- 'mod_spox/Pipeline'].each{|f|require f}
+ 'mod_spox/Pipeline',
+ 'io/reactor'].each{|f|require f}
 
 module ModSpox
 
     class Socket < Pool
-    
+
         attr_reader :sent
         attr_reader :received
         attr_reader :burst
@@ -16,7 +17,8 @@ module ModSpox
         attr_reader :delay
         attr_reader :server
         attr_reader :port
-    
+        attr_reader :socket
+
         # factory:: MessageFactory to parse messages
         # server:: Server to connect to
         # port:: Port number to connect to
@@ -28,6 +30,7 @@ module ModSpox
             super()
             @factory = bot.factory
             @pipeline = bot.pipeline
+            @dcc = bot.dcc_sockets
             @server = server
             @port = port.to_i
             @sent = 0
@@ -44,63 +47,56 @@ module ModSpox
             @lock = Mutex.new
             start_pool
         end
-        
+
         # Connects to the IRC server
         def connect
             Logger.log("Establishing connection to #{@server}:#{@port}", 10)
             @socket = TCPSocket.new(@server, @port)
-            @socket.sync = true
             server = Models::Server.find_or_create(:host => @server, :port => @port)
             server.connected = true
             server.save
             Logger.log("Created new send queue: #{@sendq}", 10)
-            reader
         end
-        
+
         # new_delay:: Seconds to delay between bursts
         # Resets the delay
         def delay=(new_delay)
             raise Exceptions::InvalidValue('Send delay must be a positive number') unless new_delay.to_f > 0
             @delay = new_delay.to_f
         end
-        
+
         # new_burst:: Number of lines allowed in burst
         # Resets the burst
         def burst=(new_burst)
             raise Exceptions::InvalidValue('Burst value must be a positive number') unless new_burst.to_i > 0
             @burst = new_burst
         end
-        
+
         # new_burst_in:: Number of seconds allowed to burst
         # Resets the burst_in
         def burst_in=(new_burst_in)
             raise Exceptions::InvalidValue('Burst in value must be positive') unless new_burst_in.to_i > 0
             @burst_in = new_burst_in
         end
-        
+
         # message:: String to send to server
         # Sends a string to the IRC server
         def puts(message)
             write(message)
         end
-        
+
         # message:: String to send to server
         # Sends a string to the IRC server
         def write(message)
             return if message.nil?
-            @socket.puts(message + "\n") #send(message + "\n", 0)
+            @socket.puts(message + "\n")
             Logger.log("<< #{message}", 5)
             @last_send = Time.new
             @sent += 1
             @check_burst += 1
             @time_check = Time.now.to_i if @time_check.nil?
         end
-        
-        # Retrieves a string from the server
-        def gets
-            read
-        end
-        
+
         # Retrieves a string from the server
         def read
             message = @socket.gets
@@ -110,12 +106,12 @@ module ModSpox
                 server = Models::Server.find_or_create(:host => @server, :port => @port)
                 server.connected = false
                 server.save
-                return
+            elsif(message.length > 0)
+                Logger.log(">> #{message}", 5)
+                @received += 1
+                message.strip!
+                @factory << message
             end
-            Logger.log(">> #{message}", 5)
-            @received += 1
-            message.strip!
-            return message
         end
 
         # message:: String to be sent to server
@@ -123,7 +119,7 @@ module ModSpox
         def <<(message)
             @sendq << message
         end
-        
+
         # Starts the thread for sending messages to the server
         def processor
             @lock.synchronize do
@@ -139,17 +135,7 @@ module ModSpox
                 end
             end
         end
-        
-        # Starts the thread for reading messages from the server
-        def reader
-            @reader_thread = Thread.new do
-                until @kill do
-                    Kernel.select([@socket], nil, nil, nil)
-                    @factory << read
-                end
-            end
-        end
-        
+
         # restart:: Reconnect after closing connection
         # Closes connection to IRC server
         def shutdown(restart=false)
@@ -158,11 +144,11 @@ module ModSpox
             server = Models::Server.find_or_create(:host => @server, :port => @port)
             server.connected = false
             server.save
-            sleep(0.1)            
+            sleep(0.1)
             @reader_thread.kill if @reader_thread.alive?
             connect if restart
         end
-        
+
     end
 
 end
