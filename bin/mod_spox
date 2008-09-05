@@ -2,14 +2,14 @@
 
 ## include our needed libraries ##
 
-['rubygems', 'sequel', 'thread', 'etc', 'getoptlong'].each{|file| 
+['rubygems', 'sequel', 'thread', 'etc', 'getoptlong'].each do |file|
     begin
         require file
     rescue Object => boom
         puts "ERROR: Failed to load required library: #{file}"
         exit 1
     end
-}
+end
 
 ## optional libraries ##
 begin
@@ -21,6 +21,7 @@ end
 $BOTVERSION='0.1.0.1'
 $VERBOSITY = 0
 $MOD_SPOX_PATH = nil
+$DAEMON_BOT = false
 Sequel::Model.unrestrict_primary_key
 
 begin
@@ -36,7 +37,8 @@ opts = GetoptLong.new(
     ['--debug', '-d', GetoptLong::OPTIONAL_ARGUMENT],
     ['--version', '-v', GetoptLong::NO_ARGUMENT],
     ['--help', '-h', GetoptLong::NO_ARGUMENT],
-    ['--path', '-p', GetoptLong::REQUIRED_ARGUMENT]
+    ['--path', '-p', GetoptLong::REQUIRED_ARGUMENT],
+    ['--daemon', '-D', GetoptLong::NO_ARGUMENT]
 )
 verbose = 0
 opts.each do |opt, arg|
@@ -45,6 +47,7 @@ opts.each do |opt, arg|
             puts 'Usage: mod_spox [opts]'
             puts '--config -c:     starts configuration wizard'
             puts '--debug -d:      turns on debugging (include number >0 for more info)'
+            puts '--deamon -D:     daemonizes the process'
             puts '--version -v:    output bot version information'
             puts '--help -h:       print this help message'
             exit
@@ -63,11 +66,23 @@ opts.each do |opt, arg|
             exit
         when '--path'
             $MOD_SPOX_PATH = arg
+        when '--daemon'
+            begin
+                $DAEMON_BOT = true
+            rescue Object => boom
+                puts 'Error: You must install the Daemons gem: (http://daemons.rubyforge.org)'
+                exit 1
+            end
     end
 end
 
 initialize_bot
 require 'mod_spox/Bot'
+
+if($DAEMON_BOT)
+    require 'daemons'
+    Daemons.daemonize
+end
 
 bot = Bot.new
 bot.run
