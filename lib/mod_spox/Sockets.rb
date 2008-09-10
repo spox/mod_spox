@@ -14,7 +14,6 @@ module ModSpox
 
         def initialize(bot)
             @bot = bot
-            @reactor = IO::Reactor.new
             @irc_socket = nil
             @dcc_sockets = []
             @mapped_sockets = {}
@@ -55,9 +54,13 @@ module ModSpox
         def check_dcc(message)
             if(message.is_ctcp? && message.ctcp_type == 'DCC')
                 if(message.message =~ /^CHAT chat (\S+) (\S+)/)
-                    ip = IPAddr.new($1.to_i, Object::Socket::AF_INET).to_s
-                    port = $2.to_i
-                    build_connection(ip, port, message.source)
+                    if(message.source.in_group?('dcc') || message.source.in_group?('admin'))
+                        ip = IPAddr.new($1.to_i, Object::Socket::AF_INET).to_s
+                        port = $2.to_i
+                        build_connection(ip, port, message.source)
+                    else
+                        Logger.log("Error: #{message.source.nick} is attempting to establish DCC connection without permission.")
+                    end
                 end
             end
         end
@@ -77,6 +80,11 @@ module ModSpox
         # TODO: make this do stuff
 
         def shutdown
+            stop_reader
+            @irc_socket.shutdown
+            @dcc_sockets.each do |sock|
+                close_dcc(sock)
+            end
         end
 
         private
@@ -88,7 +96,6 @@ module ModSpox
         def build_connection(ip, port, nick)
             begin
                 socket = DCCSocket.new(ip, port)
-                Logger.log("DCC CONNECTED!")
                 stop_reader
                 @read_sockets << socket
                 @mapped_sockets[socket.object_id] = {:socket => socket, :nick => nick}
@@ -130,23 +137,24 @@ module ModSpox
             else
                 @thread_read = Thread.new do
                     until @kill do
-                        Logger.log("Waiting for some input")
-                        result = Kernel.select(@read_sockets, nil, nil, nil)
-                        for sock in result[0] do
-                            if(sock.is_a?(DCCSocket))
-                                Logger.log("Found a DCCer: #{sock}")
-                                string = sock.gets
-                                if(sock.closed? || string.nil?)
-                                    sock.close
-                                    close_dcc(sock)
-                                    Logger.log("DCC Socket has been closed: #{sock}")
+                        begin
+                            result = Kernel.select(@read_sockets, nil, nil, nil)
+                            for sock in result[0] do
+                                if(sock.is_a?(DCCSocket))
+                                    string = sock.gets
+                                    Logger.log("DCC >> #{string}")
+                                    if(sock.closed? || string.nil?)
+                                        sock.close
+                                        close_dcc(sock)
+                                    else
+                                        @pipeline << Messages::Incoming::Privmsg.new(string, @mapped_sockets[sock.object_id][:nick], "::#{sock.object_id}::", string)
+                                    end
                                 else
-                                    @pipeline << Messages::Incoming::Privmsg.new(string, @mapped_sockets[sock.object_id][:nick], "::#{sock.object_id}::", string)
+                                    @irc_socket.read
                                 end
-                            else
-                                Logger.log("Reading stuff from: #{sock}")
-                                @irc_socket.read
                             end
+                        rescue Object => boom
+                            Logger.log("Socket error detected: #{boom}\n#{boom.backtrace}")
                         end
                     end
                 end

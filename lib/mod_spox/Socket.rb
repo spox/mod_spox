@@ -3,8 +3,7 @@
  'mod_spox/Exceptions',
  'mod_spox/messages/Messages',
  'mod_spox/models/Models',
- 'mod_spox/Pipeline',
- 'io/reactor'].each{|f|require f}
+ 'mod_spox/Pipeline'].each{|f|require f}
 
 module ModSpox
 
@@ -39,7 +38,6 @@ module ModSpox
             @burst = burst.to_i > 0 ? burst.to_i : 4
             @burst_in = 2
             @kill = false
-            @reader_thread = nil
             @time_check = nil
             @check_burst = 0
             @pause = false
@@ -145,7 +143,6 @@ module ModSpox
             server.connected = false
             server.save
             sleep(0.1)
-            @reader_thread.kill if @reader_thread.alive?
             connect if restart
         end
 
