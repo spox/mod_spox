@@ -9,23 +9,13 @@ module ModSpox
         # quiet:: Silence the bot in this channel
         # parked:: Bot is currently in this channel
         class Channel < Sequel::Model
-            
+
             set_cache Database.cache, :ttl => 3600 unless Database.cache.nil?
-            
-            set_schema do
-                primary_key :id, :null => false
-                varchar :name, :null => false, :unique => true
-                varchar :password
-                boolean :autojoin, :null => false, :default => false
-                varchar :topic
-                boolean :quiet, :null => false, :default => false
-                boolean :parked, :null => false, :default => false
-            end
-            
+
             def name=(chan_name)
                 update_values :name => chan_name.downcase
             end
-            
+
             def Channel.locate(string, create = true)
                 chan = Channel.filter(:name => string).first
                 if(!chan && create)
@@ -33,12 +23,12 @@ module ModSpox
                 end
                 return chan
             end
-            
+
             # Modes for this channel
             def channel_modes
                 ChannelMode.filter(:channel_id => pk)
             end
-            
+
             # Nicks residing within this channel
             def nicks
                 all_nicks = []
@@ -47,17 +37,17 @@ module ModSpox
                 end
                 return all_nicks
             end
-            
+
             # Adds a nick to this channel
             def nick_add(nick)
                 NickChannel.find_or_create(:channel_id => pk, :nick_id => nick.pk)
             end
-            
+
             # Removes a nick from this channel
             def nick_remove(nick)
                 NickChannel.filter(:channel_id => pk, :nick_id => nick.pk).first.destroy
             end
-            
+
             # Removes all nicks from this channel
             def clear_nicks
                 NickChannel.filter(:channel_id => pk, :nick_id => nick.pk).each{|o| o.destroy}

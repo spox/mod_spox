@@ -3,15 +3,11 @@ module ModSpox
         # This model is for internal use only to provide a
         # proper relation between Nick and Channel
         class NickChannel < Sequel::Model
-        
+
             include Models
-            
-            set_schema do
-                foreign_key :nick_id, :table => :nicks, :null => false
-                foreign_key :channel_id, :table => :channels, :null => false
-                primary_key [:nick_id, :channel_id]
-            end
-            
+
+            set_primary_key [:nick_id, :channel_id]
+
             after_save do
                 c = Channel[channel_id]
                 n = Nick[nick_id]
@@ -20,7 +16,7 @@ module ModSpox
                 c.parked = true
                 c.save
             end
-            
+
             after_destroy do
                 c = Channel[channel_id]
                 n = Nick[nick_id]
@@ -36,11 +32,11 @@ module ModSpox
                     ChannelMode.filter(:channel_id => channel_id).each{|n|n.destroy}
                 end
             end
-            
+
             def nick
                 Nick[nick_id]
             end
-            
+
             def channel
                 Channel[channel_id]
             end

@@ -3,18 +3,12 @@ module ModSpox
         # Attributes provided by model:
         # name:: name of the config item
         # value:: value of the config item
-        # 
+        #
         # It is important to note this model is for storing configuration
         # values only. It will only store strings, not complex objects. If
         # you need to store an object, use the Setting model.
         class Config < Sequel::Model
 
-            set_schema do
-                primary_key :id, :null => false
-                varchar :name, :null => false, :unique => true
-                varchar :value
-            end
-            
             def name=(config_name)
                 update_values :name => config_name.downcase
             end
@@ -26,7 +20,7 @@ module ModSpox
                 match = Config.filter(:name => key).first
                 return match ? match.value : nil
             end
-            
+
             # key:: name of the config item
             # val:: value of the config item
             # Modifies or creates config item and stores the value

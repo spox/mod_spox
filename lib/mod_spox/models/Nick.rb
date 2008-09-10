@@ -22,28 +22,14 @@ module ModSpox
 
             set_cache Database.cache, :ttl => 3600 unless Database.cache.nil?
 
-            set_schema do
-                primary_key :id, :null => false
-                varchar :nick, :null => false, :unique => true
-                varchar :username
-                varchar :real_name
-                varchar :address
-                varchar :host
-                varchar :source
-                timestamp :connected_at
-                varchar :connected_to
-                integer :seconds_idle
-                boolean :visible, :null => false, :default => false
-                boolean :away, :null => false, :default => false
-                boolean :botnick, :null => false, :default => false
-            end
-
             # This method overrides the default filter method
             # on the dataset. This is a pretty ugly hack to
             # get the nick field to be searched properly.
 #             def_dataset_method(:filter) do |arg|
 #                 return super unless arg.is_a?(Hash)
 #                 arg[:nick].downcase! if arg.has_key?(:nick)
+#                 Logger.log("ARGS ARE AS FOLLOWS:")
+#                 arg.each_pair{|k,v| Logger.log("KEY: #{k} VALUE: #{v}")}
 #                 super(arg)
 #             end
 
@@ -53,6 +39,7 @@ module ModSpox
 
             def Nick.locate(string, create = true)
                 nick = nil
+                string.downcase!
                 nick = Nick.filter(:nick => string).first
                 if(!nick && create)
                     nick = Nick.find_or_create(:nick => string)
@@ -132,6 +119,11 @@ module ModSpox
             # Set nick as member of given group
             def group=(group)
                 auth.group = group
+            end
+
+            def in_group?(group)
+                group = Group.filter(:name => group).first if group.is_a?(String)
+                return group.nil? ? false : auth_groups.include?(group)
             end
 
             # Remove nick from given group
