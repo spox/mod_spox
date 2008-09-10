@@ -1,4 +1,5 @@
-['mod_spox/models/Models.rb',
+['timeout',
+ 'mod_spox/models/Models.rb',
  'mod_spox/Logger',
  'mod_spox/Pool',
  'mod_spox/Exceptions'].each{|f|require f}
@@ -21,14 +22,14 @@ module ModSpox
             hook(self, :populate_signatures, :Internal_SignaturesUpdate)
             start_pool
         end
-        
+
         # message:: Message to send down pipeline
         # Queues a message to send down pipeline
         def <<(message)
             Logger.log("Message added to pipeline queue: #{message}", 5)
             message_processor(message)
         end
-        
+
         # plugin:: Plugin to hook to pipeline
         # Hooks a plugin into the pipeline so it can be called
         # directly when it matches a trigger
@@ -36,7 +37,7 @@ module ModSpox
             Logger.log("Plugin #{plugin.name} hooking into pipeline", 10)
             @plugins[plugin.name.to_sym] = plugin
         end
-        
+
         # plugin:: Plugin to unhook from pipeline
         # Unhooks a plugin from the pipeline (This does not unhook
         # it from the standard hooks)
@@ -47,7 +48,7 @@ module ModSpox
                 things.delete(plugin.name.to_sym) if things.has_key?(plugin.name.to_sym)
             end
         end
-        
+
         # plugin:: Plugin to hook to pipeline
         # method:: Plugin method pipeline should call to process message
         # type:: Type of message the plugin wants to process
@@ -59,9 +60,9 @@ module ModSpox
             name = object.class.to_s.gsub(/^.+:/, '')
             @hooks[type] = Hash.new unless @hooks.has_key?(type)
             @hooks[type][name.to_sym] = Array.new unless @hooks[type][name.to_sym].is_a?(Array)
-            @hooks[type][name.to_sym] << {:object => object, :method => method} 
+            @hooks[type][name.to_sym] << {:object => object, :method => method}
         end
-        
+
         # plugin:: Plugin to unhook from pipeline
         # type:: Type of message the plugin no longer wants to process
         # This will remove the hook a plugin has for a specific message type
@@ -77,14 +78,14 @@ module ModSpox
             @hooks[type].delete(name) if @hooks[type][name].empty
             @hooks.delete(type) if @hooks[type].empty?
         end
-        
+
         # Clears all hooks from the pipeline (Commonly used when reloading plugins)
         def clear
             Logger.log("All hooks have been cleared from pipeline", 10)
             @hooks.clear
             @plugins.clear
         end
-        
+
         # Repopulate the active trigger list
         def populate_triggers(m=nil)
             @populate_lock.synchronize do
@@ -92,7 +93,7 @@ module ModSpox
                 Models::Trigger.filter(:active => true).each{|t|@triggers << t.trigger}
             end
         end
-        
+
         # Repopulate the active signatures list
         def populate_signatures(m=nil)
             @populate_lock.synchronize do
@@ -114,9 +115,9 @@ module ModSpox
                 end
             end
         end
-        
+
         private
-        
+
         def processor
             action = @queue.pop
             begin
@@ -127,10 +128,10 @@ module ModSpox
                 Logger.log("Pipeline caught timeout error. Execution lasted over: #{@timeout} seconds")
                 Thread.current.kill
             rescue Object => boom
-                Logger.log("Pipeline caught an error while executing action: #{boom}")
+                Logger.log("Pipeline caught an error while executing action: #{boom}\n#{boom.backtrace.join("\n")}")
             end
         end
-        
+
         # Processes messages
         def message_processor(message)
             begin
@@ -143,7 +144,7 @@ module ModSpox
                     if(@hooks.has_key?(type))
                         @hooks[type].each_value do |objects|
                             begin
-                                objects.each do |v| 
+                                objects.each do |v|
                                     @queue << Proc.new{ v[:object].send(v[:method].to_s, message) }
                                 end
                             rescue Object => boom
@@ -156,11 +157,11 @@ module ModSpox
                 Logger.log("Pipeline encountered an exception while processing a message: #{boom}\n#{boom.backtrace.join("\n")}", 10)
             end
         end
-        
+
         # message:: Message to parse
         # This will parse a message to see if it matches any valid
         # trigger signatures. If matches are found, they will be sent
-        # to the proper plugin for processing 
+        # to the proper plugin for processing
         def parse(message)
             return unless message.kind_of?(Messages::Incoming::Privmsg) || message.kind_of?(Messages::Incoming::Notice)
             trigger = nil
@@ -203,7 +204,7 @@ module ModSpox
                 Logger.log("Message failed to match any known trigger", 15)
             end
         end
-    
+
     end
 
 end
