@@ -30,7 +30,23 @@ module ModSpox
             output = '0 seconds' if output.empty?
             return output.strip
         end
-        
+
+        # bytes:: number of bytes
+        # Converts bytes into easy human readable form
+        def Helpers.format_size(bytes)
+            string = ''
+            if(bytes / 1073741824 > 0)
+                string = "#{bytes / 1073741824}.#{(bytes % 1073741824).to_s[0..1]} GB"
+            elsif(bytes / 1048576 > 0)
+                string = "#{bytes / 1048576}.#{(bytes % 1048576).to_s[0..1]} MB"
+            elsif(bytes / 1024 > 0)
+                string = "#{bytes / 1024}.#{(bytes % 1024).to_s[0..1]} KB"
+            else
+                string = "#{bytes} B"
+            end
+            return string
+        end
+
         # command:: command to execute
         # timeout:: maximum number of seconds to run
         # Execute a system command (use with care)
@@ -45,7 +61,7 @@ module ModSpox
                 Logger.log("Command generated an exception (command: #{command} | error: #{boom})")
             end
         end
-        
+
         # url:: URL to shorten
         # Gets a tinyurl for given URL
         def Helpers.tinyurl(url)
@@ -65,7 +81,7 @@ module ModSpox
                 raise "Failed to process URL. #{boom}"
             end
         end
-        
+
         # string:: name of target
         # Locates target model and returns it. String can be a nick
         # or channel name. If the string given does not match the required
@@ -89,6 +105,10 @@ module ModSpox
                 end
                 unless(nick)
                     nick = Models::Nick.locate(string, create)
+                    if(nick.nil?)
+                        Database.reconnect
+                        return find_model(string, create)
+                    end
                     @@nick_cache[string.downcase.to_sym] = nick.pk if nick.is_a?(Models::Nick)
                     Logger.log("Nick was retrieved from database", 30)
                 end
@@ -109,6 +129,10 @@ module ModSpox
                 end
                 unless(channel)
                     channel = Models::Channel.locate(string, create)
+                    if(channel.nil?)
+                        Database.reconnect
+                        return find_model(string, create)
+                    end
                     @@channel_cache[string.downcase.to_sym] = channel.pk if channel.is_a?(Models::Channel)
                     Logger.log("Channel was retrieved from database", 30)
                 end
@@ -121,7 +145,7 @@ module ModSpox
                 return string
             end
         end
-        
+
         def Helpers.initialize_caches
             @@nick_cache = Cache.new(20) unless Helpers.class_variable_defined?(:@@nick_cache)
             @@channel_cache = Cache.new(5) unless Helpers.class_variable_defined?(:@@channel_cache)
