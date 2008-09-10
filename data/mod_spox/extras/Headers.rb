@@ -9,7 +9,7 @@ class Headers < ModSpox::Plugin
             :description => 'Fetch HTTP headers').params = [:url]
         @lock = Mutex.new
     end
-    
+
     def fetch_headers(message, params)
         @lock.synchronize do
             secure = false
@@ -35,15 +35,16 @@ class Headers < ModSpox::Plugin
                 reply message.replyto, "Connecting to: #{location} on port: #{port} retrieving: #{page}"
                 con = Net::HTTP.new(location, port)
                 con.use_ssl = secure
-                response = con.get(page, nil)
+                response = con.get(page)
                 output = ["Response code: #{response.code}"]
                 response.each{|key,val|
-                    output << "#{key}: #{val}"
+                    output << "#{key.slice(0..50)}: #{val.slice(0..200)}"
                 }
                 output << "Header listing complete"
                 reply message.replyto, output
             rescue Object => boom
                 reply message.replyto, "Error retrieving headers: #{boom}"
+                Logger.log("#{boom}\n#{boom.backtrace.join("\n")}")
             end
         end
     end

@@ -20,11 +20,11 @@ class AutoKick < ModSpox::Plugin
         @banner = nil
         @map = nil
         @colors = Setting[:colorkick]
-        @colors = Array.new if @colors.nil?
+        @colors = Array.new unless @colors.is_a?(Array)
         AutoKickRecord.create_table unless AutoKickRecord.table_exists?
         do_listen
     end
-    
+
     def colors(message, params)
         if(params[:action])
             if(params[:action] == 'on')
@@ -32,12 +32,16 @@ class AutoKick < ModSpox::Plugin
                     reply message.replyto, 'Colored autokick is already enabled'
                 else
                     @colors << message.target.pk
-                    Setting[:colorkick] = @colors
+                    record = Setting.find_or_create(:name => 'colorkick')
+                    record.value = @colors
+                    record.save
                     reply message.replyto, 'Colored autokick has been enabled'
                 end
             else
                 @colors.delete(message.target.pk)
-                Setting[:colorkick] = @colors
+                record = Setting.find_or_create(:name => 'colorkick')
+                record.value = @colors
+                record.save
                 reply message.replyto, 'Colored autokick has been disabled'
             end
         else
@@ -45,7 +49,7 @@ class AutoKick < ModSpox::Plugin
             reply message.replyto, "Colored autokick is currently \2#{status}\2"
         end
     end
-    
+
     def list(message, params)
         records = AutoKickRecord.all
         unless(records.empty?)
@@ -56,7 +60,7 @@ class AutoKick < ModSpox::Plugin
             reply message.replyto, 'No rules currently enabled'
         end
     end
-    
+
     def add(message, params)
         if(params[:channel])
             channel = Channel.filter(:name => params[:channel]).first
@@ -71,7 +75,7 @@ class AutoKick < ModSpox::Plugin
             reply message.replyto, "\2Error:\2 I have no record of #{params[:channel]}. Failed to add autokick rule."
         end
     end
-    
+
     def remove(message, params)
         record = AutoKickRecord[params[:id].to_i]
         if(record)
@@ -82,8 +86,9 @@ class AutoKick < ModSpox::Plugin
             reply message.replyto, "\2Error:\2 Failed to find an autokick rule with ID: #{params[:id]}"
         end
     end
-    
+
     def listener(message)
+        return unless message.is_public?
         if(@map.keys.include?(message.target.pk))
             @map[message.target.pk].each do |pattern|
                 reg = Regexp.new(pattern, Regexp::IGNORECASE)
@@ -91,7 +96,7 @@ class AutoKick < ModSpox::Plugin
                     record = AutoKickRecord.filter(:pattern => pattern).first
                     @banner.plugin.ban(message.source, message.target, record.bantime, record.message, false, true)
                 end
-            end 
+            end
         end
         if(@colors.include?(message.target.pk))
             if(message.is_colored?)
@@ -99,15 +104,15 @@ class AutoKick < ModSpox::Plugin
             end
         end
     end
-    
+
     def banner_watch(message)
         if(message.origin == self && message.found?)
             @banner = message.plugin
         end
     end
-    
+
     private
-    
+
     def do_listen
         @map = nil
         begin
@@ -126,7 +131,7 @@ class AutoKick < ModSpox::Plugin
             @pipeline.hook(self, :listener, :Incoming_Privmsg)
         end
     end
-    
+
     class AutoKickRecord < Sequel::Model
         set_schema do
             primary_key :id
@@ -135,7 +140,7 @@ class AutoKick < ModSpox::Plugin
             text :message, :null => false
             foreign_key :channel_id, :table => :channels
         end
-        
+
         def channel
             ModSpox::Models::Channel[channel_id]
         end
