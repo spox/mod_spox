@@ -24,6 +24,8 @@ class DCC < ModSpox::Plugin
             :description => 'Show allowed ports', :group_id => admin.pk)
         Signature.find_or_create(:signature => 'file max wait(\s(\d+))?', :plugin => name, :method => 'max_wait',
             :description => 'Show/set timeout for accepting files', :group_id => admin.pk).params = [:wait]
+        Signature.find_or_create(:signature => 'dcc chat', :plugin => name, :method => 'dcc_chat',
+            :description => 'Start a DCC chat with the bot (useful if behind firewall', :group_id => group.pk)
         @servers = {}
         @ports = Setting[:dcc_ports]
         @ports = {:start => 49152, :end => 65535} if @ports.nil?
@@ -148,6 +150,10 @@ class DCC < ModSpox::Plugin
         reply message.replyto, "\2Allowed Ports:\2 #{@ports[:start]} - #{@ports[:end]}"
     end
 
+    def dcc_chat(message, params)
+        @pipeline << Messages::Internal::DCCListener.new(message.source)
+    end
+
     private
 
     def initialize_getter(socket, filename)
@@ -174,6 +180,7 @@ class DCC < ModSpox::Plugin
                 Logger.log("Error sending file: #{filename}. Unknown reason: #{boom}")
             ensure
                 socket.close
+                client.close
                 @servers.delete(socket.object_id)
             end
         end
