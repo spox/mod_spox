@@ -137,7 +137,7 @@ module ModSpox
             begin
                 Logger.log("Pipeline is processing a message: #{message}", 10)
                 parse(message)
-                type = message.class.to_s.gsub(/^ModSpox::Messages::/, '').gsub(/::/, '_').to_sym
+                type = message.class.to_s.gsub(/^(ModSpox::Messages::|#<.+?>::)/, '').gsub(/::/, '_').to_sym
                 mod = type.to_s.gsub(/_.+$/, '').to_sym
                 Logger.log("Pipeline determines that #{message} is of type: #{type}", 10)
                 [type, mod, :all].each do |type|
