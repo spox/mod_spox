@@ -16,8 +16,6 @@ class AutoKick < ModSpox::Plugin
             :group_id => group.pk, :description => 'Remove an autokick rule').params = [:id]
         Signature.find_or_create(:signature => 'autokick colors ?(on|off)?', :plugin => name, :method => 'colors',
             :group_id => group.pk, :description => 'Kick user for using colors', :requirement => 'public').params = [:action]
-        @pipeline.hook(self, :banner_watch, :Internal_PluginResponse)
-        @banner = nil
         @map = nil
         @colors = Setting[:colorkick]
         @colors = Array.new unless @colors.is_a?(Array)
@@ -94,20 +92,14 @@ class AutoKick < ModSpox::Plugin
                 reg = Regexp.new(pattern, Regexp::IGNORECASE)
                 unless(reg.match(message.message).nil?)
                     record = AutoKickRecord.filter(:pattern => pattern).first
-                    @banner.plugin.ban(message.source, message.target, record.bantime, record.message, false, true)
+                    @pipeline << plugin_const(:Banner_Ban).new(message.source, message.target, :kickban, record.message, record.bantime, false, true)
                 end
             end
         end
         if(@colors.include?(message.target.pk))
             if(message.is_colored?)
-                @banner.plugin.ban(message.source, message.target, 60, 'No color codes allowed', false, true)
+                @pipeline << plugin_const(:Banner_Ban).new(message.source, message.target, :kickban, 'No color codes allowed', 60, false, true)
             end
-        end
-    end
-
-    def banner_watch(message)
-        if(message.origin == self && message.found?)
-            @banner = message.plugin
         end
     end
 
@@ -127,7 +119,6 @@ class AutoKick < ModSpox::Plugin
                 @map[record.channel_id] = [] unless @map[record.channel_id]
                 @map[record.channel_id] << record.pattern
             end
-            @pipeline << Messages::Internal::PluginRequest.new(self, 'Banner')
             @pipeline.hook(self, :listener, :Incoming_Privmsg)
         end
     end
