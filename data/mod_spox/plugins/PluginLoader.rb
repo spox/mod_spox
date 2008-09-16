@@ -52,9 +52,9 @@ class PluginLoader < ModSpox::Plugin
     # params:: matching signature params
     # Unload the given plugin
     def unload_plugin(message, params)
-        path = loaded_path(params[:plugin])
+        path = loaded_path(params[:plugin].to_sym)
         unless(path.nil?)
-            name = plugin_discovery(BotConfig[:pluginextraspath]).keys.include?(params[:plugin]) ? nil : ".#{params[:plugin]}.rb"
+            name = plugin_discovery(BotConfig[:pluginextraspath]).keys.include?(params[:plugin].to_sym) ? nil : ".#{params[:plugin]}.rb"
             @pipeline << Messages::Internal::PluginUnloadRequest.new(self, path, name)
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Okay")
         else
@@ -133,7 +133,7 @@ class PluginLoader < ModSpox::Plugin
                     plugins[const] = "#{path}/#{file}" if klass < Plugin
                 end
             rescue Object => boom
-                Logger.log("Failed to parse file: #{path}/#{file}. Reason: #{boom}")
+                Logger.log("Failed to parse file: #{path}/#{file}. Reason: #{boom}\n#{boom.backtrace.join("\n")}")
                 next
             end
         end

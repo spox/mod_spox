@@ -8,10 +8,10 @@
 module ModSpox
 
     class PluginManager
-    
+
         # Hash of plugins. Defined by class name symbol (i.e. Trivia class: plugins[:Trivia])
         attr_reader :plugins
-    
+
         # pipeline:: Pipeline for messages
         # Create new PluginManager
         def initialize(pipeline)
@@ -26,7 +26,7 @@ module ModSpox
             @plugin_lock = Mutex.new
             load_plugins
         end
-        
+
         # message:: Messages::Internal::PluginReload
         # Destroys and reinitializes plugins
         def reload_plugins(message=nil)
@@ -44,12 +44,12 @@ module ModSpox
                 @pipeline << Messages::Internal::SignaturesUpdate.new
             end
         end
-        
+
         # Destroys plugins
         def destroy_plugins
             unload_plugins
         end
-        
+
         # message:: Messages::Internal::PluginLoadRequest
         # Loads a plugin
         def load_plugin(message)
@@ -69,7 +69,7 @@ module ModSpox
             end
             @pipeline << Messages::Internal::SignaturesUpdate.new
         end
-        
+
         # message:: Messages::Internal::PluginUnloadRequest
         # Unloads a plugin
         def unload_plugin(message)
@@ -89,13 +89,13 @@ module ModSpox
             end
             @pipeline << Messages::Internal::SignaturesUpdate.new
         end
-        
+
         # message:: Messages::Internal::PluginModuleRequest
         # Sends the plugins module to the requester
         def send_modules(message)
             @pipeline << Messages::Internal::PluginModuleResponse.new(message.requester, @plugins_module)
         end
-        
+
         # message:: Messages::Internal::PluginRequest
         # Returns a plugin to requesting object
         def plugin_request(message)
@@ -106,13 +106,13 @@ module ModSpox
             end
             @pipeline << response
         end
-        
+
         def upgrade_plugins
             @plugins[:PluginLoader].plugin.extras_upgrade
         end
-        
+
         private
-        
+
         # Loads and initializes plugins
         def load_plugins
             @pipeline << Messages::Internal::TimerClear.new
@@ -130,7 +130,7 @@ module ModSpox
             end
             @pipeline << Messages::Internal::SignaturesUpdate.new
         end
-        
+
         # Destroys plugins
         def unload_plugins
             @plugins.each_pair do |sym, holder|
@@ -141,7 +141,7 @@ module ModSpox
             @plugins_module = Module.new
             @pipeline << Messages::Internal::TimerClear.new
         end
-        
+
         # path:: path to plugin file
         # Loads a plugin into the plugin module
         def do_load(path)
@@ -153,9 +153,9 @@ module ModSpox
                     plugins.each do |plugin|
                         klass = @plugins_module.const_get(plugin)
                         if(@plugins.has_key?(plugin.to_sym))
-                            @plugins[plugin.to_sym].set_plugin(klass.new(@pipeline))
+                            @plugins[plugin.to_sym].set_plugin(klass.new({:pipeline => @pipeline, :plugin_module => @plugins_module}))
                         else
-                            @plugins[plugin.to_sym] = PluginHolder.new(klass.new(@pipeline))
+                            @plugins[plugin.to_sym] = PluginHolder.new(klass.new({:pipeline => @pipeline, :plugin_module => @plugins_module}))
                         end
                         Logger.log("Properly initialized new plugin: #{plugin}", 25)
                     end
@@ -169,19 +169,19 @@ module ModSpox
                 raise PluginFileNotFound.new("Failed to find file at: #{path}")
             end
         end
-        
+
         # path:: path to plugin file
         # Unloads a plugin and all constants from the plugin module
         def do_unload(path)
             if(File.exists?(path))
                 discover_plugins(path).each do |plugin|
                     if(@plugins.has_key?(plugin.to_sym))
-                        @plugins[plugin.to_sym].plugin.destroy 
+                        @plugins[plugin.to_sym].plugin.destroy unless @plugins[plugin.to_sym].plugin.nil?
                         @pipeline.unhook_plugin(@plugins[plugin.to_sym].plugin)
                         @plugins[plugin.to_sym].set_plugin(nil)
                         @pipeline << Messages::Internal::TimerClear.new(plugin.to_sym)
                     end
-                    Models::Signature.filter(:plugin => plugin).destroy
+                    Models::Signature.filter(:plugin => plugin.to_s).destroy
                 end
                 discover_consts(path).each do |const|
                     Logger.log("Removing constant: #{const}")
@@ -192,7 +192,7 @@ module ModSpox
                 raise PluginFileNotFound.new("Failed to find file at: #{path}")
             end
         end
-        
+
         # path:: path to plugin
         # Find class names of any plugins within the file at given path
         def discover_plugins(path)
@@ -207,9 +207,9 @@ module ModSpox
                 return klasses
             rescue Object => boom
                 return nil
-            end     
+            end
         end
-        
+
         # path:: path to plugin
         # Find all constant names in given path
         def discover_consts(path)
@@ -221,13 +221,13 @@ module ModSpox
                 return nil
             end
         end
-        
+
         class PluginMissing < Exceptions::BotException
         end
-        
+
         class PluginFileNotFound < Exceptions::BotException
         end
-    
+
     end
 
 end
