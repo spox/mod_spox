@@ -1,7 +1,7 @@
 class AOLSpeak < ModSpox::Plugin
 
     include Models
-    
+
     def initialize(pipeline)
         super
         group = Group.find_or_create(:name => 'banner')
@@ -9,20 +9,13 @@ class AOLSpeak < ModSpox::Plugin
         Signature.find_or_create(:signature => 'aolkick (\S+) ?(\S+)?', :plugin => name, :method => 'aolkick', :description => 'AOL speak kick',
             :group_id => group.pk).params = [:nick, :channel]
         build_aolspeak
-        @banner = nil
-        @pipeline.hook(self, :banner_watch, :Internal_PluginResponse)
-        @pipeline << Messages::Internal::PluginRequest.new(self, 'Banner')
     end
-    
+
     def aolspeak(message, params)
         reply message.replyto, @aolspeak[rand(@aolspeak.size) - 1]
     end
-    
+
     def aolkick(message, params)
-        if(@banner.nil?)
-            @pipeline << Messages::Internal::PluginRequest.new(self, 'Banner')
-            sleep(0.1)
-        end
         if(params[:channel])
             channel = Models::Channel.filter(:name => params[:channel]).first
         else
@@ -30,21 +23,15 @@ class AOLSpeak < ModSpox::Plugin
         end
         nick = Helpers.find_model(params[:nick], false)
         if(channel && nick)
-            @banner.plugin.ban(nick, channel, 60, @aolspeak[rand(@aolspeak.size) - 1], invite=false, show_time=false)
+            @pipeline << plugin_const(:Banner_Ban).new(nick, channel, :kickban, @aolspeak[rand(@aolspeak.size) - 1], record.bantime, false, false)
         else
             reply message.replyto, "\2Error:\2 Failed to find channel: #{params[:channel]}" unless channel
             reply message.replyto, "\2Error:\2 Failed to find nick: #{params[:nick]}" unless nick
         end
     end
 
-    def banner_watch(message)
-        if(message.origin == self && message.found?)
-            @banner = message.plugin
-        end
-    end
-
     private
-    
+
     def build_aolspeak
         @aolspeak = [
             'ALL OREAND THE GIFCHERRY BUSH DA BOON CHASED DA WHEASELGIFPASTECLITNUGGET SHIT]',
