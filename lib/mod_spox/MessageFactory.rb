@@ -24,7 +24,7 @@ module ModSpox
         # be processed thus there is now wait for processing to be
         # completed.
         def <<(string)
-            @queue << string
+            @queue << Proc.new{ processor(string) }
         end
 
         # Builds the message handlers. This will load all Messages and Handlers
@@ -69,9 +69,9 @@ module ModSpox
 
         private
 
-        def processor
+        def processor(message)
             @lock.synchronize do
-                parse_message(@queue.pop)
+                parse_message(message)
             end
         end
 

@@ -41,7 +41,7 @@ module ModSpox
             @time_check = nil
             @check_burst = 0
             @pause = false
-            @sendq = @queue
+            @sendq = Queue.new
             @lock = Mutex.new
             start_pool
         end
@@ -116,12 +116,13 @@ module ModSpox
         # Queues a message up to be sent to the IRC server
         def <<(message)
             @sendq << message
+            @queue << Proc.new{ processor }
         end
 
         # Starts the thread for sending messages to the server
         def processor
             @lock.synchronize do
-                write(@sendq.pop)
+                write(@sendq.pop(true))
                 if((Time.now.to_i - @time_check) > @burst_in)
                     @time_check = nil
                     @check_burst = 0

@@ -8,7 +8,7 @@
 module ModSpox
 
     class Timer < Pool
-    
+
         # pipeline:: message pipeline
         # Create a new Timer
         def initialize(pipeline)
@@ -30,23 +30,21 @@ module ModSpox
             end
             start_pool
         end
-        
+
         # Wakes the timer up early
         def wakeup
             Logger.log("Timer has been explicitly told to wakeup", 15)
             @monitor.wakeup unless @thread.nil?
         end
-        
+
         # message:: TimerAdd message
         # Add a recurring code block
         def add_message(message)
             Logger.log("New block is being added to the timer", 15)
             action = nil
-            @owners_lock.synchronize do
-                action = add(message.period, message.once, message.data, &message.block)
-                @owners[message.requester.name.to_sym] = [] unless @owners.has_key?(message.requester.name.to_sym)
-                @owners[message.requester.name.to_sym] << action
-            end
+            action = add(message.period, message.once, message.data, &message.block)
+            @owners[message.requester.name.to_sym] = [] unless @owners.has_key?(message.requester.name.to_sym)
+            @owners[message.requester.name.to_sym] << action
             begin
                 @pipeline << Messages::Internal::TimerResponse.new(message.requester, action, true, message.id)
                 Logger.log("New block was successfully added to the timer", 15)
@@ -55,7 +53,7 @@ module ModSpox
                 @pipeline << Messages::Internal::TimerResponse.new(message.requester, action, false, message.id)
             end
         end
-        
+
         # message:: TimerRemove message
         # Remove an action from the timer
         def remove_message(message)
@@ -63,7 +61,7 @@ module ModSpox
             Logger.log("Action has been removed from the Timer", 15)
             @pipeline << Messages::Internal::TimerResponse.new(nil, message.action, false, message.id)
         end
-        
+
         # period:: seconds between running action
         # once:: only run action once
         # data:: data to be available
@@ -79,15 +77,15 @@ module ModSpox
             @add_lock.wakeup
             return action
         end
-        
+
         # action:: Action to add to timer's queue
-        # Adds a new action to the timer        
+        # Adds a new action to the timer
         def add_action(action)
             raise Exceptions::InvalidType.new('An Action object must be supplied') unless action.is_a?(Action)
             @timers << action
             wakeup
         end
-        
+
         # action:: Action to remove from timer's queue
         # Removes and action from the timer
         def remove(action)
@@ -95,7 +93,7 @@ module ModSpox
             @timers.delete(action)
             wakeup
         end
-        
+
         # Starts the timer
         def start
             raise Exceptions::AlreadyRunning.new('Timer is already running') unless @thread.nil?
@@ -114,7 +112,7 @@ module ModSpox
                 end
             }
         end
-        
+
         # Stops the timer
         def stop
             raise Exceptions::NotRunning.new('Timer is not running') if @thread.nil?
@@ -122,11 +120,10 @@ module ModSpox
             wakeup
             @thread.join
         end
-        
+
         # Clears all actions in the timer's queue
         def clear(message=nil)
             if(message.nil? || message.plugin.nil?)
-                @queue.clear
                 @timers.clear
                 @owners.clear
             else
@@ -139,23 +136,24 @@ module ModSpox
                 end
             end
         end
-        
+
         private
-        
+
         # time_passed:: time passed since last tick
         # Decrements all Actions the given amount of time
         def tick(time_passed)
+            ready = []
             for action in @timers do
                 action.tick(time_passed)
                 if(action.due?)
-                    @queue << action.schedule
+                    ready << action.schedule
                 end
             end
+            ready.each{|action| @queue << Proc.new{ processor(action) }}
         end
-        
+
         # Process the actions
-        def processor
-            action = @queue.pop
+        def processor(action)
             begin
                 action.run
                 remove(action) if action.is_complete?
@@ -163,7 +161,7 @@ module ModSpox
                 Logger.log("Timer block generated an exception: #{boom}\n#{boom.backtrace.join("\n")}", 5)
             end
         end
-    
+
     end
-    
+
 end

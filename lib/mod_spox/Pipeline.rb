@@ -118,20 +118,6 @@ module ModSpox
 
         private
 
-        def processor
-            action = @queue.pop
-            begin
-                Timeout::timeout(@timeout) do
-                    action.call
-                end
-            rescue Timeout::Error => boom
-                Logger.log("Pipeline caught timeout error. Execution lasted over: #{@timeout} seconds")
-                Thread.current.kill
-            rescue Object => boom
-                Logger.log("Pipeline caught an error while executing action: #{boom}\n#{boom.backtrace.join("\n")}")
-            end
-        end
-
         # Processes messages
         def message_processor(message)
             begin
