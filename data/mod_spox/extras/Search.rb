@@ -8,12 +8,12 @@ class Search < ModSpox::Plugin
         super(pipeline)
         Models::Signature.find_or_create(:signature => 'search (\d+)? ?(.+)', :plugin => name, :method => 'search', :description => 'Search the internet').params = [:number, :terms]
     end
-    
+
     def search(message, params)
         limit = params[:number] ? params[:number].to_i : 1
         limit = limit > 5 || limit < 1 ? 1 : limit
         begin
-            resp = Net::HTTP.new('www.scroogle.org', 80).request_get("/cgi-bin/nbbw.cgi?Gw=#{CGI::escape(params[:terms])}", nil)
+            resp = Net::HTTP.new('www.scroogle.org', 80).request_get("/cgi-bin/nbbw.cgi?Gw=#{CGI::escape(params[:terms])}")
             resp.value
             page = resp.body
             results = []
@@ -29,6 +29,7 @@ class Search < ModSpox::Plugin
             reply message.replyto, output
         rescue Object => boom
             @pipeline << Privmsg.new(message.replyto, "Failed to find any results for: #{params[:terms]} Reason: #{boom}")
+            Logger.log("Error: #{boom}\n#{boom.backtrace.join("\n")}")
         end
     end
 end
