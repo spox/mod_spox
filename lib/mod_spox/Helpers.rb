@@ -67,7 +67,7 @@ module ModSpox
         def Helpers.tinyurl(url)
             begin
                 connection = Net::HTTP.new('tinyurl.com', 80)
-                resp, data = connection.get("/create.php?url=#{url}", nil)
+                resp, data = connection.get("/create.php?url=#{url}")
                 if(resp.code !~ /^200$/)
                     raise "Failed to make the URL small."
                 end
@@ -107,7 +107,7 @@ module ModSpox
                     nick = Models::Nick.locate(string, create)
                     if(nick.nil?)
                         Database.reconnect
-                        return find_model(string, create)
+                        return string
                     end
                     @@nick_cache[string.downcase.to_sym] = nick.pk if nick.is_a?(Models::Nick)
                     Logger.log("Nick was retrieved from database", 30)
@@ -131,7 +131,7 @@ module ModSpox
                     channel = Models::Channel.locate(string, create)
                     if(channel.nil?)
                         Database.reconnect
-                        return find_model(string, create)
+                        return string
                     end
                     @@channel_cache[string.downcase.to_sym] = channel.pk if channel.is_a?(Models::Channel)
                     Logger.log("Channel was retrieved from database", 30)
