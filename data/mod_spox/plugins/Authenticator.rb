@@ -2,7 +2,7 @@ class Authenticator < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)
         group = Models::Group.filter(:name => 'admin').first
-        Models::Signature.find_or_create(:signature => 'auth (\S+)', :plugin => name, :method => 'authenticate', 
+        Models::Signature.find_or_create(:signature => 'auth (\S+)', :plugin => name, :method => 'authenticate',
             :description => 'Authenticate with bot using a password').params = [:password]
         Models::Signature.find_or_create(:signature => 'ident', :plugin => name, :method => 'send_whois',
             :description => 'Instructs the bot to check your NickServ status')
@@ -18,13 +18,13 @@ class Authenticator < ModSpox::Plugin
             :group_id => group.pk, :description => 'List all available authentication masks')
         Models::Signature.find_or_create(:signature => 'auth nick ident (\S+) (true|false)', :plugin => name, :method => 'nick_ident',
             :group_id => group.pk, :description => 'Allow authentication to nicks identified to NickServ').params = [:nick, :ident]
-        Models::Signature.find_or_create(:signature => 'auth nick password (\S+) (\S+)', :plugin => name, :method => 'nick_pass', 
+        Models::Signature.find_or_create(:signature => 'auth nick password (\S+) (\S+)', :plugin => name, :method => 'nick_pass',
             :group_id => group.pk, :description => 'Set authentication password for nick').params = [:nick, :password]
         Models::Signature.find_or_create(:signature => 'auth nick clear password (\S+)', :plugin => name, :method => 'clear_pass',
             :group_id => group.pk, :description => 'Clear nicks authentication password').params = [:nick]
-        Models::Signature.find_or_create(:signature => 'auth nick info (\S+)', :plugin => name, :method => 'nick_info', 
+        Models::Signature.find_or_create(:signature => 'auth nick info (\S+)', :plugin => name, :method => 'nick_info',
             :group_id => group.pk, :description => 'Return authentication information about given nick').params = [:nick]
-        Models::Signature.find_or_create(:signature => 'auth nick set (\S+) (\S+)', :plugin => name, :method => 'set_nick', 
+        Models::Signature.find_or_create(:signature => 'auth nick set (\S+) (\S+)', :plugin => name, :method => 'set_nick',
             :group_id => group.pk, :description => 'Set the group for a given nick').params = [:nick, :group]
         Models::Signature.find_or_create(:signature => 'auth nick unset (\S+) (\S+)', :plugin => name, :method => 'unset_nick',
             :group_id => group.pk, :description => 'Unset the group for a given nick').params = [:nick, :group]
@@ -41,7 +41,7 @@ class Authenticator < ModSpox::Plugin
         @pipeline.hook(self, :check_nicks, :Incoming_Who)
         @pipeline.hook(self, :check_nicks, :Incoming_Names)
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Authenticate a user by password
@@ -51,9 +51,9 @@ class Authenticator < ModSpox::Plugin
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, 'Authentication was successful')
         else
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, 'Authentication failed')
-        end            
+        end
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Add an authentication mask
@@ -69,7 +69,7 @@ class Authenticator < ModSpox::Plugin
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Authentication failed to add mask. Reason: #{boom}")
         end
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Add an authentication group to a given mask
@@ -85,7 +85,7 @@ class Authenticator < ModSpox::Plugin
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find mask with ID: #{params[:id]}")
         end
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Remove an authentication group from a given mask
@@ -101,7 +101,7 @@ class Authenticator < ModSpox::Plugin
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find mask with ID: #{params[:id]}")
         end
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # List all authentication masks
@@ -115,7 +115,7 @@ class Authenticator < ModSpox::Plugin
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "\2ID:\2 #{a.pk}: \2mask:\2 #{a.mask} \2groups:\2 #{groups.join(', ')}")
         end
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Remove given authentication mask
@@ -128,7 +128,7 @@ class Authenticator < ModSpox::Plugin
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "\2Failed\2: Could not find an authentication mask with ID: #{params[:id]}")
         end
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Set nick authentication by NickServ
@@ -141,8 +141,8 @@ class Authenticator < ModSpox::Plugin
         end
         @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Nick #{params[:nick]} has been updated. Services for authentication has been set to #{params[:ident]}")
     end
-    
-    
+
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Set password for given nick
@@ -151,7 +151,7 @@ class Authenticator < ModSpox::Plugin
         nick.auth.password = params[:password]
         @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Nick #{params[:nick]} has been updated. Password has been set.")
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Clear password field for given nick
@@ -160,7 +160,7 @@ class Authenticator < ModSpox::Plugin
         nick.auth.password = nil
         @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Nick #{params[:nick]} has been updated. Password has been set.")
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Display info for given nick
@@ -181,7 +181,7 @@ class Authenticator < ModSpox::Plugin
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "I have no record of nick: #{params[:nick]}")
         end
     end
-    
+
     def show_groups(message, params)
         groups = []
         message.source.auth_groups.each{|g| groups << g.name}
@@ -191,7 +191,7 @@ class Authenticator < ModSpox::Plugin
             reply message.replyto, "\2Groups (#{message.source.nick}):\2 #{groups.join(', ')}"
         end
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Add given nick to authentication group
@@ -206,7 +206,7 @@ class Authenticator < ModSpox::Plugin
 
         end
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Remove given nick from authenticationg group
@@ -221,14 +221,14 @@ class Authenticator < ModSpox::Plugin
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find group: #{params[:group]}") unless group
         end
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Send WHOIS for nick
     def send_whois(message, params)
         @pipeline << Messages::Outgoing::Whois.new(message.source.nick)
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Display all available authentication groups
@@ -237,7 +237,7 @@ class Authenticator < ModSpox::Plugin
         Models::Group.all.each{|g| groups << g.name}
         @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "\2Groups:\2 #{groups.join(', ')}")
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Display info about given group
@@ -262,14 +262,14 @@ class Authenticator < ModSpox::Plugin
             @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find group named: #{params[:group]}")
         end
     end
-    
+
     # Populates array with nicks that authenticate by nickserv
     def populate_nickserv
         Models::Auth.filter('services = ?', true).each do |auth|
             @nickserv_nicks << auth.nick.nick.downcase
         end
     end
-    
+
     def check_nickserv(nick)
         if(@nickserv_nicks.include?(nick.nick.downcase))
             if(!nick.auth.authed && !@whois_cache.include?(nick.nick.downcase))
@@ -278,11 +278,11 @@ class Authenticator < ModSpox::Plugin
             end
         end
     end
-    
+
     def check_join(message)
         check_nickserv(message.nick)
     end
-    
+
     def check_nicks(message)
         message.nicks.each{|nick| check_nickserv(nick) }
     end

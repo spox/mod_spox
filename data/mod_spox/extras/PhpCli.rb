@@ -9,7 +9,7 @@ class PhpCli < ModSpox::Plugin
         @path = Config[:plugin_directory] + '/phpcli'
         @botini = @path + '/bot.ini'
         unless(File.directory?(@path))
-            FileUtils.mkdir_p(@path) 
+            FileUtils.mkdir_p(@path)
         end
         result = Helpers.safe_exec('which php')
         raise NoInterpreter.new if result.empty?
@@ -18,21 +18,17 @@ class PhpCli < ModSpox::Plugin
             ini.write($ini)
             ini.close
         end
-        php = Group.find_or_create(:name => 'PHP')
+        php = Group.find_or_create(:name => 'php')
         admin = Group.filter(:name => 'admin').first
         Signature.find_or_create(:signature => 'php (on|off)', :plugin => name, :method => 'set_channel', :group_id => admin.pk,
             :description => 'Add or remove channel from allowing PHP command').params = [:action]
         Signature.find_or_create(:signature => 'php (?!on|off)(.+)', :plugin => name, :method => 'execute_php', :group_id => php.pk,
             :description => 'Execute PHP code').params = [:code]
-        @channels = Setting.find(:name => 'phpcli')
-        if(@channels.nil?)
-            Logger.log("WE ARE NIL PEOPLE")
-            @channels = []
-        else
-            @channels = @channels.value
-        end
+        @channels = Setting.filter(:name => 'phpcli').first
+        Logger.log("This is what channels is: #{@channel}")
+        @channels = @channels.nil? ? [] : @channels.value
     end
-    
+
     def set_channel(message, params)
         return unless message.is_public?
         if(params[:action] == 'on')
@@ -55,7 +51,7 @@ class PhpCli < ModSpox::Plugin
             end
         end
     end
-    
+
     def execute_php(message, params)
         return unless @channels.include?(message.target.pk)
         filepath = @path + "/#{rand(99999)}.bot.php"
@@ -88,7 +84,7 @@ class PhpCli < ModSpox::Plugin
             File.delete(filepath)
         end
     end
-    
+
     class NoInterpreter < Exceptions::BotException
     end
 

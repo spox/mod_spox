@@ -1,7 +1,7 @@
 class Roulette < ModSpox::Plugin
 
     include Models
-    
+
     def initialize(pipeline)
         super(pipeline)
         Signature.find_or_create(:signature => 'roulette', :plugin => name, :method => 'roulette', :requirement => 'public')
@@ -15,7 +15,7 @@ class Roulette < ModSpox::Plugin
         @banner = nil
         @pipeline.hook(self, :get_banner, :Internal_PluginResponse)
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # Display chamber statistics
     def chambers(m, p)
@@ -32,13 +32,13 @@ class Roulette < ModSpox::Plugin
             reply m.replyto, "\2Error:\2 No games found"
         end
     end
-    
+
     # message:: ModSpox::Messages::Internal::PluginResponse
     # Get the banner plugin
     def get_banner(message)
         @banner = message.plugin if message.found?
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: empty
     # Play roulette
@@ -46,7 +46,7 @@ class Roulette < ModSpox::Plugin
         return unless message.is_public?
         do_shot(message.source, message.target)
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: empty
     # Kill self
@@ -54,7 +54,7 @@ class Roulette < ModSpox::Plugin
         return unless message.is_public?
         do_suicide(message.source, message.target)
     end
-    
+
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: nick
     # Shoot other person playing current game
@@ -106,9 +106,9 @@ class Roulette < ModSpox::Plugin
         end
         reply(message.replyto, "\2Roulette stats #{nick.nick}:\2 #{win_loss_ratio(nick, message.target)}% survival rate. Has won #{games_won(nick, message.target)} games and lost #{games_lost(nick, message.target)} games, taking a total of #{total_shots(nick, message.target)} shots.")
     end
-    
+
     private
-    
+
     # nick:: ModSpox::Models::Nick
     # channel:: ModSpox::Models::Channel
     # Report win/loss ratio for nick
@@ -129,7 +129,7 @@ class Roulette < ModSpox::Plugin
     def games_won(nick, channel)
         Info.left_outer_join(:games, :id => :game_id).filter('nick_id = ?', nick.pk).filter('channel_id = ?', channel.pk).filter('win = ?', true).size
     end
-    
+
     # nick:: ModSpox::Models::Nick
     # channel:: ModSpox::Models::Channel
     # Return number of games nick has lost
@@ -155,7 +155,7 @@ class Roulette < ModSpox::Plugin
 
     # nick:: ModSpox::Models::Nick
     # channel:: ModSpox::Models::Channel
-    # Fire shot    
+    # Fire shot
     def do_shot(nick, channel)
         begin
             shot(nick, channel)
@@ -165,7 +165,7 @@ class Roulette < ModSpox::Plugin
             kill_nick(nick, channel)
         end
     end
-    
+
     # nick:: ModSpox::Models::Nick
     # channel:: ModSpox::Models::Channel
     # Commit suicide
@@ -179,7 +179,7 @@ class Roulette < ModSpox::Plugin
             kill_nick(nick, channel)
         end
     end
-    
+
     def kill_nick(nick, channel)
         unless(@banner.nil?)
             begin
@@ -207,7 +207,7 @@ class Roulette < ModSpox::Plugin
         end
         return game
     end
-    
+
     # nick:: ModSpox::Models::Nick
     # channel:: ModSpox::Models::Channel
     # Process shot
@@ -218,7 +218,7 @@ class Roulette < ModSpox::Plugin
         cur_game.update_with_params(:shots => cur_game.shots - 1)
         raise Bullet.new(cur_game) if cur_game.shots < 1
     end
-    
+
     # nick:: ModSpox::Models::Nick
     # game:: Game
     # Return number of games nick has won
@@ -227,7 +227,7 @@ class Roulette < ModSpox::Plugin
             info.update_with_params(:win => true) unless info.nick_id == nick.pk
         end
     end
-    
+
     class Game < Sequel::Model
         set_schema do
             primary_key :id
@@ -236,16 +236,16 @@ class Roulette < ModSpox::Plugin
             integer :chamber, :null => false, :default => 1
             foreign_key :channel_id, :null => false, :table => :channels
         end
-        
+
         before_create do
             self.stamp = Time.now
         end
-        
+
         def channel
             Models::Channel[channel_id]
         end
     end
-    
+
     class Info < Sequel::Model
         set_schema do
             primary_key :id
@@ -254,16 +254,16 @@ class Roulette < ModSpox::Plugin
             foreign_key :nick_id, :null => false, :table => :nicks
             foreign_key :game_id, :null => false, :table => :games
         end
-        
+
         def nick
             Models::Nick[nick_id]
         end
-        
+
         def game
             Models::Game[game_id]
         end
     end
-    
+
     class Bullet < Exception
         attr_reader :game
         def initialize(game)
