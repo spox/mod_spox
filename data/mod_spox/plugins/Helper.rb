@@ -9,14 +9,14 @@ class Helper < ModSpox::Plugin
         Signature.find_or_create(:signature => 'help (\S+)', :plugin => name, :method => 'plugin_help',
             :description => 'Display help information from given plugin').params = [:plugin]
     end
-    
+
     def default_help(message, params)
         plugins = Signature.select(:plugin).map(:plugin)
         plugins.uniq!
         reply message.replyto, "Plugins currently available for help: #{plugins.join(', ')}"
         reply message.replyto, "Request help on a plugin: !help Plugin"
     end
-    
+
     def plugin_help(message, params)
         sigs = Signature.filter(:plugin => params[:plugin])
         if(sigs.count > 0)
@@ -30,7 +30,11 @@ class Helper < ModSpox::Plugin
                 help << "\2Description:\2 #{sig.description}" if sig.description
                 output << help.join(' ')
             end
-            reply message.source, output
+            if(message.is_dcc?)
+                reply message.replyto, output
+            else
+                reply message.source, output
+            end
         else
             reply message.replyto, "\2Error:\2 No triggers found for plugin named: #{params[:plugin]}"
         end
