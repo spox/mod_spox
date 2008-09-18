@@ -7,7 +7,7 @@ class Karma < ModSpox::Plugin
         Datatype::Karma.create_table unless Datatype::Karma.table_exists?
         Datatype::Alias.create_table unless Datatype::Alias.table_exists?
         alias_group = Models::Group.find_or_create(:name => 'alias')
-        Models::Signature.find_or_create(:signature => 'karma (.+)', :plugin => name, :method => 'score', :description => 'Returns karma for given thing').params = [:thing]
+        Models::Signature.find_or_create(:signature => 'karma (?!fight \S+ \S+$)(.+)', :plugin => name, :method => 'score', :description => 'Returns karma for given thing').params = [:thing]
         Models::Signature.find_or_create(:signature => 'karma reset (.+)', :plugin => name, :method => 'reset',
             :group_id => Models::Group.filter(:name => 'admin').first.pk, :description => 'Reset a karma score').params = [:thing]
         Models::Signature.find_or_create(:signature => 'karma alias (\S+) (\S+)', :plugin => name, :method => 'aka',
@@ -44,7 +44,7 @@ class Karma < ModSpox::Plugin
             end
         end
     end
-    
+
     def score(message, params)
         return unless message.is_public?
         karma = Datatype::Karma.filter(:thing => params[:thing].downcase, :channel_id => message.target.pk).first
@@ -54,7 +54,7 @@ class Karma < ModSpox::Plugin
             @pipeline << Privmsg.new(message.replyto, "\2Error:\2 #{params[:thing]} has no karma")
         end
     end
-    
+
     def reset(message, params)
         params[:thing].downcase!
         return unless message.is_public?
@@ -64,9 +64,9 @@ class Karma < ModSpox::Plugin
             @pipeline << Privmsg.new(message.replyto, "Karma for \2#{karma.thing}\2 has been reset")
         else
             @pipeline << Privmsg.new(message.replyto, "\2Error:\2 #{params[:thing]} has no karma")
-        end        
+        end
     end
-    
+
     def fight(message, params)
         thing = Datatype::Karma.find_or_create(:thing => params[:thing].downcase)
         thang = Datatype::Karma.find_or_create(:thing => params[:thang].downcase)
@@ -77,12 +77,12 @@ class Karma < ModSpox::Plugin
         distance = (thing_score - thang_score).abs
         output = "\2KARMA FIGHT RESULTS:\2 "
         if(distance > 0)
-            reply message.replyto, "\2#{winner}\2 has beaten \2#{loser}\2 #{distance > 50 ? 'like a redheaded step child' : ''} (+#{distance} points)"
+            reply message.replyto, "\2#{winner}\2 #{winner[-1] == 's' || winner[-1] == 115 ? 'have' : 'has'} beaten \2#{loser}\2 #{distance > 50 ? 'like a redheaded step child' : ''} (+#{distance} points)"
         else
-            reply message.replyto, "\2#{winner}\2 has tied \2#{loser}\2"
+            reply message.replyto, "\2#{winner}\2 #{winner[-1] == 's' || winner[-1] == 115 ? 'have' : 'has'} tied \2#{loser}\2"
         end
     end
-    
+
     def aka(message, params)
         thing = Datatype::Karma.find_or_create(:thing => params[:thing].downcase, :channel_id => message.target.pk)
         thang = Datatype::Karma.find_or_create(:thing => params[:thang].downcase, :channel_id => message.target.pk)
@@ -93,7 +93,7 @@ class Karma < ModSpox::Plugin
             reply message.replyto, "\2Karma Alias:\2 #{params[:thing]} is now aliased to #{params[:thang]}"
         end
     end
-     
+
     def dealias(message, params)
         thing = Datatype::Karma.filter(:thing => params[:thing].downcase, :channel_id => message.target.pk).first
         otherthing = Datatype::Karma.filter(:thing => params[:otherthing].downcase, :channel_id => message.target.pk).first
@@ -109,7 +109,7 @@ class Karma < ModSpox::Plugin
             reply message.replyto, "\2Error:\2 No alias found between #{params[:thing]} and #{params[:otherthing]}"
         end
     end
-    
+
     def show_aliases(message, params)
         thing = Datatype::Karma.filter(:thing => params[:thing].downcase, :channel_id => message.target.pk).first
         if(thing)
@@ -136,7 +136,7 @@ class Karma < ModSpox::Plugin
                 foreign_key :channel_id, :table => :channels
                 index [:thing, :channel_id], :unique => true
             end
-            
+
             def channel
                 ModSpox::Models::Channel[channel_id]
             end
@@ -147,15 +147,15 @@ class Karma < ModSpox::Plugin
                 foreign_key :thing_id, :null => false
                 foreign_key :aka_id, :null => false
             end
-            
+
             def thing
                 Karma[thing_id]
             end
-            
+
             def aka
                 Karma[aka_id]
             end
-            
+
             def Alias.score_object(object_id)
                 Alias.create_lock unless class_variable_defined?(:@@lock)
                 @@objects = []
@@ -165,16 +165,16 @@ class Karma < ModSpox::Plugin
                 end
                 return score
             end
-            
+
             def Alias.get_aliases(object_id)
                 Alias.score_object(object_id)
                 objs = @@objects.dup
                 objs.delete(object_id)
                 return objs
             end
-            
+
             private
-            
+
             def Alias.sum_objects(object_id)
                 return 0 if @@objects.include?(object_id)
                 @@objects << object_id
@@ -188,11 +188,11 @@ class Karma < ModSpox::Plugin
                 end
                 return score
             end
-            
+
             def Alias.create_lock
                 @@lock = Mutex.new
             end
-            
+
         end
     end
 end
