@@ -40,10 +40,12 @@ module ModSpox
             @factory = MessageFactory.new(@pipeline)
             @socket = nil
             @plugin_manager = PluginManager.new(@pipeline)
-            @plugin_manager.upgrade_plugins if @config[:plugin_upgrade] == 'yes'
-            Logger.log('Main bot thread is now sleeping for 10 seconds to allow upgrade to conclude')
-            sleep(10) if @config[:plugin_upgrade] == 'yes'
-            Logger.log('Main bot thread sleep completed. Continuing loading.')
+            if(@config[:plugin_upgrade] == 'yes')
+                @plugin_manager.upgrade_plugins
+                Logger.log('Main bot thread is now sleeping for 10 seconds to allow upgrade to conclude')
+                sleep(10)
+                Logger.log('Main bot thread sleep completed. Continuing loading.')
+            end
             @config[:plugin_upgrade] = 'no'
             @config.write_configuration
             @shutdown = false
@@ -97,6 +99,7 @@ module ModSpox
         def bot_connect(message)
             Logger.log("Received a connection command", 10)
             begin
+                @socket = Sockets.new(self) if @socket.nil?
                 @socket.irc_connect(message.server, message.port)
                 @pipeline << Messages::Internal::Connected.new(message.server, message.port)
             rescue Object => boom
