@@ -16,12 +16,14 @@ module ModSpox
         # Create a new pool
         def initialize
             if(@@thread_pool.nil?)
-                workers = Models::Config[:pool_workers]
-                workers = workers.nil? ? 5 : workers.to_i
+                workers_min = Models::Config[:pool_workers_min]
+                workers_min = workers_min.nil? ? 5 : workers_min.to_i
+                workers_max = Models::Config[:pool_workers_max]
+                workers_max = workers_max.nil? ? 2 : workers_max.to_i
                 timeout = Models::Config[:pool_timeout]
                 timeout = timeout.nil? ? 0 : timeout.to_i
-                Logger.log("Starting up thread pool with max workers at: #{workers} and timeout: #{timeout} seconds")
-                @@thread_pool = ThreadPool.new(workers, timeout)
+                Logger.log("Starting up thread pool with max workers at: #{workers_max}, min workers at: #{workers_min}, and timeout: #{timeout} seconds")
+                @@thread_pool = ThreadPool.new(timeout, workers_max, workers_min)
             end
             @queue = PoolQueue.new
         end
@@ -59,9 +61,25 @@ module ModSpox
         def Pool.max_workers=(max)
             @@thread_pool.max_workers = max
         end
+        
+        def Pool.min_workers
+            @@thread_pool.min_workers
+        end
+        
+        def Pool.min_workers=(min)
+            @@thread_pool.min_workers = min
+        end
 
         def Pool.workers
             @@thread_pool.pool_size
+        end
+        
+        def Pool.workers_idle
+            @@thread_pool.pool_idle
+        end
+        
+        def Pool.workers_active
+            @@thread_pool.pool_active
         end
 
         def Pool.stop_old_workers(secs)

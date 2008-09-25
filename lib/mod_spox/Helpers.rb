@@ -35,7 +35,9 @@ module ModSpox
         # Converts bytes into easy human readable form
         def Helpers.format_size(bytes)
             string = ''
-            if(bytes / 1073741824 > 0)
+            if(bytes / 1099511627780 > 0)
+                string = "#{bytes / 1099511627780}.#{(bytes % 1099511627780).to_s[0..1]} TB"
+            elsif(bytes / 1073741824 > 0)
                 string = "#{bytes / 1073741824}.#{(bytes % 1073741824).to_s[0..1]} GB"
             elsif(bytes / 1048576 > 0)
                 string = "#{bytes / 1048576}.#{(bytes % 1048576).to_s[0..1]} MB"

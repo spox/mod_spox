@@ -28,6 +28,13 @@ module ModSpox
         def Database.db
             return Database.class_variable_defined?(:@@db) ? @@db : nil
         end
+        
+        def Database.reset_connections
+            Logger.log('Resetting database connections. Any active connections are being closed.')
+            Database.db.pool.allocated.each_pair do |thread, connection|
+                thread.kill
+            end
+        end
 
         def Database.reconnect
             begin

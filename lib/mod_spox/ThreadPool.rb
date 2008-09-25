@@ -5,20 +5,35 @@ module ModSpox
     class ThreadPool
 
         attr_reader :max_workers
+        attr_reader :min_workers
         attr_reader :max_exec_time
 
-        def initialize(max_size=10, max_exec_time=0)
-            @max_workers = max_size.to_i
+        def initialize(max_exec_time=0, max_size=10, min_size=2)
+            max_size = max_size.to_i > 0 ? max_size.to_i : 10
+            min_size = min_size.to_i > 0 ? min_size.to_i : 2
+            @max_workers = max_size > min_size ? max_size : min_size
+            @min_workers = min_size.to_i
             @max_exec_time = max_exec_time.to_i
             @workers = []
             @lock = Mutex.new
             @proc_queue = Queue.new
             @worker_queue = Queue.new
+            (@max_workers / 2).times do
+                create
+            end
         end
 
         def max_workers=(max)
             raise Exceptions::InvalidValue.new('Value given must be a positive integer') unless max.to_i > 0
+            @min_workers = max.to_i if @min_workers > max.to_i
             @max_workers = max.to_i
+            resize
+        end
+        
+        def min_workers=(min)
+            raise Exceptions::InvalidValue.new('Value given must be a positive integer') unless min.to_i > 0
+            raise Exceptions::InvalidValue.new('Value given must not exceed size of max workers') unless min.to_i <= @max_workers
+            @min_workers = min.to_i
             resize
         end
 
@@ -30,22 +45,22 @@ module ModSpox
         def pool_size
             return @workers.size
         end
-
-        def queue(action)
-            @proc_queue << action
-            create if @proc_queue.size > @workers.size
+        
+        def pool_active
+            count = 0
+            @workers.each{|w| count += 1 if w.active?}
+            return count
+        end
+        
+        def pool_idle
+            count = 0
+            @workers.each{|w| count += 1 if w.idle?}
+            return count
         end
 
-        def run(&block)
-            @lock.synchronize do
-                worker = find_or_create
-                if(worker.nil?)
-                    @proc_queue << block
-                else
-                    @workers[worker] = Time.now
-                    worker.process(@max_exec_time, &block)
-                end
-            end
+        def queue(action)
+            create if @proc_queue.size > (@workers.size / 2) || @workers.size < @min_workers
+            @proc_queue << action
         end
 
         def clean_old(secs)
@@ -87,6 +102,11 @@ module ModSpox
                     end
                 end
             end
+            if(@workers.size < @min_workers)
+                (@min_workers - @workers.size).times do
+                    create
+                end
+            end
         end
 
         class Worker
@@ -108,6 +128,14 @@ module ModSpox
             def last_run
                 @time
             end
+            
+            def idle?
+                return !@active
+            end
+            
+            def active?
+                return @active
+            end
 
             def stale?
                 !(['sleep', 'run'].include?(@thread.status))
@@ -115,13 +143,11 @@ module ModSpox
 
             def kill(timeout=0.01, force=false)
                 slept = 0.0
-                unless(force)
-                    until(!@active || slept >= timeout) do
-                        sleep(0.01)
-                        slept += 0.01
-                    end
+                until(!@active || slept >= timeout) do
+                    sleep(0.01)
+                    slept += 0.01
                 end
-                @thread.kill unless @active
+                @thread.kill if force || !@active
                 return stale?
             end
 
@@ -140,6 +166,7 @@ module ModSpox
                                 end
                             rescue Timeout::Error => boom
                                 Logger.log("Worker timed out processing block. (exceeded #{@timeout} seconds)")
+                                Database.reset_connections
                             end
                         else
                             block.call

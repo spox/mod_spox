@@ -3,6 +3,7 @@
  'mod_spox/Exceptions'].each{|f|require f}
 module ModSpox
     class Plugin
+        include Models
         def initialize(args)
             @pipeline = args[:pipeline]
             @plugin_module = args[:plugin_module]
@@ -55,6 +56,16 @@ module ModSpox
             else
                 return klass
             end
+        end
+        
+        def add_sig(args)
+            raise ModSpox::Exceptions::InvalidType.new('You must provide a hash for creating new signatures') unless args.is_a?(Hash)
+            sig = Signature.find_or_create(:signature => args[:sig], :plugin => name, :method => args[:method].to_s)
+            sig.description = args[:desc] if args.has_key?(:desc)
+            sig.group_id = args[:group].pk if args.has_key?(:group)
+            sig.requirement = args[:req] if args.has_key?(:req)
+            sig.params = args[:params] if args.has_key?(:params)
+            sig.save
         end
 
     end

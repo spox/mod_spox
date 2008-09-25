@@ -24,7 +24,6 @@ module ModSpox
                         @ctcp_type = $1
                         @message = $2
                         @action = @ctcp_type.downcase == 'action'
-                        Logger.log("TYPE: #{@ctcp_type} message: #{@message}")
                     else
                         @message = message
                     end
