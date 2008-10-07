@@ -69,16 +69,11 @@ module ModSpox
         def Helpers.tinyurl(url)
             begin
                 connection = Net::HTTP.new('tinyurl.com', 80)
-                resp, data = connection.get("/create.php?url=#{url}")
+                resp, data = connection.get("/api-create.php?url=#{url}")
                 if(resp.code !~ /^200$/)
                     raise "Failed to make the URL small."
                 end
-                data.gsub!(/[\n\r]/, '')
-                if(data =~ /<input type=hidden name=tinyurl value="(.+?)">/)
-                    return $1
-                else
-                    raise "Failed to locate the small URL."
-                end
+                return data.strip
             rescue Object => boom
                 raise "Failed to process URL. #{boom}"
             end
