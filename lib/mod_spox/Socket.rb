@@ -107,8 +107,13 @@ module ModSpox
             elsif(message.length > 0)
                 Logger.log(">> #{message}", 5)
                 @received += 1
-                message.strip!
-                @factory << message
+                begin
+                    message.strip!
+                rescue Object => boom
+                    #do nothing#
+                ensure
+                    @factory << message
+                end
             end
         end
 

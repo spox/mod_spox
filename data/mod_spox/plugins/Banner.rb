@@ -83,8 +83,8 @@ class Banner < ModSpox::Plugin
     # Ban nick in given channel for given time providing given message
     def full_ban(message, params)
         nick = Helpers.find_model(params[:nick], false)
-        channel = Channel.filter(:name => params[:channel]).first
-        if(!me.is_op?(message.target))
+        channel = Channel.locate(params[:channel])
+        if(!me.is_op?(channel))
             reply(message.replyto, "Error: I'm not a channel operator")
         elsif(!nick)
             reply(message.replyto, "#{message.source.nick}: Failed to find nick #{params[:nick]}")

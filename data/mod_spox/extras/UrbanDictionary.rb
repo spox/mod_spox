@@ -7,10 +7,17 @@ class UrbanDictionary < ModSpox::Plugin
 
     def initialize(pipeline)
         super(pipeline)
+        begin
+            require 'htmlentities'
+        rescue Object => boom
+            Logger.log('Error: This plugin requires the HTMLEntities gem. Please install and reload plugin.')
+            raise Exceptions::BotException.new("Missing required HTMLEntities library")
+        end
         Signature.find_or_create(:signature => 'udefine (?!key)(\d+)? ?(.+)', :plugin => name, :method => 'define',
             :description => 'Find the definition of a word or phrase').params = [:number, :term]
         Signature.find_or_create(:signature => 'udefine key (.+)', :plugin => name, :method => 'key',
             :group_id => Models::Group.filter(:name => 'admin').first.pk, :description => 'Set API key').params = [:key]
+        @coder = HTMLEntities.new
     end
 
     def define(message, params)
@@ -31,8 +38,8 @@ class UrbanDictionary < ModSpox::Plugin
                     defin = defs[result].definition.length > 500 ? defs[result].definition.slice(0..500) + " *[CUT]*" : defs[result].definition
                     exp = defs[result].example.length > 500 ? defs[result].example.slice(0..500) + " *[CUT]*" : defs[result].example
                     output << "Definition for \2#{defs[result].word}:\2"
-                    output << defin
-                    output << "\2Example usage:\2 #{exp}" if exp.length > 0
+                    output << @coder.decode(defin.gsub(/[\r\n\s]+/, ' '))
+                    output << "\2Example usage:\2 #{@coder.decode(exp.gsub(/[\r\n\s]+/, ' '))}" if exp.length > 0
                     reply message.replyto, output
                 end
             rescue Timeout::Error

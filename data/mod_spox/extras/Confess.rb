@@ -37,7 +37,6 @@ class Confess < ModSpox::Plugin
     
     def confess(message, params)
         c = nil
-        reg = false
         if(params[:term])
             return if params[:term] == 'count'
             if(params[:term] =~ /^\d+$/)
@@ -45,19 +44,12 @@ class Confess < ModSpox::Plugin
              else
                  cs = Database.db[:confessions].full_text_search(:confession, params[:term].gsub(/\s+/, '.*'), :language => 'english').map(:id)
                  c = Confession[cs[rand(cs.size)].to_i]
-                 reg = true
              end
         else
             c = Confession[rand(Confession.count) + 1]
         end
         if(c)
-            bolded = c.confession
-            if(reg)
-                params[:term].split(/\s+/).each do |term| 
-                    bolded.gsub!(/(#{Regexp.escape(term)})/i, "\2\\1\2")
-                end
-            end
-            reply message.replyto, "\2[#{c.pk}]\2: #{bolded}"
+            reply message.replyto, "\2[#{c.pk}]\2: #{c.confession}"
             @last_confession[message.target.pk] = c.pk
         else
             reply message.replyto, "\2Error:\2 Failed to find confession"
@@ -116,8 +108,8 @@ class Confess < ModSpox::Plugin
     
     def grab_page
         begin
-            connection = Net::HTTP.new('beta.grouphug.us', 80)
-            response = connection.request_get('/random', nil)
+            connection = Net::HTTP.new('grouphug.us', 80)
+            response = connection.request_get("/confessions/new?page=#{rand(17349)+1}", nil)
             response.value
             page = response.body.gsub(/[\r\n]/, ' ')
             Logger.log("Processing matches")

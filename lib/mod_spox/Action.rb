@@ -25,6 +25,7 @@ module ModSpox
         # Decrement wait time by given number of seconds
         def tick(amount)
             @wait_remaining = @wait_remaining - amount
+            @wait_remaining = 0 if @wait_remaining < 0
         end
         
         # Returns true if action is due to run
