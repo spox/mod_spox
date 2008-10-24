@@ -7,16 +7,16 @@ class Karma < ModSpox::Plugin
         Datatype::Karma.create_table unless Datatype::Karma.table_exists?
         Datatype::Alias.create_table unless Datatype::Alias.table_exists?
         alias_group = Models::Group.find_or_create(:name => 'alias')
-        Models::Signature.find_or_create(:signature => 'karma (?!(fight|alias|dealias|aliases) \S+ ?\S+?$)(.+)', :plugin => name, :method => 'score', :description => 'Returns karma for given thing').params = [:crap, :thing]
-        Models::Signature.find_or_create(:signature => 'karma reset (.+)', :plugin => name, :method => 'reset',
+        Models::Signature.find_or_create(:signature => 'karma (?!(fight|alias|dealias|aliases|reset) (\S+|\(.+?\)) ?(\S+|\(.+?\))?$)(.+)', :plugin => name, :method => 'score', :description => 'Returns karma for given thing').params = [:crap, :crap2, :crap3, :thing]
+        Models::Signature.find_or_create(:signature => 'karma reset (\S+|\(.+?\))', :plugin => name, :method => 'reset',
             :group_id => Models::Group.filter(:name => 'admin').first.pk, :description => 'Reset a karma score').params = [:thing]
-        Models::Signature.find_or_create(:signature => 'karma alias (\S+) (\S+)', :plugin => name, :method => 'aka',
+        Models::Signature.find_or_create(:signature => 'karma alias (\S+|\(.+?\)) (\S+|\(.+?\))', :plugin => name, :method => 'aka',
             :group_id => alias_group.pk, :description => 'Alias a karma object to another karma object').params = [:thing, :thang]
-        Models::Signature.find_or_create(:signature => 'karma dealias (\S+) (\S+)', :plugin => name, :method => 'dealias',
+        Models::Signature.find_or_create(:signature => 'karma dealias (\S+|\(.+?\)) (\S+|\(.+?\))', :plugin => name, :method => 'dealias',
             :group_id => alias_group.pk, :description => 'Remove a karma alias').params = [:thing, :otherthing]
-        Models::Signature.find_or_create(:signature => 'karma aliases (\S+)', :plugin => name, :method => 'show_aliases',
+        Models::Signature.find_or_create(:signature => 'karma aliases (\S+|\(.+?\))', :plugin => name, :method => 'show_aliases',
             :description => 'Show all aliases for given thing').params = [:thing]
-        Models::Signature.find_or_create(:signature => 'karma fight (\S+) (\S+)', :plugin => name, :method => 'fight',
+        Models::Signature.find_or_create(:signature => 'karma fight (\S+|\(.+?\)) (\S+|\(.+?\))', :plugin => name, :method => 'fight',
             :description => 'Make two karma objects fight').params = [:thing, :thang]
         @pipeline.hook(self, :check, :Incoming_Privmsg)
         @thing_maxlen = 32
@@ -28,7 +28,7 @@ class Karma < ModSpox::Plugin
             message.message.scan(@karma_regex) do |match|
                 thing, adj = match
                 thing.downcase!
-                thing = thing[1..-2] if thing[0..0] == '(' && thing[-1..1] == ')'
+                thing = thing[1..-2] if thing[0..0] == '(' && thing[-1..-1] == ')'
                 adj = adj == '++' ? +1 : -1
                 things = [thing]
                 karma = Datatype::Karma.find_or_create(:thing => thing, :channel_id => message.target.pk)
@@ -56,24 +56,29 @@ class Karma < ModSpox::Plugin
     end
 
     def reset(message, params)
-        params[:thing].downcase!
+        sthing = params[:thing].downcase
+        sthing = thing[1..-2] if thing[0..0] == '(' && thing[-1..-1] == ')'
         return unless message.is_public?
-        karma = Datatype::Karma.filter(:thing => params[:thing], :channel_id => message.target.pk).first
+        karma = Datatype::Karma.filter(:thing => sthing, :channel_id => message.target.pk).first
         if(karma)
             karma.update_with_params(:score => 0)
             @pipeline << Privmsg.new(message.replyto, "Karma for \2#{karma.thing}\2 has been reset")
         else
-            @pipeline << Privmsg.new(message.replyto, "\2Error:\2 #{params[:thing]} has no karma")
+            @pipeline << Privmsg.new(message.replyto, "\2Error:\2 #{sthing} has no karma")
         end
     end
 
     def fight(message, params)
-        thing = Datatype::Karma.find_or_create(:thing => params[:thing].downcase)
-        thang = Datatype::Karma.find_or_create(:thing => params[:thang].downcase)
+        thing = params[:thing].downcase
+        thang = params[:thang].downcase
+        thing = thing[1..-2] if thing[0..0] == '(' && thing[-1..-1] == ')'
+        thang = thang[1..-2] if thang[0..0] == '(' && thang[-1..-1] == ')'
+        thing = Datatype::Karma.find_or_create(:thing => thing, :channel_id => message.target.pk)
+        thang = Datatype::Karma.find_or_create(:thing => thang, :channel_id => message.target.pk)
         thing_score = Datatype::Alias.score_object(thing.pk)
         thang_score = Datatype::Alias.score_object(thang.pk)
-        winner = thing_score > thang_score ? params[:thing] : params[:thang]
-        loser = thing_score > thang_score ? params[:thang] : params[:thing]
+        winner = thing_score > thang_score ? thing.thing : thang.thing
+        loser = thing_score > thang_score ? thang.thing : thing.thing
         distance = (thing_score - thang_score).abs
         output = "\2KARMA FIGHT RESULTS:\2 "
         if(distance > 0)
@@ -84,46 +89,56 @@ class Karma < ModSpox::Plugin
     end
 
     def aka(message, params)
-        thing = Datatype::Karma.find_or_create(:thing => params[:thing].downcase, :channel_id => message.target.pk)
-        thang = Datatype::Karma.find_or_create(:thing => params[:thang].downcase, :channel_id => message.target.pk)
+        thing = params[:thing].downcase
+        thang = params[:thang].downcase
+        thing = thing[1..-2] if thing[0..0] == '(' && thing[-1..-1] == ')'
+        thang = thang[1..-2] if thang[0..0] == '(' && thang[-1..-1] == ')'
+        thing = Datatype::Karma.find_or_create(:thing => thing, :channel_id => message.target.pk)
+        thang = Datatype::Karma.find_or_create(:thing => thang, :channel_id => message.target.pk)
         if(Datatype::Alias.filter('(thing_id = ? AND aka_id = ?) OR (thing_id = ? AND aka_id = ?)', thing.pk, thang.pk, thang.pk, thing.pk).first)
-            reply message.replyto, "\2Error:\2 #{params[:thing]} is already aliased to #{params[:thang]}"
+            reply message.replyto, "\2Error:\2 #{thing.thing} is already aliased to #{thang.thing}"
         else
             Datatype::Alias.find_or_create(:thing_id => thing.pk, :aka_id => thang.pk)
-            reply message.replyto, "\2Karma Alias:\2 #{params[:thing]} is now aliased to #{params[:thang]}"
+            reply message.replyto, "\2Karma Alias:\2 #{thing.thing} is now aliased to #{thang.thing}"
         end
     end
 
     def dealias(message, params)
-        thing = Datatype::Karma.filter(:thing => params[:thing].downcase, :channel_id => message.target.pk).first
-        otherthing = Datatype::Karma.filter(:thing => params[:otherthing].downcase, :channel_id => message.target.pk).first
+        sthing = params[:thing].downcase
+        sotherthing = params[:otherthing].downcase
+        sthing = sthing[1..-2] if sthing[0..0] == '(' && sthing[-1..-1] == ')'
+        sotherthing = sotherthing[1..-2] if sotherthing[0..0] == '(' && sotherthing[-1..-1] == ')'
+        thing = Datatype::Karma.filter(:thing => sthing, :channel_id => message.target.pk).first
+        otherthing = Datatype::Karma.filter(:thing => sotherthing, :channel_id => message.target.pk).first
         if(thing && otherthing)
             set = Datatype::Alias.filter('(thing_id = ? AND aka_id = ?) OR (thing_id = ? AND aka_id = ?)', thing.pk, otherthing.pk, otherthing.pk, thing.pk)
             if(set.size < 1)
-                reply message.replyto, "\2Error:\2 No alias found between #{params[:thing]} and #{params[:otherthing]}"
+                reply message.replyto, "\2Error:\2 No alias found between #{thing.thing} and #{otherthing.thing}"
             else
                 set.destroy
-                reply message.replyto, "#{params[:thing]} has been successfully dealiased from #{params[:otherthing]}"
+                reply message.replyto, "#{thing.thing} has been successfully dealiased from #{otherthing.thing}"
             end
         else
-            reply message.replyto, "\2Error:\2 No alias found between #{params[:thing]} and #{params[:otherthing]}"
+            reply message.replyto, "\2Error:\2 No alias found between #{sthing} and #{sotherthing}"
         end
     end
 
     def show_aliases(message, params)
-        thing = Datatype::Karma.filter(:thing => params[:thing].downcase, :channel_id => message.target.pk).first
+        thing = params[:thing].downcase
+        thing = thing[1..-2] if thing[0..0] == '(' && thing[-1..-1] == ')'
+        thing = Datatype::Karma.filter(:thing => thing, :channel_id => message.target.pk).first
         if(thing)
             things = []
             Datatype::Alias.get_aliases(thing.pk).each do |id|
                 things << Datatype::Karma[id].thing
             end
             if(things.empty?)
-                reply message.replyto, "#{params[:thing]} is not currently aliased"
+                reply message.replyto, "#{thing.thing} is not currently aliased"
             else
-                reply message.replyto, "#{params[:thing]} is currently aliased to: #{things.join(', ')}"
+                reply message.replyto, "#{thing.thing} is currently aliased to: #{things.join(', ')}"
             end
         else
-            reply message.replyto, "\2Error:\2 #{params[:thing]} has never been used and has no aliases"
+            reply message.replyto, "\2Error:\2 #{thing.thing} has never been used and has no aliases"
         end
     end
 
