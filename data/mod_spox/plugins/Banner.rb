@@ -143,7 +143,7 @@ class Banner < ModSpox::Plugin
         record = BanMask.new(:mask => mask, :channel_id => channel.pk, :message => message, :bantime => time.to_i, :stamp => Object::Time.now)
         record.save
         check_masks
-        @pipeline << Messages::Internal::TimerAdd.new(self, record.remaining, nil, true){ record.destroy }
+        @pipeline << Messages::Internal::TimerAdd.new(self, record.bantime, nil, true){ record.destroy }
         reset_time
     end
 
