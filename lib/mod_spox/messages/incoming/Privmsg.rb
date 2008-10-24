@@ -62,7 +62,7 @@ module ModSpox
 
                 # Message with coloring stripped
                 def message_nocolor
-                    return @message.gsub(/\cC\d\d?(?:,\d\d?)?/, '')
+                    return @message.gsub(/\cC\d\d?(?:,\d\d?)?/, '').tr("\x00-\x1f", '')
                 end
 
                 # the message sent
