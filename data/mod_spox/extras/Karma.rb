@@ -7,7 +7,7 @@ class Karma < ModSpox::Plugin
         Datatype::Karma.create_table unless Datatype::Karma.table_exists?
         Datatype::Alias.create_table unless Datatype::Alias.table_exists?
         alias_group = Models::Group.find_or_create(:name => 'alias')
-        Models::Signature.find_or_create(:signature => 'karma (?!fight \S+ \S+$)(.+)', :plugin => name, :method => 'score', :description => 'Returns karma for given thing').params = [:thing]
+        Models::Signature.find_or_create(:signature => 'karma (?!(fight|alias|dealias|aliases) \S+ ?\S+?$)(.+)', :plugin => name, :method => 'score', :description => 'Returns karma for given thing').params = [:crap, :thing]
         Models::Signature.find_or_create(:signature => 'karma reset (.+)', :plugin => name, :method => 'reset',
             :group_id => Models::Group.filter(:name => 'admin').first.pk, :description => 'Reset a karma score').params = [:thing]
         Models::Signature.find_or_create(:signature => 'karma alias (\S+) (\S+)', :plugin => name, :method => 'aka',
