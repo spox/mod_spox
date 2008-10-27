@@ -23,8 +23,7 @@ class Quotes < ModSpox::Plugin
             if(params[:term] =~ /^\d+$/)
                 quote = Quote[params[:term].to_i]
             else
-                ids = Quote.filter(:quote => Regexp.new(params[:term])).map(:id)
-                quote = Quote[ids[rand(ids.size)].to_i]
+                ids = Quote.filter(:quote => Regexp.new(params[:term], Regexp::IGNORECASE)).map(:id) quote = Quote[ids[rand(ids.size)].to_i]
                 reg = true
             end
         else
@@ -47,7 +46,7 @@ class Quotes < ModSpox::Plugin
     end
     
     def searchquote(message, params)
-        result = Quote.filter(:quote => /#{params[:term]}/i)
+        result = Quote.filter(:quote => Regexp.new(params[:term], Regexp::IGNORECASE))
         if(result.size > 0)
             ids = result.map(:id)
             ids.sort!
