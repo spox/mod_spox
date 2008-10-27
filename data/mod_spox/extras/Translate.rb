@@ -69,7 +69,7 @@ class Translate < ModSpox::Plugin
         if(@cache.has_key?(langs) && @cache[langs].has_key?(text))
             return @cache[langs][text]
         end
-        connection = Net::HTTP.new('babelfish.altavista.com', 80)
+        connection = Net::HTTP.new('babelfish.yahoo.com', 80)
         response = connection.request_get("/tr?tt=urltext&trtext=#{CGI::escape(text)}&lp=#{langs.gsub(/\|/, '_')}", nil)
         response.value()
         if response.body.gsub(/[\r\n]/, '') =~ /<div style=padding:10px;>(.+?)<\/div>/

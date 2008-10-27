@@ -47,7 +47,7 @@ class Quotes < ModSpox::Plugin
     end
     
     def searchquote(message, params)
-        result = Quote.filter(:quote => Regexp.new(params[:term]), Regexp::IGNORECASE)
+        result = Quote.filter(:quote => /#{params[:term]}/i)
         if(result.size > 0)
             ids = result.map(:id)
             ids.sort!
