@@ -3,13 +3,13 @@ module ModSpox
     module Handlers
         class NickInUse < Handler
             def initialize(handlers)
-                handlers[:RPL_NICKNAMEINUSE] = self
+                handlers[ERR_NICKNAMEINUSE] = self
             end
             def process(string)
-                if(string =~ /#{RPL_NICKNAMEINUSE}\s\S+\s(\S+)\s:/)
+                if(string =~ /#{ERR_NICKNAMEINUSE}\s\S+\s(\S+)\s:/)
                     return Messages::Incoming::NickInUse.new(string, $1)
                 else
-                    Logger.log('Failed to parse RPL_NICKNAMEINUSE message')
+                    Logger.log('Failed to parse ERR_NICKNAMEINUSE message')
                     return nil
                 end
             end
