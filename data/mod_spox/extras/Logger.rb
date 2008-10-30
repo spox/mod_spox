@@ -31,11 +31,11 @@ class ChatLogger < ModSpox::Plugin
         type = 'action' if message.is_action?
         target = message.target.is_a?(Sequel::Model) ? message.target : Helpers.find_model(message.target)
         if(target.is_a?(Models::Channel))
-            PublicLog.new(:message => message.message, :type => type, :sender => me.pk,
-                :channel => target.pk, :received => Time.now).save
+            PublicLog.new(:message => message.message, :type => type, :sender_id => me.pk,
+                :channel_id => target.pk, :received => Time.now).save
         else
-            PrivateLog.new(:message => message.message, :type => type, :sender => me.pk,
-                :receiver => target.pk, :received => Time.now).save
+            PrivateLog.new(:message => message.message, :type => type, :sender_id => me.pk,
+                :receiver_id => target.pk, :received => Time.now).save
         end        
     end
     
@@ -43,30 +43,30 @@ class ChatLogger < ModSpox::Plugin
         type = message.is_a?(Messages::Incoming::Privmsg) ? 'privmsg' : 'notice'
         type = 'action' if message.is_action?
         if(message.is_public?)
-            PublicLog.new(:message => message.message, :type => type, :sender => message.source.pk,
+            PublicLog.new(:message => message.message, :type => type, :sender_id => message.source.pk,
                 :channel => message.target.pk, :received => message.time).save
         else
-            PrivateLog.new(:message => message.message, :type => type, :sender => message.source.pk,
-                :receiver => message.target.pk, :received => message.time).save
+            PrivateLog.new(:message => message.message, :type => type, :sender_id => message.source.pk,
+                :receiver_id => message.target.pk, :received => message.time).save
         end
     end
     
     def log_join(message)
-        PublicLog.new(:type => 'join', :sender => message.nick.pk, :channel => message.channel.pk, :received => message.time).save
+        PublicLog.new(:type => 'join', :sender_id => message.nick.pk, :channel_id => message.channel.pk, :received => message.time).save
     end
     
     def log_part(message)
-        PublicLog.new(:message => message.reason, :type => 'part', :sender => message.nick.pk,
-            :channel => message.channel.pk, :received => message.time).save
+        PublicLog.new(:message => message.reason, :type => 'part', :sender_id => message.nick.pk,
+            :channel_id => message.channel.pk, :received => message.time).save
     end
     
     def log_quit(message)
-        PublicLog.new(:message => message.message, :type => 'quit', :sender => message.nick.pk, :received => message.time).save
+        PublicLog.new(:message => message.message, :type => 'quit', :sender_id => message.nick.pk, :received => message.time).save
     end
     
     def log_kick(message)
-        PublicLog.new(:message => "#{message.kickee.pk}|#{message.reason}", :type => 'kick', :sender => message.kicker.pk,
-            :channel => message.channel.pk, :received => message.time).save
+        PublicLog.new(:message => "#{message.kickee.pk}|#{message.reason}", :type => 'kick', :sender_id => message.kicker.pk,
+            :channel_id => message.channel.pk, :received => message.time).save
     end
     
     # TODO: Fix this
@@ -83,8 +83,8 @@ class ChatLogger < ModSpox::Plugin
     def seen(m, p)
         nick = Helpers.find_model(p[:nick], false)
         if(nick.is_a?(Models::Nick))
-            record = PublicLog.filter(:sender => nick.pk).order(:received).last
-            record_p = PrivateLog.filter(:sender => nick.pk).order(:received).last
+            record = PublicLog.filter(:sender_id => nick.pk).order(:received).last
+            record_p = PrivateLog.filter(:sender_id => nick.pk).order(:received).last
             record = record_p if !record || (record_p && record && record_p.received > record.received)
             if(record)
                 if(record.is_a?(PublicLog))
@@ -145,9 +145,16 @@ class ChatLogger < ModSpox::Plugin
             text :type, :null => false, :default => 'privmsg'
             boolean :action, :null => false, :default => false
             timestamp :received, :null => false
-            foreign_key :sender, :table => :nicks
-            foreign_key :receiver, :table => :nicks
-            index :message, :type => :full_text
+            foreign_key :sender_id, :table => :nicks
+            foreign_key :receiver_id, :table => :nicks
+        end
+        
+        def sender
+            Nick[sender_id]
+        end
+        
+        def receiver
+            Nick[receiver_id]
         end
     end
     
@@ -158,10 +165,18 @@ class ChatLogger < ModSpox::Plugin
             text :type, :null => false, :default => 'privmsg'
             boolean :action, :null => false, :default => false
             timestamp :received, :null => false
-            foreign_key :sender, :table => :nicks
-            foreign_key :channel, :table => :channels
-            index :message, :type => :full_text
+            foreign_key :sender_id, :table => :nicks
+            foreign_key :channel_id, :table => :channels
         end
+        
+        def sender
+            Nick[sender_id]
+        end
+        
+        def channel
+            Channel[channel_id]
+        end
+        
     end
 
 end
