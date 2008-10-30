@@ -24,8 +24,10 @@ module ModSpox
         # be processed thus there is now wait for processing to be
         # completed.
         def <<(string)
-            @queue << Proc.new{ processor(string) }
+            @queue << lambda { parse_message(string) }
         end
+
+        private
 
         # Builds the message handlers. This will load all Messages and Handlers
         # found in the lib directory and then initialize all the Handlers
@@ -58,20 +60,15 @@ module ModSpox
                     key = key.to_sym unless key[0].chr =~ /\d/
                     if(@handlers.has_key?(key))
                         Logger.log("Message of type #{key} is now being handled by #{@handlers[key]}", 10)
-                        message = @handlers[key].process(message)
-                        @pipeline << message unless message.nil?
+                        @handlers[key].preprocess(message)
+                        @queue << lambda do
+                            message = @handlers[key].process(message)
+                            @pipeline << message unless message.nil?
+                        end
                     end
                 end
             rescue Object => boom
                 Logger.log("Failed to parse message from server: #{boom}\n#{boom.backtrace.join("\n")}")
-            end
-        end
-
-        private
-
-        def processor(message)
-            @lock.synchronize do
-                parse_message(message)
             end
         end
 
