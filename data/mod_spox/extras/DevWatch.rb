@@ -19,11 +19,8 @@ class DevWatch < ModSpox::Plugin
         if(Setting[:devwatch].nil?)
             Setting.find_or_create(:name => 'devwatch').value = {:channels => [], :interval => 300}
         end
-        @pipeline.hook(self, :timer_response, :Internal_TimerResponse)
         @original = nil
         @new = nil
-        @timer = nil
-        @lock = Mutex.new
         run
     end
     
@@ -84,27 +81,9 @@ class DevWatch < ModSpox::Plugin
     end
     
     def run
-        @lock.synchronize do
-            check_updates
-            if(Setting[:devwatch].has_key?(:url) && Setting[:devwatch][:channels].size > 0)
-                if(@timer.nil?)
-                    @pipeline << ModSpox::Messages::Internal::TimerAdd.new(self, Setting[:devwatch][:interval].to_i){check_updates}
-                    sleep(0.01) while @timer.nil?
-                end
-            else
-                if(@timer)
-                    @pipeline << ModSpox::Messages::Internal::TimerRemove.new(@timer)
-                    sleep(0.01) until @timer.nil?
-                end
-            end
-        end
-    end
-    
-    def timer_response(message)
-        if(message.origin == self && message.action_added?)
-            @timer = message.action
-        elsif(message.action == @timer && message.action_removed?)
-            @timer = nil
+        check_updates
+        if(Setting[:devwatch].has_key?(:url) && Setting[:devwatch][:channels].size > 0)
+            @pipeline << ModSpox::Messages::Internal::TimerAdd.new(self, Setting[:devwatch][:interval].to_i, nil, true){check_updates}
         end
     end
     
