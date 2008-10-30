@@ -25,6 +25,7 @@ module ModSpox
             @pipeline.hook(self, :return_socket, :Internal_DCCRequest)
             @pipeline.hook(self, :dcc_listener, :Internal_DCCListener)
             @kill = false
+            @ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
         end
 
         # server:: IRC server string
@@ -181,7 +182,8 @@ module ModSpox
                             result = Kernel.select(@read_sockets, nil, nil, nil)
                             for sock in result[0] do
                                 unless(sock == @irc_socket.socket)
-                                    string = sock.gets
+                                    tainted_string = sock.gets
+                                    string = ic.iconv(tainted_string + ' ')[0..-2]
                                     Logger.log("DCC >> #{string}")
                                     if(sock.closed? || string.nil?)
                                         sock.close

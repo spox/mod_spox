@@ -43,6 +43,7 @@ module ModSpox
             @pause = false
             @sendq = Queue.new
             @lock = Mutex.new
+            @ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
             start_pool
         end
 
@@ -97,7 +98,8 @@ module ModSpox
 
         # Retrieves a string from the server
         def read
-            message = @socket.gets
+            tainted_message = @socket.gets
+            message = @ic.iconv(tainted_message + ' ')[0..-2]
             if(message.nil? || @socket.closed?) # || message =~ /^ERROR/)
                 @pipeline << Messages::Internal::Disconnected.new
                 shutdown
