@@ -86,18 +86,18 @@ module ModSpox
         def Helpers.find_model(string, create=true)
             Helpers.initialize_caches
             if(string =~ /^[A-Za-z\|\\\{\}\[\]\^\`~\_\-]+[A-Za-z0-9\|\\\{\}\[\]\^\`~\_\-]*$/)
-                Logger.log("Model: #{string} -> Nick", 30)
+                Logger.log("Model: #{string} -> Nick", 120)
                 nick = nil
                 if(@@nick_cache.has_key?(string.downcase.to_sym))
                     begin
                         nick = Models::Nick[@@nick_cache[string.downcase.to_sym]]
-                        Logger.log("Handler cache hit for nick: #{string}", 30)
+                        Logger.log("Handler cache hit for nick: #{string}", 120)
                         if(nick.nick.downcase != string.downcase)
                             Logger.log("Nick returned from cache invalid. Expecting #{string} but got #{nick.nick}", 30)
                             nick = nil
                         end
                     rescue Object => boom
-                        Logger.log("Failed to grab cached nick: #{boom}", 30)
+                        Logger.log("Failed to grab cached nick: #{boom}", 120)
                     end
                 end
                 unless(nick)
@@ -107,21 +107,21 @@ module ModSpox
                         return string
                     end
                     @@nick_cache[string.downcase.to_sym] = nick.pk if nick.is_a?(Models::Nick)
-                    Logger.log("Nick was retrieved from database", 30)
+                    Logger.log("Nick was retrieved from database", 120)
                 end
                 return nick
             elsif(string =~ /^[&#+!]/)
-                Logger.log("Model: #{string} -> Channel", 30)
+                Logger.log("Model: #{string} -> Channel", 120)
                 if(@@channel_cache.has_key?(string.downcase.to_sym))
                     begin
                         channel = Models::Channel[@@channel_cache[string.downcase.to_sym]]
-                        Logger.log("Handler cache hit for channel: #{string}", 30)
+                        Logger.log("Handler cache hit for channel: #{string}", 120)
                         if(string.downcase != channel.name.downcase)
                             Logger.log("Channel returned from cache invalid. Expecting #{string} but got #{channel.name}", 30)
                             channel = nil
                         end
                     rescue Object => boom
-                        Logger.log("Failed to grab cached channel: #{boom}", 30)
+                        Logger.log("Failed to grab cached channel: #{boom}", 120)
                     end
                 end
                 unless(channel)
@@ -131,11 +131,11 @@ module ModSpox
                         return string
                     end
                     @@channel_cache[string.downcase.to_sym] = channel.pk if channel.is_a?(Models::Channel)
-                    Logger.log("Channel was retrieved from database", 30)
+                    Logger.log("Channel was retrieved from database", 120)
                 end
                 return channel
             elsif(model = Models::Server.filter(:host => string, :connected => true).first)
-                Logger.log("Model: #{string} -> Server", 30)
+                Logger.log("Model: #{string} -> Server", 120)
                 return model
             else
                 Logger.log("FAIL Model: #{string} -> No match", 30)
