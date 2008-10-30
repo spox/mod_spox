@@ -4,8 +4,17 @@ module ModSpox
     
         class Handler
         
+            def initialize(handlers)
+            end
+        
             def process(data)
                 raise Exceptions::NotImplemented.new('Method has not been implemented')
+            end
+            
+            # data:: any expected data
+            # Preprocessing allows for actions to be taken
+            # while messages are still in a synchronized state
+            def preprocess(data)
             end
             
             protected

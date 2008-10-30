@@ -1,4 +1,5 @@
-require 'mod_spox/handlers/Handler'
+['mod_spox/handlers/Handler', 'mod_spox/Monitors'].each{|f|require f}
+
 module ModSpox
     module Handlers
         class Who < Handler
@@ -7,10 +8,11 @@ module ModSpox
                 handlers[RPL_ENDOFWHO] = self
                 @cache = Hash.new
                 @raw_cache = Hash.new
+                @counter = Hash.new
+                @lock = Mutex.new
             end
+            
             def process(string)
-            # :not.configured 352 mod_spox #foobar ~mod_spox 192.168.0.25 not.configured mod_spox H :0 mod_spox IRC bot
-            # :not.configured 352 mod_spox * ~mod_spox 192.168.0.25 not.configured mod_spox H :0 mod_spox IRC bot
                 if(string =~ /#{RPL_WHOREPLY}\s\S+\s(\S+|\*|\*\s\S+)\s(\S+)\s(\S+)\s(\S+)\s(\S+)\s(\S+)\s:(\d)\s(.+)$/)
                     # Items matched are as follows:
                     # 1: location
@@ -31,9 +33,9 @@ module ModSpox
                     nick.away = info =~ /G/ ? true : false
                     nick.save_changes
                     key = location.nil? ? nick.nick : location
-                    @cache[key] = Array.new unless @cache[location]
+                    @cache[key] = Array.new unless @cache[key]
                     @cache[key] << nick
-                    @raw_cache[key] = Array.new unless @raw_cache[location]
+                    @raw_cache[key] = Array.new unless @raw_cache[key]
                     @raw_cache[key] << string
                     unless(location.nil?)
                         channel = find_model(location)
@@ -46,9 +48,11 @@ module ModSpox
                             Models::NickMode.filter(:channel_id => channel.pk, :nick_id => nick.pk).each{|m| m.destroy}
                         end
                     end
+                    decrement(key)
                     return nil
                 elsif(string =~ /#{RPL_ENDOFWHO}\s\S+\s(\S+)\s/)
                     location = $1
+                    check(location)
                     loc = find_model(location)
                     @raw_cache[location] << string
                     message = Messages::Incoming::Who.new(@raw_cache[location].join("\n"), loc, @cache[location])
@@ -58,6 +62,37 @@ module ModSpox
                 else
                     Logger.log('Failed to match RPL_WHO type message')
                     return nil
+                end
+            end
+            
+            def preprocess(string)
+                @lock.synchronize do
+                    if(string =~ /^.+?#{RPL_WHOREPLY}\s(\S+)\s(\S+|\*|\*\s\S+)/)
+                        key = $2 == '*' ? $1 : $2
+                        if(@counter.has_key?(key))
+                            @counter[key][:count] += 1
+                        else
+                            @counter[key] = {:count => 1, :waiter => Monitors::Boolean.new}
+                        end
+                    end 
+                end
+            end
+            
+            def check(key)
+                if(@counter[key][:count] > 0)
+                    @counter[key][:waiter].wait
+                end
+                @counter.delete(key)
+            end
+            
+            def decrement(key)
+                @lock.synchronize do
+                    if(@counter.has_key?(key))
+                        @counter[key][:count] -= 1
+                        if(@counter[key][:count] < 1)
+                            @counter[key][:waiter].wakeup
+                        end
+                    end
                 end
             end
         end
