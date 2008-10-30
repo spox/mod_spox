@@ -23,7 +23,8 @@ class Quotes < ModSpox::Plugin
             if(params[:term] =~ /^\d+$/)
                 quote = Quote[params[:term].to_i]
             else
-                ids = Quote.filter(:quote => Regexp.new(params[:term], Regexp::IGNORECASE)).map(:id) quote = Quote[ids[rand(ids.size)].to_i]
+                ids = Quote.filter(:quote => Regexp.new(params[:term], Regexp::IGNORECASE)).map(:id) 
+                quote = Quote[ids[rand(ids.size)].to_i]
                 reg = true
             end
         else
@@ -31,7 +32,7 @@ class Quotes < ModSpox::Plugin
             quote = Quote[ids[rand(ids.size)].to_i]
         end
         if(quote)
-            reply message.replyto, "\2[\2#{quote.pk}\2|\2#{quote.added.year}/#{sprintf('%02d', quote.added.month)}/#{sprintf('%02d', quote.added.day)}\2]:\2 #{reg ? quote.quote.gsub(/(#{params[:term]})/, "\2\\1\2") : quote.quote}"
+            reply message.replyto, "\2[\2#{quote.pk}\2|\2#{quote.added.year}/#{sprintf('%02d', quote.added.month)}/#{sprintf('%02d', quote.added.day)}\2]:\2 #{reg ? quote.quote.gsub(/(#{params[:term]})/i, "\2\\1\2") : quote.quote}"
         else
             reply message.replyto, "\2Error:\2 Failed to find quote"
         end
