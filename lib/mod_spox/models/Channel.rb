@@ -17,6 +17,7 @@ module ModSpox
             end
 
             def Channel.locate(string, create = true)
+                string.downcase!
                 chan = Channel.filter(:name => string).first
                 if(!chan && create)
                     chan = Channel.find_or_create(:name => string)

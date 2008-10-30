@@ -22,17 +22,6 @@ module ModSpox
 
             set_cache Database.cache, :ttl => 3600 unless Database.cache.nil?
 
-            # This method overrides the default filter method
-            # on the dataset. This is a pretty ugly hack to
-            # get the nick field to be searched properly.
-#             def_dataset_method(:filter) do |arg|
-#                 return super unless arg.is_a?(Hash)
-#                 arg[:nick].downcase! if arg.has_key?(:nick)
-#                 Logger.log("ARGS ARE AS FOLLOWS:")
-#                 arg.each_pair{|k,v| Logger.log("KEY: #{k} VALUE: #{v}")}
-#                 super(arg)
-#             end
-
             def nick=(nick_name)
                 values[:nick] = nick_name.downcase
             end
@@ -46,7 +35,7 @@ module ModSpox
                 end
                 return nick
             end
-
+            
             def address=(address)
                 begin
                     info =  Object::Socket.getaddrinfo(address, nil)
@@ -190,7 +179,8 @@ module ModSpox
                                    :source => nil, :connected_at => nil, :connected_to => nil,
                                    :seconds_idle => nil, :away => false, :visible => false, :botnick => false)
                 NickMode.destroy_all
-                #NickGroup.destroy_all
+                NickChannel.destroy_all
+                NickGroup.destroy_all
                 Auth.set(:authed => false)
             end
 
