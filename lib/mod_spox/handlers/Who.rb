@@ -8,8 +8,6 @@ module ModSpox
                 handlers[RPL_ENDOFWHO] = self
                 @cache = Hash.new
                 @raw_cache = Hash.new
-                @counter = Hash.new
-                @lock = Mutex.new
             end
             
             def process(string)
@@ -48,11 +46,9 @@ module ModSpox
                             Models::NickMode.filter(:channel_id => channel.pk, :nick_id => nick.pk).each{|m| m.destroy}
                         end
                     end
-                    decrement(key)
                     return nil
                 elsif(string =~ /#{RPL_ENDOFWHO}\s\S+\s(\S+)\s/)
                     location = $1
-                    check(location)
                     loc = find_model(location)
                     @raw_cache[location] << string
                     message = Messages::Incoming::Who.new(@raw_cache[location].join("\n"), loc, @cache[location])
@@ -65,36 +61,6 @@ module ModSpox
                 end
             end
             
-            def preprocess(string)
-                @lock.synchronize do
-                    if(string =~ /^.+?#{RPL_WHOREPLY}\s(\S+)\s(\S+|\*|\*\s\S+)/)
-                        key = $2 == '*' ? $1 : $2
-                        if(@counter.has_key?(key))
-                            @counter[key][:count] += 1
-                        else
-                            @counter[key] = {:count => 1, :waiter => Monitors::Boolean.new}
-                        end
-                    end 
-                end
-            end
-            
-            def check(key)
-                if(@counter[key][:count] > 0)
-                    @counter[key][:waiter].wait
-                end
-                @counter.delete(key)
-            end
-            
-            def decrement(key)
-                @lock.synchronize do
-                    if(@counter.has_key?(key))
-                        @counter[key][:count] -= 1
-                        if(@counter[key][:count] < 1)
-                            @counter[key][:waiter].wakeup
-                        end
-                    end
-                end
-            end
         end
     end
 end

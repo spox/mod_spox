@@ -17,6 +17,9 @@ module ModSpox
             Logger.log("Created new factory queue: #{@queue}", 15)
             build_handlers
             start_pool
+            @sync = [RPL_MOTDSTART, RPL_MOTD, RPL_ENDOFMOTD, RPL_WHOREPLY, RPL_ENDOFWHO,
+                     RPL_NAMREPLY, RPL_ENDOFNAMES, RPL_WHOISUSER, RPL_WHOISSERVER, RPL_WHOISOPERATOR,
+                     RPL_WHOISIDLE, RPL_WHOISCHANNELS, RPL_WHOISIDENTIFIED, RPL_ENDOFWHOIS]
         end
 
         # string:: server message to be parsed
@@ -60,10 +63,18 @@ module ModSpox
                     key = key.to_sym unless key[0].chr =~ /\d/
                     if(@handlers.has_key?(key))
                         Logger.log("Message of type #{key} is now being handled by #{@handlers[key]}", 10)
-                        @handlers[key].preprocess(message)
-                        @queue << lambda do
-                            message = @handlers[key].process(message)
-                            @pipeline << message unless message.nil?
+                        if(@sync.include?(key))
+                            @queue << lambda do
+                                @lock.synchronize do
+                                    message = @handlers[key].process(message)
+                                    @pipeline << message unless message.nil?
+                                end
+                            end
+                        else
+                            @queue << lambda do
+                                message = @handlers[key].process(message)
+                                @pipeline << message unless message.nil?
+                            end
                         end
                     end
                 end
