@@ -9,11 +9,22 @@ module ModSpox
                 if(string =~ /^:([^!]+)!\S+\sNICK\s:(.+)$/)
                     old_nick = find_model($1)
                     new_nick = find_model($2)
-                    old_nick.visible = false
                     new_nick.visible = true
                     old_nick.channels.each do |channel|
                         new_nick.channel_add(channel)
+                        Models::NickMode.find_or_create(:nick_id => new_nick.pk, :channel_id => channel.pk, :mode => 'o') if old_nick.is_op?(channel)
+                        Models::NickMode.find_or_create(:nick_id => new_nick.pk, :channel_id => channel.pk, :mode => 'v') if old_nick.is_voice?(channel)
+                        Models::NickMode.filter(:nick_id => old_nick.pk, :channel_id => channel.pk).destroy
                     end
+                    new_nick.username = old_nick.username
+                    new_nick.address = old_nick.address
+                    new_nick.real_name = old_nick.real_name
+                    new_nick.connected_to = old_nick.connected_to
+                    new_nick.away = old_nick.away
+                    new_nick.visible = true
+                    new_nick.save_changes
+                    Models::Nick.transfer_groups(old_nick, new_nick)
+                    old_nick.visible = false
                     old_nick.clear_channels
                     if(old_nick.botnick == true)
                         old_nick.botnick = false

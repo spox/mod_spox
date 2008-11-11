@@ -29,6 +29,7 @@ module ModSpox
                     nick.real_name = $8
                     nick.connected_to = $4
                     nick.away = info =~ /G/ ? true : false
+                    nick.visible = true
                     nick.save_changes
                     key = location.nil? ? nick.nick : location
                     @cache[key] = Array.new unless @cache[key]
