@@ -29,7 +29,7 @@ class Translate < ModSpox::Plugin
     
     def auto_remove(message, params)
         return unless message.is_public?
-        nick = Helpers.find_model(params[:nick], false)
+        nick = Models::Nick.locate(params[:nick], false)
         if(nick)
             if(@watchers.has_key?(message.target.pk))
                 @watchers[message.target.pk].delete(nick.pk) if @watchers[message.target.pk].has_key?(nick.pk)
@@ -69,23 +69,37 @@ class Translate < ModSpox::Plugin
         if(@cache.has_key?(langs) && @cache[langs].has_key?(text))
             return @cache[langs][text]
         end
-        connection = Net::HTTP.new('babelfish.yahoo.com', 80)
-        response = connection.request_get("/tr?tt=urltext&trtext=#{CGI::escape(text)}&lp=#{langs.gsub(/\|/, '_')}", nil)
-        response.value()
-        if response.body.gsub(/[\r\n]/, '') =~ /<div style=padding:10px;>(.+?)<\/div>/
-            result = $1
-            if(text.length < 15)
-                @cache[langs] = {} unless @cache.has_key?(langs)
-                @cache[langs][text] = result
+        content = Net::HTTP.post_form(URI.parse('http://babelfish.yahoo.com/translate_txt'), {
+            'ei' => 'UTF-8',
+            'doit' => 'done',
+            'fr' => 'bf-home',
+            'intl' => '1',
+            'tt' => 'urltext',
+            'trtext' => text,
+            'lp' => langs.gsub(/\|/, '_'),
+            'btnTrTxt' => 'Translate'
+        }).body
+        if(content)
+            if(content =~ /<div id="result">(.+?)<input/im)
+                tr = $1
+                tr.gsub!(/<.+?>/, '')
+                tr.gsub!(/[\r\n]/, ' ')
+                tr.gsub!(/\s+/, ' ')
+                if(text.length < 15)
+                    @cache[langs] = {} unless @cache.has_key?(langs)
+                    @cache[langs][text] = tr
+                end
+                return tr
+            else
+                raise 'Failed to locate translation'
             end
-            return result.gsub(/\s+/, ' ')
         else
-            raise "Failed to extract translation"
+            raise "Failed to receive result from server"
         end
     end
     
     def hook
-        if(@watchers.size > 0)
+        if(@watchers.size == 1)
             @pipeline.hook(self, :listener, :Incoming_Privmsg)
         else
             @pipeline.unhook(self, :listener, :Incoming_Privmsg)
