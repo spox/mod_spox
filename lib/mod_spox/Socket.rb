@@ -1,4 +1,5 @@
-['mod_spox/Logger',
+['iconv',
+ 'mod_spox/Logger',
  'mod_spox/Pool',
  'mod_spox/Exceptions',
  'mod_spox/messages/Messages',
@@ -99,14 +100,14 @@ module ModSpox
         # Retrieves a string from the server
         def read
             tainted_message = @socket.gets
-            message = @ic.iconv(tainted_message + ' ')[0..-2]
-            if(message.nil? || @socket.closed?) # || message =~ /^ERROR/)
+            if(tainted_message.nil? || @socket.closed?) # || message =~ /^ERROR/)
                 @pipeline << Messages::Internal::Disconnected.new
                 shutdown
                 server = Models::Server.find_or_create(:host => @server, :port => @port)
                 server.connected = false
                 server.save
-            elsif(message.length > 0)
+            elsif(tainted_message.length > 0)
+                message = @ic.iconv(tainted_message + ' ')[0..-2]
                 Logger.log(">> #{message}", 5)
                 @received += 1
                 begin
@@ -123,7 +124,7 @@ module ModSpox
         # Queues a message up to be sent to the IRC server
         def <<(message)
             @sendq << message
-            @queue << Proc.new{ processor }
+            @queue << lambda{ processor }
         end
 
         # Starts the thread for sending messages to the server

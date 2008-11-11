@@ -1,4 +1,5 @@
 ['ipaddr',
+ 'iconv',
  'mod_spox/Bot',
  'mod_spox/Pipeline',
  'mod_spox/MessageFactory',
@@ -183,7 +184,7 @@ module ModSpox
                             for sock in result[0] do
                                 unless(sock == @irc_socket.socket)
                                     tainted_string = sock.gets
-                                    string = ic.iconv(tainted_string + ' ')[0..-2]
+                                    string = @ic.iconv(tainted_string + ' ')[0..-2]
                                     Logger.log("DCC >> #{string}")
                                     if(sock.closed? || string.nil?)
                                         sock.close
