@@ -79,8 +79,8 @@ class PhpCli < ModSpox::Plugin
                 reply message.replyto, "Result: "+output
             end
             File.delete(filepath)
-        rescue
-            reply message.replyto, "\2Error:\2 Timeout reached. Script execution terminated"
+        rescue Object => boom
+            reply message.replyto, "\2Error:\2 Timeout reached or error encountered. Script execution terminated. (#{boom})"
             File.delete(filepath)
         end
     end
