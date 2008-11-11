@@ -21,6 +21,12 @@ class Karma < ModSpox::Plugin
         @pipeline.hook(self, :check, :Incoming_Privmsg)
         @thing_maxlen = 32
         @karma_regex = /(\(.{1,#@thing_maxlen}?\)|\S{1,#@thing_maxlen})([+-]{2})(?:\s|$)/
+        @eggs = {}
+        @eggs[:chameleon] = []
+        @eggs[:chameleon] << 'Karma karma karma karma karma chameleon You come and go You come and go Loving would be easy if your colors were like my dream Red, gold and green Red, gold and green'
+        @eggs[:chameleon] << 'Didn\'t hear your wicked words every day And you used to be so sweet I heard you say That my love was an addiction When we cling our love is strong When you go youre gone forever You string along You string along'
+        @eggs[:chameleon] << 'Every day is like a survival You\'re my lover not my rival Every day is like a survival You\'re my lover not my rival'
+        @eggs[:chameleon] << 'I\'m a man without conviction I\'m a man who doesnt know How to sell a contradication You come and go You come and go'
     end
 
     def check(message)
@@ -52,6 +58,9 @@ class Karma < ModSpox::Plugin
             @pipeline << Privmsg.new(message.replyto, "Karma for \2#{params[:thing]}\2 is #{Datatype::Alias.score_object(karma.pk)}")
         else
             @pipeline << Privmsg.new(message.replyto, "\2Error:\2 #{params[:thing]} has no karma")
+        end
+        if(@eggs.has_key?(params[:thing].downcase.to_sym))
+            @pipeline << Messages::Internal::TimerAdd.new(self, rand(5) + 1, nil, true){ egg(params[:thing].downcase, message) }
         end
     end
 
@@ -139,6 +148,12 @@ class Karma < ModSpox::Plugin
             end
         else
             reply message.replyto, "\2Error:\2 #{thing.thing} has never been used and has no aliases"
+        end
+    end
+    
+    def egg(karma, message)
+        if(karma.downcase == 'chameleon')
+            reply message.replyto, @eggs[:chameleon][rand(@eggs[:chameleon].size - 1)]
         end
     end
 
