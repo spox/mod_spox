@@ -131,7 +131,7 @@ module ModSpox
                         @hooks[type].each_value do |objects|
                             begin
                                 objects.each do |v|
-                                    @queue << Proc.new{ v[:object].send(v[:method].to_s, message) }
+                                    @queue << lambda{ v[:object].send(v[:method].to_s, message) }
                                 end
                             rescue Object => boom
                                 Logger.log("Plugin threw exception while attempting to process message: #{boom}\n#{boom.backtrace.join("\n")}")
@@ -179,7 +179,7 @@ module ModSpox
                         end
                         if(@plugins.has_key?(sig.plugin.to_sym))
                             begin
-                                @queue << Proc.new{ @plugins[sig.plugin.to_sym].send(sig.values[:method], message, params) }
+                                @queue << lambda{ @plugins[sig.plugin.to_sym].send(sig.values[:method], message, params) }
                             rescue Object => boom
                                 Logger.log("Plugin threw exception while attempting to process message: #{boom}\n#{boom.backtrace.join("\n")}")
                             end

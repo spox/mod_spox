@@ -71,7 +71,7 @@ module ModSpox
             action = Action.new(self, period, data, once, &func)
             @adding = true
             wakeup
-            sleep(0.01) until @add_lock.count > 0
+            @add_lock.wait
             @timers << action
             @adding = false
             @add_lock.wakeup
@@ -108,7 +108,8 @@ module ModSpox
                     actual_sleep = @monitor.wait(to_sleep)
                     tick(actual_sleep)
                     Logger.log("Timer was set to sleep for #{to_sleep.nil? ? 'forever' : "#{to_sleep} seconds"}. Actual sleep time: #{actual_sleep} seconds", 15)
-                    @add_lock.wait if @adding
+                    @add_lock.wakeup
+                    @add_lock.wait while @adding
                 end
             }
         end
@@ -149,7 +150,7 @@ module ModSpox
                     ready << action.schedule
                 end
             end
-            ready.each{|action| @queue << Proc.new{ processor(action) }}
+            ready.each{|action| @queue << lambda{ processor(action) }}
         end
 
         # Process the actions
