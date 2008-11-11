@@ -18,8 +18,6 @@ module ModSpox
 
         class Nick < Sequel::Model
 
-            Nick.after_save :clear_auth
-
             set_cache Database.cache, :ttl => 3600 unless Database.cache.nil?
 
             def nick=(nick_name)
@@ -37,6 +35,7 @@ module ModSpox
             end
             
             def address=(address)
+                oldaddress = values[:address]
                 begin
                     info =  Object::Socket.getaddrinfo(address, nil)
                     update_values :address => info[0][3]
@@ -44,6 +43,10 @@ module ModSpox
                 rescue Object => boom
                     update_values :address => address
                     update_values :host => address
+                ensure
+                    if values[:address] != oldaddress
+                        clear_auth 
+                    end
                 end
             end
 
@@ -62,7 +65,7 @@ module ModSpox
             end
 
             def source=(mask)
-                update_values :source => mask
+                super
             end
 
             # Auth model associated with nick
@@ -122,7 +125,7 @@ module ModSpox
 
             # Clear this nick's auth status
             def clear_auth
-                auth.authed = false
+                auth.authenticated(false)
                 NickGroup.filter(:nick_id => pk).destroy
             end
 
@@ -139,11 +142,17 @@ module ModSpox
             # Remove channel nick is no longer found in
             def channel_remove(channel)
                 NickChannel.filter(:nick_id => pk, :channel_id => channel.pk).first.destroy
+                if(NickChannel.filter(:nick_id => pk).count < 1)
+                    clear_auth
+                    visible = false
+                end
             end
 
             # Remove all channels
             def clear_channels
-                NickChannel.filter(:nick_id => pk).each{|o|o.destroy}
+                NickChannel.filter(:nick_id => pk).destroy
+                visible = false
+                clear_auth
             end
 
             # Channels nick is currently in
@@ -171,6 +180,10 @@ module ModSpox
                     return true if mode.mode == 'v'
                 end
                 return false
+            end
+
+            def Nick.transfer_groups(old_nick, new_nick)
+                NickGroup.filter(:nick_id => old_nick.pk).update(:nick_id => new_nick.pk)
             end
 
             # Purge all nick information

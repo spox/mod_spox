@@ -31,6 +31,10 @@ module ModSpox
                 end
             end
 
+            def authenticated(bool=true)
+                update_values :authed => bool
+            end
+
             # Groups this auth is a member of
             def groups
                 # we grab IDs, then the object. Otherwise we get sync problems
