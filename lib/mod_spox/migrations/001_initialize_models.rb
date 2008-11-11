@@ -97,7 +97,7 @@ module ModSpox
                     varchar :mode, :null => false
                     foreign_key :nick_id, :table => :nicks, :null => false
                     foreign_key :channel_id, :table => :channels
-                    index [:nick_id, :channel_id], :unique => true
+                    index [:nick_id, :channel_id]
                 end unless Database.db.table_exists?(:nick_modes)
             end
 
