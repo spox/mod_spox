@@ -556,7 +556,8 @@ class Banner < ModSpox::Plugin
         set_schema do
             primary_key :id
             varchar :mode, :null => false
-            foreign_key :channel_id, :table => :channels, :unique => true
+            foreign_key :channel_id, :table => :channels
+            index [:channel_id, :mode]
         end
 
         def channel
