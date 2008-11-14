@@ -5,7 +5,8 @@ class Slashdot < ModSpox::Plugin
 
     def initialize(pipeline)
         super
-        add_sig(:sig => '(\/\.|slashdot) ?(\d+)?', :method => 'show_slashdot', :desc => 'Slashdot headlines', :params => [:trig, :num])
+        add_sig(:sig => 'slashdot ?(\d+)?', :method => 'show_slashdot', :desc => 'Slashdot headlines', :params => [:num])
+        add_sig(:sig => '\/\. ?(\d+)?', :method => 'show_slashdot', :desc => 'Slashdot headlines', :params => [:num])
     end
 
     def show_slashdot(message, params)
