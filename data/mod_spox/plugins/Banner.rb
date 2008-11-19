@@ -112,7 +112,7 @@ class Banner < ModSpox::Plugin
             raise BanExemption.new("This nick is exempt from bans: #{nick.nick}")
         else
             reset_time
-            mask = nick.source.nil? || nick.source.empty? ? "#{nick.nick}!*@*" : "*!*@#{nick.address}"
+            mask = nick.address.nil? || nick.address.empty? ? "#{nick.nick}!*@*" : "*!*@#{nick.address}"
             record = BanRecord.filter(:nick_id => nick.pk, :channel_id => channel.pk, :mask => mask, :removed => false).first
             if(record)
                 record.bantime = record.bantime + time.to_i
@@ -158,7 +158,7 @@ class Banner < ModSpox::Plugin
                 reply(message.replyto, "Okay")
             rescue Object => boom
                 reply(message.replyto, "Error: Failed to ban mask. Reason: #{boom}")
-                Logger.log("ERROR: #{boom} #{boom.backtrace.join("\n")}")
+                Logger.warn("ERROR: #{boom} #{boom.backtrace.join("\n")}")
             end
         else
             reply(message.replyto, "Error: No record of channel: #{params[:channel]}")
@@ -238,12 +238,12 @@ class Banner < ModSpox::Plugin
                         begin
                             ban(nick, channel, match[:bantime], match[:message])
                         rescue Object => boom
-                            Logger.log("Mask based ban failed. Reason: #{boom}")
+                            Logger.warn("Mask based ban failed. Reason: #{boom}")
                         end
                     end
                 end
             else
-                Logger.log("Ban masks will not be processed due to lack of operator status")
+                Logger.info("Ban masks will not be processed due to lack of operator status")
             end
         end
     end
@@ -263,7 +263,7 @@ class Banner < ModSpox::Plugin
             begin
                 ban(nick, channel, match.bantime, match.message)
             rescue Object => boom
-                Logger.log("Mask based ban failed. Reason: #{boom}")
+                Logger.warn("Mask based ban failed. Reason: #{boom}")
             end
         end
     end
@@ -507,7 +507,7 @@ class Banner < ModSpox::Plugin
         def self.map_masks
             masks = {}
             BanMask.all.each do |mask|
-                Logger.log("Processing mask for channel: #{mask.channel.name}")
+                Logger.info("Processing mask for channel: #{mask.channel.name}")
                 masks[mask.channel.name] = [] unless masks.has_key?(mask.channel.name)
                 masks[mask.channel.name] << {:mask => mask.mask, :message => mask.message, :bantime => mask.bantime, :channel => mask.channel}
             end

@@ -71,7 +71,7 @@ class DCC < ModSpox::Plugin
                     socket.bind(addr)
                     initialize_getter(socket, params[:filename])
                 rescue Object => boom
-                    Logger.log("Failed to initialize DCC TCPServer. Reason: #{boom}")
+                    Logger.warn("Failed to initialize DCC TCPServer. Reason: #{boom}")
                     @try += 1
                     socket = nil
                     port = nil
@@ -168,16 +168,16 @@ class DCC < ModSpox::Plugin
                     client, addrinfo = socket.accept
                     cport, cip = Object::Socket.unpack_sockaddr_in(addrinfo)
                 end
-                Logger.log("Sending file: #{filename} to IP: #{cip}:#{cport}")
+                Logger.info("Sending file: #{filename} to IP: #{cip}:#{cport}")
                 file = File.new(filename)
                 until((line = file.gets).nil?) do
                     client << line
                 end
-                Logger.log("Sending of file: #{filename} to IP: #{addrinfo} is now complete")
+                Logger.info("Sending of file: #{filename} to IP: #{addrinfo} is now complete")
             rescue Timeout::Error => boom
-                Logger.log("Error sending file: #{filename}. Timeout exceeded (#{@max_wait} seconds)")
+                Logger.warn("Error sending file: #{filename}. Timeout exceeded (#{@max_wait} seconds)")
             rescue Object => boom
-                Logger.log("Error sending file: #{filename}. Unknown reason: #{boom}")
+                Logger.warn("Error sending file: #{filename}. Unknown reason: #{boom}")
             ensure
                 socket.close
                 client.close

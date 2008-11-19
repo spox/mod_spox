@@ -12,7 +12,7 @@ module ModSpox
                     channel = find_model($3)
                     return Messages::Incoming::Invite.new(string, source, target, channel)
                 else
-                    Logger.log('Failed to parse INVITE message')
+                    Logger.warn('Failed to parse INVITE message')
                     return nil
                 end
             end

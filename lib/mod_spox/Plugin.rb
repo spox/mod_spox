@@ -13,7 +13,7 @@ module ModSpox
 
         # Called before the object is destroyed by the ModSpox::PluginManager
         def destroy
-            Logger.log("Destroy method for plugin #{name} has not been defined.", 15)
+            Logger.info("Destroy method for plugin #{name} has not been defined.")
         end
 
         # Returns the name of the class

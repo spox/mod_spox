@@ -57,7 +57,7 @@ module ModSpox
                     @cache.delete(location)
                     return message
                 else
-                    Logger.log('Failed to match RPL_WHO type message')
+                    Logger.warn('Failed to match RPL_WHO type message')
                     return nil
                 end
             end

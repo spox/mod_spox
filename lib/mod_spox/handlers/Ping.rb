@@ -9,7 +9,7 @@ module ModSpox
                 if(string =~ /^PING\s:(.+)$/)
                     return Messages::Incoming::Ping.new(string, $1, nil)
                 else
-                    Logger.log('Failed to match PING message')
+                    Logger.warn('Failed to match PING message')
                     return nil
                 end
             end

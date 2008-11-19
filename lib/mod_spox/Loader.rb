@@ -29,7 +29,7 @@ module ModSpox
         case config[:db_adapter]
             when 'mysql'
                 Database.db = Sequel.mysql(config[:db_database], :user => config[:db_username],
-                        :password => config[:db_password], :host => config[:db_host])
+                        :password => config[:db_password], :host => config[:db_host], :max_connections => 20)
                 Database.type = :mysql
             when 'pgsql'
                 Database.db = Sequel.open("postgres://#{config[:db_username]}:#{config[:db_password]}@#{config[:db_host]}/#{config[:db_database]}")

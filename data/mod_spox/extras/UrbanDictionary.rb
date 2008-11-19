@@ -10,7 +10,7 @@ class UrbanDictionary < ModSpox::Plugin
         begin
             require 'htmlentities'
         rescue Object => boom
-            Logger.log('Error: This plugin requires the HTMLEntities gem. Please install and reload plugin.')
+            Logger.warn('Error: This plugin requires the HTMLEntities gem. Please install and reload plugin.')
             raise Exceptions::BotException.new("Missing required HTMLEntities library")
         end
         Signature.find_or_create(:signature => 'udefine (?!key)(\d+)? ?(.+)', :plugin => name, :method => 'define',

@@ -1,7 +1,5 @@
 ['mod_spox/Logger',
  'mod_spox/Exceptions',
- 'mod_spox/Monitors',
- 'mod_spox/ThreadPool',
  'timeout'].each{|f|require f}
 
 module ModSpox
@@ -9,116 +7,102 @@ module ModSpox
     # The Pool class is used to reduce thread creation. It provides
     # an easy way to process many actions in an asynchronous manner.
     class Pool
-
-        # Storage space that the pool will be processing
-        attr_reader :queue
-
-        # Create a new pool
-        def initialize
-            if(@@thread_pool.nil?)
-                workers_min = Models::Config[:pool_workers_min]
-                workers_min = workers_min.nil? ? 5 : workers_min.to_i
-                workers_max = Models::Config[:pool_workers_max]
-                workers_max = workers_max.nil? ? 2 : workers_max.to_i
-                timeout = Models::Config[:pool_timeout]
-                timeout = timeout.nil? ? 0 : timeout.to_i
-                Logger.log("Starting up thread pool with max workers at: #{workers_max}, min workers at: #{workers_min}, and timeout: #{timeout} seconds")
-                @@thread_pool = ThreadPool.new(timeout, workers_max, workers_min)
+    
+        # Create and start our process pool
+        # Note: This uses a separate thread to run the actions. This is not
+        # needed on 1.8.x as the fibers are simulated there, but in 1.9 errors
+        # will occur as attempts to call fibers are made across threads
+    
+        def Pool.create_pool
+            workers_max = Models::Config.filter(:name => 'pool_workers_max').first
+            workers_max = workers_max.nil? ? 30 : workers_max.value.to_i
+            timeout = Models::Config.filter(:name => 'pool_timeout').first
+            @@timeout = timeout.nil? ? 15 : timeout.to_i
+            @@queue = Queue.new
+            Thread.new do
+                @@pool = NeverBlock::Pool::FiberPool.new(workers_max)
+                @@kill = false
+                until @@kill do
+                    a = @@queue.pop
+                    Pool.run(a)
+                end
             end
-            @queue = PoolQueue.new
+        end
+        
+        # Stop processing actions in the pool
+        def Pool.stop_pool
+            @@kill = true
+        end
+        
+        # Add an action to the pool to be processed
+        def Pool.<<(action)
+            @@queue << action
+        end
+        
+        # Alias of Pool.<<(action)
+        def Pool.queue(action)
+            Pool << action
+        end
+        
+        # action:: action to be run
+        # Runs an action in the pool
+        def Pool.run(action)
+            @@pool.spawn do
+                begin
+                    if(@@timeout > 0)
+                        Timeout::timeout(@@timeout) do
+                            action.call
+                        end
+                    else
+                        action.call
+                    end
+                rescue Timeout::Error => boom
+                    Logger.warn("Pool worker timed out during execution of action (#{@@timeout} sec limit)")
+                rescue Object => boom
+                    Logger.warn("Pool worker caught an unknown exception: #{boom}")
+                end
+            end
         end
 
-        # Destroys this pool
-        def destroy
-            Pool.remove_pool(self)
-        end
-
-        # Starts the pool
-        def start_pool
-            Pool.add_pool(self)
-        end
-
-        private
-
-        # Running pools
-        @@pools = Hash.new
-        @@thread_pool = nil
-        @@lock = Mutex.new
-        @@running = false
-
+        # Return maximum number of seconds actions are allowed to process
         def Pool.max_exec_time
-            @@thread_pool.max_exec_time
+            @@timeout
         end
 
+        # time:: number of seconds actions are allowed
+        # Set number of seconds actions are allowed to work
         def Pool.max_exec_time=(time)
-            @@thread_pool.max_exec_time = time
+            @@timeout = time
+            t = Models::Config.find_or_create(:name => 'pool_timeout')
+            t.value = time
+            t.save
         end
 
+        # returns maximum number of workers
         def Pool.max_workers
-            @@thread_pool.max_workers
+            t = Models::Config.filter(:name => 'pool_workers_max').first
+            return t.nil? ? 30 : t.value
         end
 
+        # Set maximum number of workers to process tasks
         def Pool.max_workers=(max)
-            @@thread_pool.max_workers = max
+            t = Models::Config.find_or_create(:name => 'pool_workers_max')
+            t.value = min
+            t.save
         end
         
+        # Not currently implemented
         def Pool.min_workers
-            @@thread_pool.min_workers
+            'not implemented'
         end
         
+        # Not currently implemented
         def Pool.min_workers=(min)
-            @@thread_pool.min_workers = min
+            'not implemented'
         end
 
         def Pool.workers
-            @@thread_pool.pool_size
-        end
-        
-        def Pool.workers_idle
-            @@thread_pool.pool_idle
-        end
-        
-        def Pool.workers_active
-            @@thread_pool.pool_active
-        end
-
-        def Pool.stop_old_workers(secs)
-            @@thread_pool.clean_old(secs)
-        end
-
-        # Forces sleeping threads to wake up
-        def Pool.process(action)
-            raise Exceptions::InvalidType.new("Pool will only run Procs") unless action.is_a?(Proc)
-            @@thread_pool.queue(action)
-        end
-
-        # Adds a Pool to the master Pool list
-        def Pool.add_pool(pool)
-            @@pools[pool.queue.object_id] = pool
-        end
-
-        # Removes a Pool from the master Pool list
-        def Pool.remove_pool(pool)
-            @@pools.delete(pool.queue.object_id)
-        end
-
-        # Modified Queue to properly interact with Pool
-        class PoolQueue
-
-            def <<(val)
-                push(val)
-            end
-
-            def push(val)
-                Pool.process(val)
-            end
-
-            def pop
-                raise EmptyQueue.new("Queue is currently empty")
-            end
-        end
-
-        class EmptyQueue < Exceptions::BotException
+            @@pool.fibers.size
         end
 
     end

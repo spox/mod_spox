@@ -9,7 +9,7 @@ module ModSpox
                 if(string =~ /^:\S+\sPONG\s(\S+)\s:(.+)$/)
                     return Messages::Incoming::Pong.new(string, $1, $2)
                 else
-                    Logger.log('Failed to parse PONG message')
+                    Logger.warn('Failed to parse PONG message')
                     return nil
                 end
             end

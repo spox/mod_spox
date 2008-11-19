@@ -8,7 +8,8 @@
  'mod_spox/messages/Messages',
  'mod_spox/models/Models',
  'mod_spox/Monitors',
- 'mod_spox/Helpers'].each{|f|require f}
+ 'mod_spox/Helpers',
+ 'mod_spox/Pool'].each{|f|require f}
 module ModSpox
 
     class Bot
@@ -30,8 +31,8 @@ module ModSpox
 
         # Create a Bot
         def initialize
-            Logger.severity($VERBOSITY)
-            Logger.fd
+            Pool.create_pool
+            Logger.initialize($LOGTO, $LOGLEVEL)
             clean_models
             @start_time = Time.now
             @pipeline = Pipeline.new
@@ -42,9 +43,9 @@ module ModSpox
             @plugin_manager = PluginManager.new(@pipeline)
             if(@config[:plugin_upgrade] == 'yes')
                 @plugin_manager.upgrade_plugins
-                Logger.log('Main bot thread is now sleeping for 10 seconds to allow upgrade to conclude')
+                Logger.info('Main bot thread is now sleeping for 10 seconds to allow upgrade to conclude')
                 sleep(10)
-                Logger.log('Main bot thread sleep completed. Continuing loading.')
+                Logger.info('Main bot thread sleep completed. Continuing loading.')
             end
             @config[:plugin_upgrade] = 'no'
             @config.write_configuration
@@ -58,19 +59,20 @@ module ModSpox
 
         # Run the bot
         def run
-            trap('SIGTERM'){ Logger.log("Caught SIGTERM"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit; Logger.kill; }
-            trap('SIGKILL'){ Logger.log("Caught SIGKILL"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit; Logger.kill; }
-            trap('SIGINT'){ Logger.log("Caught SIGINT"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit; Logger.kill; }
-            trap('SIGQUIT'){ Logger.log("Caught SIGQUIT"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit; Logger.kill; }
+            trap('SIGTERM'){ Logger.warn("Caught SIGTERM"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit; }
+            trap('SIGKILL'){ Logger.warn("Caught SIGKILL"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit; }
+            trap('SIGINT'){ Logger.warn("Caught SIGINT"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit; }
+            trap('SIGQUIT'){ Logger.warn("Caught SIGQUIT"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit; }
             until @shutdown do
                 @timer.start
                 @pipeline << Messages::Internal::BotInitialized.new
                 begin
                     @waiter.wait
                 rescue Object => boom
-                    Logger.log("Caught exception: #{boom}")
+                    Logger.fatal("Caught exception: #{boom}")
+                ensure
+                    shutdown
                 end
-                shutdown
             end
         end
 
@@ -80,11 +82,8 @@ module ModSpox
             @plugin_manager.destroy_plugins
             @thread.run
             @timer.stop
-            @timer.destroy
-            @factory.destroy
             @pipeline << Messages::Internal::Shutdown.new
             sleep(0.1)
-            @pipeline.destroy
             @socket.shutdown unless @socket.nil?
             clean_models
         end
@@ -97,13 +96,13 @@ module ModSpox
         # message:: Messages::Internal::EstablishConnection message
         # Initialize connection to IRC server
         def bot_connect(message)
-            Logger.log("Received a connection command", 10)
+            Logger.info("Received a connection command")
             begin
                 @socket = Sockets.new(self) if @socket.nil?
                 @socket.irc_connect(message.server, message.port)
                 @pipeline << Messages::Internal::Connected.new(message.server, message.port)
             rescue Object => boom
-                Logger.log("Failed connection to server: #{boom}")
+                Logger.warn("Failed connection to server: #{boom}")
                 @pipeline << Messages::Internal::ConnectionFailed.new(message.server, message.port)
             end
         end

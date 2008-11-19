@@ -56,14 +56,14 @@ module ModSpox
                     config[:db_adapter] == 'sqlite' ? test_connection(config[:db_adapter]) : test_connection(config[:db_adapter], config[:db_username], config[:db_password], config[:db_host], config[:db_database])
                     puts 'OK'
                     valid_connection = true
-#                 rescue Sequel::DatabaseError => boom
-#                     puts 'Failed'
-#                     puts 'Error: Connection to database failed'
-#                     puts "Info: #{boom}"
+                rescue Sequel::DatabaseError, URI::InvalidURIError, Mysql::Error => boom
+                    puts 'Failed'
+                    puts 'Error: Connection to database failed'
+                    puts "Info: #{boom}"
                 rescue Object => boom
                     puts 'Failed'
                     puts 'Error: Unexpected error encountered.'
-                    puts "Info: #{boom}\n#{boom.backtrace.join("\n")}"
+                    puts "Info: #{boom.class} #{boom}\n#{boom.backtrace.join("\n")}"
                     exit 1
                 ensure
                     $stdout.flush
@@ -90,11 +90,13 @@ module ModSpox
         def test_connection(type, username=nil, password=nil, host=nil, name=nil)
             case type
                 when 'mysql'
-                    test = Sequel.mysql(name, :user => username, :password => password, :host => host)
+                    c = Sequel.mysql(name, :user => username, :password => password, :host => host)
+                    c.test_connection
                 when 'pgsql'
-                    test = Sequel.open("postgres://#{username}:#{password}@#{host}/#{name}")
+                    c = Sequel.open("postgres://#{username}:#{password}@#{host}/#{name}")
+                    c.test_connection
                 when 'sqlite'
-                    test = Sequel.sqlite
+                    return true
             end
         end
         

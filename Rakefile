@@ -19,7 +19,7 @@ spec = Gem::Specification.new do |s|
     s.platform = Gem::Platform::RUBY
     s.summary = 'The mod_spox IRC robot'
     s.description = 'mod_spox is a Ruby IRC bot that is easily modifiable and extensible'
-    s.requirements << 'sequel, daemons'
+    s.requirements << 'sequel, daemons, espace-neverblock'
     s.files = FileList['README', 'INSTALL', 'CHANGELOG', 'lib/**/*.rb', 'bin/*', 'data/**/*.rb'].to_a.delete_if {|item| item == ".svn"}
     s.executables << 'mod_spox'
     s.require_path = 'lib'

@@ -96,7 +96,7 @@ class DevWatch < ModSpox::Plugin
                     @original = item.elements['title'].text
                     break
                 end
-                Logger.log("Initialized development watch RSS feed: #{@original}")
+                Logger.info("Initialized development watch RSS feed: #{@original}")
             else
                 @new = doc
                 print_new

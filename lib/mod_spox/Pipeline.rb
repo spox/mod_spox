@@ -1,17 +1,13 @@
-['timeout',
- 'mod_spox/models/Models.rb',
+['mod_spox/models/Models.rb',
  'mod_spox/Logger',
  'mod_spox/Pool',
  'mod_spox/Exceptions'].each{|f|require f}
 module ModSpox
 
-    class Pipeline < Pool
+    class Pipeline
 
         # Create a new Pipeline
         def initialize
-            super()
-            @timeout = 20 # Anything over 20 seconds and we assume a plugin locked up the thread
-            Logger.log("Created queue #{@queue} in pipeline", 10)
             @hooks = Hash.new
             @plugins = Hash.new
             @admin = Models::Group.filter(:name => 'admin').first
@@ -20,13 +16,12 @@ module ModSpox
             populate_signatures
             hook(self, :populate_triggers, :Internal_TriggersUpdate)
             hook(self, :populate_signatures, :Internal_SignaturesUpdate)
-            start_pool
         end
 
         # message:: Message to send down pipeline
         # Queues a message to send down pipeline
         def <<(message)
-            Logger.log("Message added to pipeline queue: #{message}", 5)
+            Logger.info("Message added to pipeline queue: #{message}")
             message_processor(message)
         end
 
@@ -34,7 +29,7 @@ module ModSpox
         # Hooks a plugin into the pipeline so it can be called
         # directly when it matches a trigger
         def hook_plugin(plugin)
-            Logger.log("Plugin #{plugin.name} hooking into pipeline", 10)
+            Logger.info("Plugin #{plugin.name} hooking into pipeline")
             @plugins[plugin.name.to_sym] = plugin
         end
 
@@ -42,7 +37,7 @@ module ModSpox
         # Unhooks a plugin from the pipeline (This does not unhook
         # it from the standard hooks)
         def unhook_plugin(plugin)
-            Logger.log("Plugin #{plugin.name} unhooking from pipeline", 10)
+            Logger.info("Plugin #{plugin.name} unhooking from pipeline")
             @plugins.delete(plugin.name.to_sym)
             @hooks.each_pair do |type, things|
                 things.delete(plugin.name.to_sym) if things.has_key?(plugin.name.to_sym)
@@ -54,7 +49,7 @@ module ModSpox
         # type:: Type of message the plugin wants to process
         # Hooks a plugin into the pipeline for a specific type of message
         def hook(object, method, type)
-            Logger.log("Object #{object.class.to_s} hooking into messages of type: #{type}", 10)
+            Logger.info("Object #{object.class.to_s} hooking into messages of type: #{type}")
             type = type.gsub(/::/, '_').to_sym unless type.is_a?(Symbol)
             method = method.to_sym unless method.is_a?(Symbol)
             name = object.class.to_s.gsub(/^.+:/, '')
@@ -67,7 +62,7 @@ module ModSpox
         # type:: Type of message the plugin no longer wants to process
         # This will remove the hook a plugin has for a specific message type
         def unhook(object, method, type)
-            Logger.log("Object #{object.class.to_s} unhooking from messages of type: #{type}", 10)
+            Logger.info("Object #{object.class.to_s} unhooking from messages of type: #{type}")
             type = type.gsub(/::/, '_').to_sym unless type.is_a?(Symbol)
             name = object.class.to_s.gsub(/^.+:/, '').to_sym
             raise Exceptions::InvalidValue.new("Unknown hook type given: #{type.to_s}") unless @hooks.has_key?(type)
@@ -81,7 +76,7 @@ module ModSpox
 
         # Clears all hooks from the pipeline (Commonly used when reloading plugins)
         def clear
-            Logger.log("All hooks have been cleared from pipeline", 10)
+            Logger.info("All hooks have been cleared from pipeline")
             @hooks.clear
             @plugins.clear
         end
@@ -99,7 +94,6 @@ module ModSpox
             @populate_lock.synchronize do
                 @signatures = {}
                 Models::Signature.all.each do |s|
-                    Logger.log("Signature being processed: #{s.signature} with params: #{s.params.join(', ')}")
                     c = s.signature[0].chr.downcase
                     if(c =~ /^[a-z]$/)
                         type = c.to_sym
@@ -121,26 +115,26 @@ module ModSpox
         # Processes messages
         def message_processor(message)
             begin
-                Logger.log("Pipeline is processing a message: #{message}", 10)
+                Logger.info("Pipeline is processing a message: #{message}")
                 parse(message)
                 type = message.class.to_s.gsub(/^(ModSpox::Messages::|#<.+?>::)/, '').gsub(/::/, '_').to_sym
                 mod = type.to_s.gsub(/_.+$/, '').to_sym
-                Logger.log("Pipeline determines that #{message} is of type: #{type}", 10)
+                Logger.info("Pipeline determines that #{message} is of type: #{type}")
                 [type, mod, :all].each do |type|
                     if(@hooks.has_key?(type))
                         @hooks[type].each_value do |objects|
                             begin
                                 objects.each do |v|
-                                    @queue << lambda{ v[:object].send(v[:method].to_s, message) }
+                                    Pool << lambda{ v[:object].send(v[:method].to_s, message) }
                                 end
                             rescue Object => boom
-                                Logger.log("Plugin threw exception while attempting to process message: #{boom}\n#{boom.backtrace.join("\n")}")
+                                Logger.warn("Plugin threw exception while attempting to process message: #{boom}\n#{boom.backtrace.join("\n")}")
                             end
                         end
                     end
                 end
             rescue Object => boom
-                Logger.log("Pipeline encountered an exception while processing a message: #{boom}\n#{boom.backtrace.join("\n")}", 10)
+                Logger.warn("Pipeline encountered an exception while processing a message: #{boom}\n#{boom.backtrace.join("\n")}")
             end
         end
 
@@ -154,7 +148,7 @@ module ModSpox
             @triggers.each{|t| trigger = t if message.message =~ /^#{Regexp.escape(t)}/}
             if(!trigger.nil? || message.addressed?)
                 return if !trigger.nil? && message.message.length == trigger.length
-                Logger.log("Message has matched against a known trigger", 15)
+                Logger.info("Message has matched against a known trigger")
                 c = (message.addressed? && trigger.nil?) ? message.message[0].chr.downcase : message.message[trigger.length].chr.downcase
                 if(c =~ /^[a-z]$/)
                     type = c.to_sym
@@ -165,7 +159,7 @@ module ModSpox
                 end
                 return unless @signatures[type]
                 @signatures[type].each do |sig|
-                    Logger.log("Matching against: #{trigger}#{sig.signature}")
+                    Logger.info("Matching against: #{trigger}#{sig.signature}")
                     esc_trig = trigger.nil? ? '' : Regexp.escape(trigger)
                     res = message.message.scan(/^#{esc_trig}#{sig.signature}$/)
                     if(res.size > 0)
@@ -173,22 +167,21 @@ module ModSpox
                         next if sig.requirement == 'private' && message.is_public?
                         next if sig.requirement == 'public' && message.is_private?
                         params = Hash.new
-                        puts "WTF IS THIS: #{sig.pk} | #{sig.signature} | #{sig.params.join(', ')}"
                         sig.params.size.times do |i|
                             params[sig.params[i].to_sym] = res[0][i]
-                            Logger.log("Signature params: #{sig.params[i].to_sym} = #{res[0][i]}")
+                            Logger.info("Signature params: #{sig.params[i].to_sym} = #{res[0][i]}")
                         end
                         if(@plugins.has_key?(sig.plugin.to_sym))
                             begin
-                                @queue << lambda{ @plugins[sig.plugin.to_sym].send(sig.values[:method], message, params) }
+                                Pool << lambda{ @plugins[sig.plugin.to_sym].send(sig.values[:method], message, params) }
                             rescue Object => boom
-                                Logger.log("Plugin threw exception while attempting to process message: #{boom}\n#{boom.backtrace.join("\n")}")
+                                Logger.warn("Plugin threw exception while attempting to process message: #{boom}\n#{boom.backtrace.join("\n")}")
                             end
                         end
                     end
                 end
             else
-                Logger.log("Message failed to match any known trigger", 15)
+                Logger.info("Message failed to match any known trigger")
             end
         end
 

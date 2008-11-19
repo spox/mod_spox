@@ -1,75 +1,35 @@
+require 'logger'
 module ModSpox
 
     class Logger
-
-        def self.do_initialization
-            Logger.fd(nil) unless Logger.class_variable_defined?(:@@fd)
-            Logger.severity unless Logger.class_variable_defined?(:@@severity)
-            @@lock = Mutex.new unless Logger.class_variable_defined?(:@@lock)
-            @@lock.synchronize do
-                @@writer = LogWriter.new(@@fd) unless Logger.class_variable_defined?(:@@writer)
-                @@initialized = true
+        
+        def Logger.initialize(output=nil, level=:fatal)
+            if(output.nil?)
+                @@log = nil
+            else
+                levels = {:info => Object::Logger::INFO, :warn => Object::Logger::WARN, :fatal => Object::Logger::FATAL}
+                @@log = Object::Logger.new(output)
+                @@log.level = levels.has_key?(level) ? levels[level] : Object::Logger::WARN
             end
         end
-
-        # severity:: minimum severity for visible logging
-        # Sets the maximum level of visible logs
-        def self.severity(severity=1)
-            @@severity = severity
-        end
-
-        # filedes:: file descriptor to log to
-        # Sets the file descriptor for logging. By default
-        # logs will be sent to STDOUT
-        def self.fd(filedes=nil)
-            @@fd = filedes.nil? ? $stdout : filedes
-        end
-
-        # message:: message to log
-        # severity:: severity level (lower is more severe)
-        # Log a message. It is important to note that the lower the
-        # severity level of a message, the better chance it has of
-        # being outputted
-        def self.log(message, severity=1)
-            do_initialization unless Logger.class_variable_defined?(:@@initialized)
-            @@writer.log(message) unless @@severity < severity
-        end
-
-        def self.kill
-            @@writer.kill
-        end
-
-    end
-
-    class LogWriter
-
-        attr_reader :fd
-
-        def initialize(fd)
-            @fd = fd
-            @kill = false
-            @queue = Queue.new
-            @thread = Thread.new do
-                until(@kill)
-                    processor
-                end
+        
+        def Logger.warn(s)
+            unless @@log.nil?
+                Pool << lambda{@@log.warn(s)}
             end
         end
-
-        def kill
-            @kill = true
-            @queue << "Logger has been told to shut down"
+        
+        def Logger.info(s)
+            unless @@log.nil?
+                Pool << lambda{@@log.info(s)}
+            end
         end
-
-        def log(message)
-            @queue << message
+        
+        def Logger.fatal(s)
+            unless @@log.nil?
+                Pool << lambda{@@log.fatal(s)}
+            end
         end
-
-        def processor
-            message = @queue.pop
-            @fd.puts("LOGGER [#{Time.now}]: #{message}")
-        end
-
+        
     end
-
 end

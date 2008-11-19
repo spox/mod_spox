@@ -75,7 +75,7 @@ module ModSpox
                     @cache.delete(nick)
                     return message
                 else
-                    Logger.log('Failed to parse WHOIS type reply')
+                    Logger.warn('Failed to parse WHOIS type reply')
                     return nil
                 end
             end

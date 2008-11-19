@@ -17,7 +17,7 @@ module ModSpox
                     channel.nick_remove(kickee)
                     return Messages::Incoming::Kick.new(string, channel, kicker, kickee, reason)
                 else
-                    Logger.log('Failed to process KICK message')
+                    Logger.warn('Failed to process KICK message')
                     return nil
                 end
             end

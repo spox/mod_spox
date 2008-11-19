@@ -34,7 +34,7 @@ module ModSpox
                     old_nick.save
                     return Messages::Incoming::Nick.new(string, old_nick, new_nick)
                 else
-                    Logger.log('Failed to parse NICK message')
+                    Logger.warn('Failed to parse NICK message')
                     return nil
                 end
             end

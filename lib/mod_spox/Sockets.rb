@@ -62,7 +62,7 @@ module ModSpox
                         port = $2.to_i
                         build_connection(ip, port, message.source)
                     else
-                        Logger.log("Error: #{message.source.nick} is attempting to establish DCC connection without permission.")
+                        Logger.warn("Error: #{message.source.nick} is attempting to establish DCC connection without permission.")
                     end
                 end
             end
@@ -102,17 +102,17 @@ module ModSpox
                         client, addrinfo = socket.accept
                         cport, cip = Object::Socket.unpack_sockaddr_in(addrinfo)
                     end
-                    Logger.log("New DCC socket created for #{message.nick.nick} has connected from: #{cip}:#{cport}")
+                    Logger.info("New DCC socket created for #{message.nick.nick} has connected from: #{cip}:#{cport}")
                     stop_reader
                     @dcc_sockets << client
                     @mapped_sockets[client.object_id] = {:socket => client, :nick => message.nick}
                     @read_sockets << client
                     start_reader
                 rescue Timeout::Error => boom
-                    Logger.log("Timeout reached waiting for #{message.nick.nick} to connect to DCC socket. Closing.")
+                    Logger.warn("Timeout reached waiting for #{message.nick.nick} to connect to DCC socket. Closing.")
                     client.close
                 rescue Object => boom
-                    Logger.log("Unknown error encountered while building DCC listener for: #{message.nick.nick}. Error: #{boom}")
+                    Logger.warn("Unknown error encountered while building DCC listener for: #{message.nick.nick}. Error: #{boom}")
                     client.close
                 ensure
                     socket.close
@@ -143,9 +143,9 @@ module ModSpox
                 @mapped_sockets[socket.object_id] = {:socket => socket, :nick => nick}
                 @dcc_sockets << socket
                 start_reader
-                Logger.log("New DCC connection established to #{nick.nick} on #{ip}:#{port}")
+                Logger.info("New DCC connection established to #{nick.nick} on #{ip}:#{port}")
             rescue Object => boom
-                Logger.log("DCC connection to #{nick.nick} on #{ip}:#{port} failed. #{boom}")
+                Logger.warn("DCC connection to #{nick.nick} on #{ip}:#{port} failed. #{boom}")
             end
         end
 
@@ -156,14 +156,14 @@ module ModSpox
         end
 
         def stop_reader
-            Logger.log('Stopping reader thread for sockets')
+            Logger.info('Stopping reader thread for sockets')
             if(!@thread_read.nil? && @thread_read.alive?)
                 @kill = true
                 @thread_read.join(0.2)
                 @thread_read.kill if @thread_read.alive?
                 @kill = false
             end
-            Logger.log('Reader thread for sockets has been stopped')
+            Logger.info('Reader thread for sockets has been stopped')
         end
 
         def restart_reader
@@ -173,9 +173,9 @@ module ModSpox
 
 
         def start_reader
-            Logger.log('Starting reader thread for sockets')
+            Logger.info('Starting reader thread for sockets')
             if(!@thread_read.nil? && @thread_read.alive?)
-                Logger.log('ERROR: Cannot start reader. Already running.')
+                Logger.warn('ERROR: Cannot start reader. Already running.')
             else
                 @thread_read = Thread.new do
                     until @kill do
@@ -185,7 +185,7 @@ module ModSpox
                                 unless(sock == @irc_socket.socket)
                                     tainted_string = sock.gets
                                     string = @ic.iconv(tainted_string + ' ')[0..-2]
-                                    Logger.log("DCC >> #{string}")
+                                    Logger.info("DCC >> #{string}", false)
                                     if(sock.closed? || string.nil?)
                                         sock.close
                                         close_dcc(sock)
@@ -197,11 +197,11 @@ module ModSpox
                                 end
                             end
                         rescue Object => boom
-                            Logger.log("Socket error detected: #{boom}\n#{boom.backtrace}")
+                            Logger.warn("Socket error detected: #{boom}\n#{boom.backtrace}", false)
                         end
                     end
                 end
-                Logger.log('Reader thread for sockets has been started')
+                Logger.info('Reader thread for sockets has been started')
             end
         end
 

@@ -7,15 +7,13 @@
 
 module ModSpox
 
-    class Timer < Pool
+    class Timer
 
         # pipeline:: message pipeline
         # Create a new Timer
         def initialize(pipeline)
-            super()
             @pipeline = pipeline
             @timers = Array.new
-            Logger.log("Created queue: #{@queue} in timer", 10)
             @monitor = Monitors::Timer.new
             @thread = nil
             @stop_timer = false
@@ -28,28 +26,27 @@ module ModSpox
              :Internal_TimerClear => :clear}.each_pair do |type,method|
                 @pipeline.hook(self, method, type)
             end
-            start_pool
         end
 
         # Wakes the timer up early
         def wakeup
-            Logger.log("Timer has been explicitly told to wakeup", 15)
+            Logger.info("Timer has been explicitly told to wakeup")
             @monitor.wakeup unless @thread.nil?
         end
 
         # message:: TimerAdd message
         # Add a recurring code block
         def add_message(message)
-            Logger.log("New block is being added to the timer", 15)
+            Logger.info("New block is being added to the timer")
             action = nil
             action = add(message.period, message.once, message.data, &message.block)
             @owners[message.requester.name.to_sym] = [] unless @owners.has_key?(message.requester.name.to_sym)
             @owners[message.requester.name.to_sym] << action
             begin
                 @pipeline << Messages::Internal::TimerResponse.new(message.requester, action, true, message.id)
-                Logger.log("New block was successfully added to the timer", 15)
+                Logger.info("New block was successfully added to the timer")
             rescue Object => boom
-                Logger.log("Failed to add block to timer: #{boom}", 10)
+                Logger.warn("Failed to add block to timer: #{boom}")
                 @pipeline << Messages::Internal::TimerResponse.new(message.requester, action, false, message.id)
             end
         end
@@ -58,7 +55,7 @@ module ModSpox
         # Remove an action from the timer
         def remove_message(message)
             remove(message.action)
-            Logger.log("Action has been removed from the Timer", 15)
+            Logger.info("Action has been removed from the Timer")
             @pipeline << Messages::Internal::TimerResponse.new(nil, message.action, false, message.id)
         end
 
@@ -104,10 +101,10 @@ module ModSpox
                         to_sleep = a.remaining if to_sleep.nil?
                         to_sleep = a.remaining if !a.remaining.nil? && a.remaining < to_sleep
                     end
-                    Logger.log("Timer is set to sleep for #{to_sleep.nil? ? 'forever' : "#{to_sleep} seconds"}", 15)
+                    Logger.info("Timer is set to sleep for #{to_sleep.nil? ? 'forever' : "#{to_sleep} seconds"}")
                     actual_sleep = @monitor.wait(to_sleep)
                     tick(actual_sleep)
-                    Logger.log("Timer was set to sleep for #{to_sleep.nil? ? 'forever' : "#{to_sleep} seconds"}. Actual sleep time: #{actual_sleep} seconds", 15)
+                    Logger.info("Timer was set to sleep for #{to_sleep.nil? ? 'forever' : "#{to_sleep} seconds"}. Actual sleep time: #{actual_sleep} seconds")
                     @add_lock.wakeup
                     @add_lock.wait while @adding
                 end
@@ -150,7 +147,7 @@ module ModSpox
                     ready << action.schedule
                 end
             end
-            ready.each{|action| @queue << lambda{ processor(action) }}
+            ready.each{|action| Pool << lambda{ processor(action) }}
         end
 
         # Process the actions
@@ -159,7 +156,7 @@ module ModSpox
                 action.run
                 remove(action) if action.is_complete?
             rescue Object => boom
-                Logger.log("Timer block generated an exception: #{boom}\n#{boom.backtrace.join("\n")}", 5)
+                Logger.warn("Timer block generated an exception: #{boom}\n#{boom.backtrace.join("\n")}")
             end
         end
 

@@ -2,7 +2,7 @@
 
 ## include our needed libraries ##
 
-['rubygems', 'sequel', 'thread', 'etc', 'getoptlong'].each do |file|
+['rubygems', 'sequel', 'thread', 'etc', 'getoptlong', 'neverblock', 'logger'].each do |file|
     begin
         require file
     rescue Object => boom
@@ -18,16 +18,30 @@ rescue Object => boom
     # ignore if not found #
 end
 
+begin
+    require 'mysqlplus'
+    class Object::Mysql
+        unless method_defined? :sync_query
+            alias :sync_query :query
+            alias :query :async_query
+        end
+    end
+rescue Object => boom
+    # just ignore
+end
+
 $BOTVERSION='0.1.0.1'
 $VERBOSITY = 0
 $MOD_SPOX_PATH = nil
 $DAEMON_BOT = false
+$LOGTO = nil
+$LOGLEVEL = :info
 Sequel::Model.unrestrict_primary_key
 
 begin
     require 'mod_spox/Loader'
 rescue
-    p 'ERROR: Failed to load mod_spox'
+    puts 'ERROR: Failed to load mod_spox'
     exit 1
 end
 include ModSpox
@@ -35,6 +49,7 @@ include ModSpox
 opts = GetoptLong.new(
     ['--config', '-c', GetoptLong::NO_ARGUMENT],
     ['--debug', '-d', GetoptLong::OPTIONAL_ARGUMENT],
+    ['--verbosity', '-V', GetoptLong::OPTIONAL_ARGUMENT],
     ['--version', '-v', GetoptLong::NO_ARGUMENT],
     ['--help', '-h', GetoptLong::NO_ARGUMENT],
     ['--path', '-p', GetoptLong::REQUIRED_ARGUMENT],
@@ -45,19 +60,22 @@ opts.each do |opt, arg|
     case opt
         when '--help'
             puts 'Usage: mod_spox [opts]'
-            puts '--config -c:     starts configuration wizard'
-            puts '--debug -d:      turns on debugging (include number >0 for more info)'
-            puts '--deamon -D:     daemonizes the process'
-            puts '--version -v:    output bot version information'
-            puts '--help -h:       print this help message'
+            puts '--config -c:                        starts configuration wizard'
+            puts '--debug -d [logfile]:               turns on debugging and outputs to file (default STDOUT)'
+            puts '--verbosity -V [(info|warn|fatal)]: verbosity of debug output (default info)'
+            puts '--deamon -D:                        daemonizes the process'
+            puts '--version -v:                       output bot version information'
+            puts '--help -h:                          print this help message'
             exit
         when '--version'
             puts "mod_spox IRC bot version: #{$BOTVERSION}"
             puts 'http://rubyforge.org/projects/modspox'
             exit
         when '--debug'
-            if(arg && arg =~ /^[0-9]+/)
-                $VERBOSITY = arg.to_i
+            if(arg && File.writable?(arg))
+                $LOGTO = arg
+            else
+                $LOGTO = $stdout
             end
         when '--config'
             require 'mod_spox/ConfigurationWizard'
@@ -72,6 +90,10 @@ opts.each do |opt, arg|
             rescue Object => boom
                 puts 'Error: You must install the Daemons gem: (http://daemons.rubyforge.org)'
                 exit 1
+            end
+        when '--verbosity'
+            if(arg && arg =~ /^(info|warn|fatal)$/)
+                $LOGLEVEL = arg.to_sym
             end
     end
 end

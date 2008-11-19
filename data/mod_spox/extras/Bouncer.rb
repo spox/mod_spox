@@ -28,7 +28,7 @@ class Bouncer < ModSpox::Plugin
     
     def get_msgs(message)
         unless(@clients.empty?)
-        Logger.log("BOUNCER: Sending to #{@clients.size} clients")
+        Logger.info("BOUNCER: Sending to #{@clients.size} clients")
             @clients.each do |client|
                 begin
                     if(message.raw_content.is_a?(Array))
@@ -107,18 +107,18 @@ class Bouncer < ModSpox::Plugin
                 until(@socket.closed?)
                     begin
                         new_con = @socket.accept_nonblock
-                        Logger.log("BOUNCER: New connection established on bouncer")
+                        Logger.info("BOUNCER: New connection established on bouncer")
                         @clients << {
                                     :connection => new_con, 
                                     :thread => Thread.new(new_con) do | con |
                                         begin
-                                        Logger.log("CONNECTION: #{con}")
+                                        Logger.info("CONNECTION: #{con}")
                                         until(con.closed?)
-                                            Logger.log("WAITING FOR STUFF ON :#{con}")
+                                            Logger.info("WAITING FOR STUFF ON :#{con}")
                                             Kernel.select([con], nil, nil, nil)
-                                            Logger.log("Woken up and ready to read")
+                                            Logger.info("Woken up and ready to read")
                                             string = con.gets
-                                            Logger.log("BOUNCER GOT MESSAGE: #{string}")
+                                            Logger.info("BOUNCER GOT MESSAGE: #{string}")
                                             if(string.empty?)
                                                 raise Exception.new("EMPTY STRING")
                                             else
@@ -126,7 +126,7 @@ class Bouncer < ModSpox::Plugin
                                             end
                                         end
                                         rescue Object => boom
-                                        Logger.log("THREAD BOUNCER ERROR: #{boom}")
+                                        Logger.warn("THREAD BOUNCER ERROR: #{boom}")
                                         end
                                         end
                                     }
@@ -139,7 +139,7 @@ class Bouncer < ModSpox::Plugin
             end
             start_processor
         else
-            Logger.log("Error: Bouncer was not started. Failed to find set port number")
+            Logger.warn("Error: Bouncer was not started. Failed to find set port number")
         end
     end
     
@@ -158,7 +158,7 @@ class Bouncer < ModSpox::Plugin
         begin
             while(@listener) do
                 info = @to_server.pop
-                Logger.log("Processing message: #{info[:message]}")
+                Logger.info("Processing message: #{info[:message]}")
                 if(info[:message] =~ /^USER\s/i)
                     initialize_connection(info[:socket])
                 else
@@ -166,7 +166,7 @@ class Bouncer < ModSpox::Plugin
                 end
             end
         rescue Object => boom
-            Logger.log("BOUNCER ERROR: #{boom}")
+            Logger.warn("BOUNCER ERROR: #{boom}")
             unless(@clients.empty?)
                 @clients.each do |socket|
                     socket[:connection].close

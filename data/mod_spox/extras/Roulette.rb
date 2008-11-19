@@ -76,7 +76,6 @@ class Roulette < ModSpox::Plugin
         return unless message.is_public?
         ds = Database.db[:infos].left_outer_join(:games, :id => :game_id)
         ds.select!(:nick_id, :COUNT[:win] => :wins).where!(:channel_id => message.target.pk, :win => true).group!(:nick_id).reverse_order!(:wins).limit!(10)
-        Logger.log(ds.sql)
         ids = ds.map(:nick_id)
         top = []
         ids.each do |id|
@@ -188,7 +187,7 @@ class Roulette < ModSpox::Plugin
                 reply(channel, "#{nick.nick}: *BANG*")
             rescue Object => boom
                 reply(channel, "#{nick.nick}: *BANG*")
-                Logger.log("Error: Roulette ban generated an unexpected error: #{boom}")
+                Logger.warn("Error: Roulette ban generated an unexpected error: #{boom}")
             end
         else
             reply(channel, "#{nick.nick}: *BANG*")

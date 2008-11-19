@@ -9,7 +9,7 @@ module ModSpox
                 if(string =~ /#{RPL_ERRORNEOUSNICK}\s\S+\s(\S+)\s:/)
                     return Messages::Incoming::BadNick.new(string, $1)
                 else
-                    Logger.log('Failed to process RPL_ERRORONEOUSNICK message')
+                    Logger.warn('Failed to process RPL_ERRORONEOUSNICK message')
                     return nil
                 end
             end

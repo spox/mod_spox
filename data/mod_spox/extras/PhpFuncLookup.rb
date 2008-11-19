@@ -79,7 +79,7 @@ class PhpFuncLookup < ModSpox::Plugin
         
     def phpfunc(m, params)
         name = params[:name].downcase
-        Logger.log "phpfunc name=#{name}"
+        Logger.info "phpfunc name=#{name}"
         if name =~ /^\S+$/ && name =~ /\*/
             parse_wildcard(m, name) 
         elsif name =~ /^\$/
@@ -157,7 +157,7 @@ class PhpFuncLookup < ModSpox::Plugin
     def fetch_manual(message=nil, params=nil)
         Thread.new do
             manual_site = 'http://us.php.net/'
-            Logger.log "Fetching PHP manual from #{manual_site}"
+            Logger.info "Fetching PHP manual from #{manual_site}"
             connection = Net::HTTP.new("us.php.net", 80)
             File.open("#{@path}/manual.tar.gz", 'w'){ |manual|
                 connection.get('/distributions/manual/php_manual_en.tar.gz', nil){ |line|
@@ -166,7 +166,7 @@ class PhpFuncLookup < ModSpox::Plugin
             }
             Dir.chdir(@path)
             Helpers.safe_exec("tar -xzf #{@path}/manual.tar.gz", 60)
-            Logger.log "PHP manual fetching complete."
+            Logger.info "PHP manual fetching complete."
             reply message.replyto, "PHP manual fetch is now complete" unless message.nil?
         end
     end
@@ -245,7 +245,7 @@ class PhpFuncLookup < ModSpox::Plugin
     end
 
     def parse_operator(m, name)
-        Logger.log "parse_operator name=#{name}"
+        Logger.info "parse_operator name=#{name}"
         name.downcase!
         type, title, ejemplo = @ops[name]
         output = ["\2#{name}\2 is the \2#{title.to_a.join("\2 or \2")}\2 operator"]

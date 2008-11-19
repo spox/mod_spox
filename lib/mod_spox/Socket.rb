@@ -8,7 +8,7 @@
 
 module ModSpox
 
-    class Socket < Pool
+    class Socket
 
         attr_reader :sent
         attr_reader :received
@@ -27,7 +27,6 @@ module ModSpox
         # burst:: Number of lines allowed to be sent within the burst_in time limit
         # Create a new Socket
         def initialize(bot, server, port, delay=2, burst_in=2, burst=4)
-            super()
             @factory = bot.factory
             @pipeline = bot.pipeline
             @dcc = bot.dcc_sockets
@@ -45,17 +44,16 @@ module ModSpox
             @sendq = Queue.new
             @lock = Mutex.new
             @ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
-            start_pool
         end
 
         # Connects to the IRC server
         def connect
-            Logger.log("Establishing connection to #{@server}:#{@port}", 10)
+            Logger.info("Establishing connection to #{@server}:#{@port}")
             @socket = TCPSocket.new(@server, @port)
             server = Models::Server.find_or_create(:host => @server, :port => @port)
             server.connected = true
             server.save
-            Logger.log("Created new send queue: #{@sendq}", 10)
+            Logger.info("Created new send queue: #{@sendq}")
         end
 
         # new_delay:: Seconds to delay between bursts
@@ -90,7 +88,7 @@ module ModSpox
         def write(message)
             return if message.nil?
             @socket.puts(message + "\n")
-            Logger.log("<< #{message}", 5)
+            Logger.info("<< #{message}")
             @last_send = Time.new
             @sent += 1
             @check_burst += 1
@@ -108,7 +106,8 @@ module ModSpox
                 server.save
             elsif(tainted_message.length > 0)
                 message = @ic.iconv(tainted_message + ' ')[0..-2]
-                Logger.log(">> #{message}", 5)
+                message.strip!
+                Logger.info(">> #{message}")
                 @received += 1
                 begin
                     message.strip!
@@ -124,7 +123,7 @@ module ModSpox
         # Queues a message up to be sent to the IRC server
         def <<(message)
             @sendq << message
-            @queue << lambda{ processor }
+            Pool << lambda{ processor }
         end
 
         # Starts the thread for sending messages to the server
@@ -135,7 +134,7 @@ module ModSpox
                     @time_check = nil
                     @check_burst = 0
                 elsif((Time.now.to_i - @time_check) <= @burst_in && @check_burst >= @burst)
-                    Logger.log("Burst limit hit. Output paused for: #{@delay} seconds", 70)
+                    Logger.warn("Burst limit hit. Output paused for: #{@delay} seconds")
                     sleep(@delay)
                     @time_check = nil
                     @check_burst = 0

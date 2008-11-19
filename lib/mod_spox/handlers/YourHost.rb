@@ -10,7 +10,7 @@ module ModSpox
                 if(string =~ /:Your host is (\S+), running version (.+)$/)
                     return Messages::Incoming::YourHost.new(string, $1, $2)
                 else
-                    Logger.log('Failed to match Your Host message')
+                    Logger.warn('Failed to match Your Host message')
                     return nil
                 end
             end

@@ -13,7 +13,7 @@ class Confess < ModSpox::Plugin
         begin
             require 'htmlentities'
         rescue Object => boom
-            Logger.log('Error: This plugin requires the HTMLEntities gem. Please install and reload plugin.')
+            Logger.warn('Error: This plugin requires the HTMLEntities gem. Please install and reload plugin.')
             raise Exceptions::BotException.new("Missing required HTMLEntities library")
         end
         Confession.create_table unless Confession.table_exists?
@@ -112,23 +112,23 @@ class Confess < ModSpox::Plugin
             response = connection.request_get("/confessions/new?page=#{rand(17349)+1}", nil)
             response.value
             page = response.body.gsub(/[\r\n]/, ' ')
-            Logger.log("Processing matches")
+            Logger.info("Processing matches")
             page.scan(/<div class="content">\s*<p>\s*(.+?)\s*<\/p>\s*<\/div>/).each{|match|
-                Logger.log("Match found: #{match[0]}")
+                Logger.info("Match found: #{match[0]}")
                 conf = CGI::unescapeHTML(match[0])
                 conf = conf.gsub(/<.+?>/, ' ').gsub(/[\r\n]/, '').gsub(/\s+/, ' ')
                 conf = @coder.decode(conf)
-                Logger.log("Match turned into: #{conf}")
+                Logger.info("Match turned into: #{conf}")
                 if conf.length < 300
                     begin
                         Confession.new(:confession => conf, :hash => Digest::MD5.hexdigest(conf)).save
                     rescue Object => boom
-                        Logger.log 'Warning: Fetched confession already found in database'
+                        Logger.warn('Warning: Fetched confession already found in database')
                     end
                 end
             }
         rescue Object => boom
-            Logger.log "Error fetching data: #{boom}"
+            Logger.warn("Error fetching data: #{boom}")
         end
         if(Config[:confess] == 'fetch')
             @pipeline << Messages::Internal::TimerAdd.new(self, rand(500), nil, true){ grab_page }

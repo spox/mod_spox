@@ -9,7 +9,7 @@ module ModSpox
                 if(string =~ /#{RPL_CREATED.to_s}.+?:created\s(.+)$/)
                     return Messages::Incoming::Created.new(string, $1)
                 else
-                    Logger.log('Failed to parse RPL_CREATED message')
+                    Logger.warn('Failed to parse RPL_CREATED message')
                     return nil
                 end
             end

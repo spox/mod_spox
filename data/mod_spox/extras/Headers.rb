@@ -70,7 +70,7 @@ class Headers < ModSpox::Plugin
                 reply message.replyto, output
             rescue Object => boom
                 reply message.replyto, "Error retrieving headers: #{boom}"
-                Logger.log("#{boom}\n#{boom.backtrace.join("\n")}")
+                Logger.warn("#{boom}\n#{boom.backtrace.join("\n")}")
             end
         end
     end

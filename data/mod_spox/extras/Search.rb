@@ -29,7 +29,7 @@ class Search < ModSpox::Plugin
             reply message.replyto, output
         rescue Object => boom
             @pipeline << Privmsg.new(message.replyto, "Failed to find any results for: #{params[:terms]} Reason: #{boom}")
-            Logger.log("Error: #{boom}\n#{boom.backtrace.join("\n")}")
+            Logger.warn("Error: #{boom}\n#{boom.backtrace.join("\n")}")
         end
     end
 end

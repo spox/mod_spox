@@ -25,7 +25,6 @@ class PhpCli < ModSpox::Plugin
         Signature.find_or_create(:signature => 'php (?!on|off)(.+)', :plugin => name, :method => 'execute_php', :group_id => php.pk,
             :description => 'Execute PHP code').params = [:code]
         @channels = Setting.filter(:name => 'phpcli').first
-        Logger.log("This is what channels is: #{@channel}")
         @channels = @channels.nil? ? [] : @channels.value
     end
 

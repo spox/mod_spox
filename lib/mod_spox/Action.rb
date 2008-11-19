@@ -67,7 +67,7 @@ module ModSpox
                     @func.call
                 end
             rescue Object => boom
-                Logger.log("Action generated an exception during run: #{boom}\n#{boom.backtrace.join("\n")}", 10)
+                Logger.warn("Action generated an exception during run: #{boom}\n#{boom.backtrace.join("\n")}")
             end
             @completed = true if @once
         end

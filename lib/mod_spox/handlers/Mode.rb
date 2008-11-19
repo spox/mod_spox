@@ -43,10 +43,10 @@ module ModSpox
                         nicks = nicks[0] if nicks.size == 1
                         return Messages::Incoming::Mode.new(string, full_modes, source, nicks, channel)
                     else
-                        Logger.log('Failed to parse MODE message')
+                        Logger.warn('Failed to parse MODE message')
                     end
                 rescue Object => boom
-                    Logger.log("Failed to process MODE message. Reason: #{boom}")
+                    Logger.warn("Failed to process MODE message. Reason: #{boom}")
                 end
                 return nil
             end

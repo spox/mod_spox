@@ -9,7 +9,7 @@ module ModSpox
                 if(string =~ /#{ERR_NICKNAMEINUSE}\s\S+\s(\S+)\s:/)
                     return Messages::Incoming::NickInUse.new(string, $1)
                 else
-                    Logger.log('Failed to parse ERR_NICKNAMEINUSE message')
+                    Logger.warn('Failed to parse ERR_NICKNAMEINUSE message')
                     return nil
                 end
             end

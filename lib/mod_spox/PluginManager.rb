@@ -36,7 +36,7 @@ module ModSpox
                     FileUtils.remove_file(message.stale)
                     FileUtils.copy(message.fresh, BotConfig[:userpluginpath])
                     do_load(message.stale)
-                    Logger.log("Completed reload of plugin: #{message.stale}")
+                    Logger.info("Completed reload of plugin: #{message.stale}")
                 else
                     unload_plugins
                     load_plugins
@@ -62,9 +62,9 @@ module ModSpox
                 end
                 do_load(path)
                 @pipeline << Messages::Internal::PluginLoadResponse.new(message.requester, true)
-                Logger.log("Loaded new plugin: #{message.path}", 10)
+                Logger.info("Loaded new plugin: #{message.path}")
             rescue Object => boom
-                Logger.log("Failed to load plugin: #{message.path} Reason: #{boom}", 10)
+                Logger.warn("Failed to load plugin: #{message.path} Reason: #{boom}")
                 @pipeline << Messages::Internal::PluginLoadResponse.new(message.requester, false)
             end
             @pipeline << Messages::Internal::SignaturesUpdate.new
@@ -82,9 +82,9 @@ module ModSpox
                 end
                 File.delete(message.path)
                 @pipeline << Messages::Internal::PluginUnloadResponse.new(message.requester, true)
-                Logger.log("Unloaded plugin: #{message.path}", 10)
+                Logger.info("Unloaded plugin: #{message.path}")
             rescue Object => boom
-                Logger.log("Failed to unload plugin: #{message.path} Reason: #{boom}", 10)
+                Logger.warn("Failed to unload plugin: #{message.path} Reason: #{boom}")
                 @pipeline << Messages::Internal::PluginUnloadResponse.new(message.requester, false)
             end
             @pipeline << Messages::Internal::SignaturesUpdate.new
@@ -123,7 +123,7 @@ module ModSpox
                         begin
                             do_load("#{path}/#{file}")
                         rescue Object => boom
-                            Logger.log("Failed to load file: #{path}/#{file}. Reason: #{boom}")
+                            Logger.warn("Failed to load file: #{path}/#{file}. Reason: #{boom}")
                         end
                     end
                 end
@@ -157,12 +157,12 @@ module ModSpox
                         else
                             @plugins[plugin.to_sym] = PluginHolder.new(klass.new({:pipeline => @pipeline, :plugin_module => @plugins_module}))
                         end
-                        Logger.log("Properly initialized new plugin: #{plugin}", 25)
+                        Logger.info("Properly initialized new plugin: #{plugin}")
                     end
-                    Logger.log("All plugins found at: #{path} have been loaded")
+                    Logger.info("All plugins found at: #{path} have been loaded")
                 rescue Object => boom
-                    Logger.log("Plugin loading failed: #{boom}\n#{boom.backtrace.join("\n")}", 25)
-                    Logger.log("All constants loaded from file: #{path} will now be unloaded")
+                    Logger.warn("Plugin loading failed: #{boom}\n#{boom.backtrace.join("\n")}")
+                    Logger.warn("All constants loaded from file: #{path} will now be unloaded")
                     do_unload(path)
                 end
             else
@@ -184,10 +184,10 @@ module ModSpox
                     Models::Signature.filter(:plugin => plugin.to_s).destroy
                 end
                 discover_consts(path).each do |const|
-                    Logger.log("Removing constant: #{const}")
+                    Logger.info("Removing constant: #{const}")
                     @plugins_module.send(:remove_const, const)
                 end
-                Logger.log("Removed all constants found in file: #{path}")
+                Logger.info("Removed all constants found in file: #{path}")
             else
                 raise PluginFileNotFound.new("Failed to find file at: #{path}")
             end

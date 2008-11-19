@@ -8,7 +8,7 @@ class LolSpeak < ModSpox::Plugin
         begin
             require 'lolspeak'
         rescue Object => boom
-            Logger.log('Error: This plugins requires the lolspeak gem. Please install gem and reload plugin.')
+            Logger.warn('Error: This plugins requires the lolspeak gem. Please install gem and reload plugin.')
             raise BotException.new("Failed to initialize plugin. Missing lolspeak gem.")
         end
         Signature.find_or_create(:signature => 'lolspeak (.+)', :plugin => name, :method => 'translate',

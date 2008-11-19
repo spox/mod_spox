@@ -21,7 +21,7 @@ module ModSpox
                     Models::NickChannel.find_or_create(:channel_id => target.pk, :nick_id => source.pk) if target.is_a?(ModSpox::Models::Channel)
                     return Messages::Incoming::Privmsg.new(string, source, target, message)
                 else
-                    Logger.log('Failed to match PRIVMSG message')
+                    Logger.warn('Failed to match PRIVMSG message')
                     return nil
                 end
             end

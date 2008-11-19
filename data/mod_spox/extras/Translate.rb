@@ -53,7 +53,7 @@ class Translate < ModSpox::Plugin
             if(@watchers[message.target.pk].has_key?(message.source.pk))
                 reply message.replyto, "\2Translation (#{message.source.nick}):\2 #{do_translation("#{@watchers[message.target.pk][message.source.pk]}en", message.message)}"
             elsif(message.message =~ /^(\S+)[:,]/)
-                Logger.log("Matched a nick: #{$1}")
+                Logger.info("Translate matched a followed nick: #{$1}")
                 nick = Helpers.find_model($1, false)
                 return unless nick
                 if(@watchers[message.target.pk].has_key?(nick.pk))

@@ -58,10 +58,10 @@ module ModSpox
                     result = `#{command}`
                 end
             rescue Timeout::Error => boom
-                Logger.log("Command execution exceeded allowed time (command: #{command} | timeout: #{timeout})")
+                Logger.warn("Command execution exceeded allowed time (command: #{command} | timeout: #{timeout})")
                 raise "Command execution exceeded allowed time (timeout: #{timeout})"
             rescue Object => boom
-                Logger.log("Command generated an exception (command: #{command} | error: #{boom})")
+                Logger.warn("Command generated an exception (command: #{command} | error: #{boom})")
                 raise "Command generated an exception: #{boom}"
             end
         end
@@ -88,18 +88,16 @@ module ModSpox
         def Helpers.find_model(string, create=true)
             Helpers.initialize_caches
             if(string =~ /^[A-Za-z\|\\\{\}\[\]\^\`~\_\-]+[A-Za-z0-9\|\\\{\}\[\]\^\`~\_\-]*$/)
-                Logger.log("Model: #{string} -> Nick", 120)
                 nick = nil
                 if(@@nick_cache.has_key?(string.downcase.to_sym))
                     begin
                         nick = Models::Nick[@@nick_cache[string.downcase.to_sym]]
-                        Logger.log("Handler cache hit for nick: #{string}", 120)
                         if(nick.nick.downcase != string.downcase)
-                            Logger.log("Nick returned from cache invalid. Expecting #{string} but got #{nick.nick}", 30)
+                            Logger.warn("Nick returned from cache invalid. Expecting #{string} but got #{nick.nick}")
                             nick = nil
                         end
                     rescue Object => boom
-                        Logger.log("Failed to grab cached nick: #{boom}", 120)
+                        Logger.info("Failed to grab cached nick: #{boom}")
                     end
                 end
                 unless(nick)
@@ -109,21 +107,19 @@ module ModSpox
                         return string
                     end
                     @@nick_cache[string.downcase.to_sym] = nick.pk if nick.is_a?(Models::Nick)
-                    Logger.log("Nick was retrieved from database", 120)
+                    Logger.info('Nick was retrieved from database')
                 end
                 return nick
             elsif(string =~ /^[&#+!]/)
-                Logger.log("Model: #{string} -> Channel", 120)
                 if(@@channel_cache.has_key?(string.downcase.to_sym))
                     begin
                         channel = Models::Channel[@@channel_cache[string.downcase.to_sym]]
-                        Logger.log("Handler cache hit for channel: #{string}", 120)
                         if(string.downcase != channel.name.downcase)
-                            Logger.log("Channel returned from cache invalid. Expecting #{string} but got #{channel.name}", 30)
+                            Logger.warn("Channel returned from cache invalid. Expecting #{string} but got #{channel.name}")
                             channel = nil
                         end
                     rescue Object => boom
-                        Logger.log("Failed to grab cached channel: #{boom}", 120)
+                        Logger.info("Failed to grab cached channel: #{boom}")
                     end
                 end
                 unless(channel)
@@ -133,14 +129,13 @@ module ModSpox
                         return string
                     end
                     @@channel_cache[string.downcase.to_sym] = channel.pk if channel.is_a?(Models::Channel)
-                    Logger.log("Channel was retrieved from database", 120)
+                    Logger.info('Channel was retrieved from database')
                 end
                 return channel
             elsif(model = Models::Server.filter(:host => string, :connected => true).first)
-                Logger.log("Model: #{string} -> Server", 120)
                 return model
             else
-                Logger.log("FAIL Model: #{string} -> No match", 30)
+                Logger.warn("Failed to match string to model: #{string} -> No match")
                 return string
             end
         end

@@ -35,7 +35,7 @@ module ModSpox
             end
             
             def address=(address)
-                return if values[:address] == address || values[:host] == address
+                return if (!values[:address].nil? && !values[:host].nil?) && (values[:address] == address || values[:host] == address)
                 oldaddress = values[:address]
                 begin
                     info =  Object::Socket.getaddrinfo(address, nil)
@@ -99,7 +99,7 @@ module ModSpox
                 end
                 Auth.where('mask is not null').each do |a|
                     [source, "#{nick}!#{username}@#{host}", "#{nick}!#{username}@#{address}"].each do |chk_src|
-                        Logger.log("Matching AUTH - #{chk_src} against #{a.mask}", 30)
+                        Logger.info("Matching AUTH - #{chk_src} against #{a.mask}")
                         if(chk_src =~ /#{a.mask}/)
                             auth_ids << a.pk unless auth_ids.include?(a.pk)
                         end

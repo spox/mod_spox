@@ -130,10 +130,10 @@ class PluginLoader < ModSpox::Plugin
                 sandbox.module_eval(IO.readlines("#{path}/#{file}").join("\n"))
                 sandbox.constants.each do |const|
                     klass = sandbox.const_get(const)
-                    plugins[const] = "#{path}/#{file}" if klass < Plugin
+                    plugins[const.to_sym] = "#{path}/#{file}" if klass < Plugin
                 end
             rescue Object => boom
-                Logger.log("Failed to parse file: #{path}/#{file}. Reason: #{boom}\n#{boom.backtrace.join("\n")}")
+                Logger.warn("Failed to parse file: #{path}/#{file}. Reason: #{boom}\n#{boom.backtrace.join("\n")}")
                 next
             end
         end
@@ -156,20 +156,20 @@ class PluginLoader < ModSpox::Plugin
 
     # Upgrades extra plugins to latest version
     def extras_upgrade
-        Logger.log("Starting plugin upgrade to current version: #{$BOTVERSION}")
+        Logger.info("Starting plugin upgrade to current version: #{$BOTVERSION}")
         loaded = plugin_list
         plugins = find_plugins
         available_plugins = plugin_discovery(BotConfig[:pluginextraspath])
         plugin_list.each do |plugin|
             @pipeline << Messages::Internal::PluginUnloadRequest.new(self, nil, plugin)
         end
-        Logger.log('Waiting for all plugins to complete unloading...')
+        Logger.info('Waiting for all plugins to complete unloading...')
         sleep(3)
-        Logger.log('Loading active plugins back into the bot')
+        Logger.info('Loading active plugins back into the bot')
         loaded.each do |plugin|
             @pipeline << Messages::Internal::PluginLoadRequest.new(self, plugins[plugin], nil)
         end
-        Logger.log("Plugin upgrade is not complete. Upgraded to version: #{$BOTVERSION}")
+        Logger.info("Plugin upgrade is now complete. Upgraded to version: #{$BOTVERSION}")
     end
 
 end
