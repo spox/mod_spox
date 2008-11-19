@@ -17,7 +17,7 @@ module ModSpox
             workers_max = Models::Config.filter(:name => 'pool_workers_max').first
             workers_max = workers_max.nil? ? 30 : workers_max.value.to_i
             timeout = Models::Config.filter(:name => 'pool_timeout').first
-            @@timeout = timeout.nil? ? 15 : timeout.to_i
+            @@timeout = timeout.nil? ? 15 : timeout.value.to_i
             @@queue = Queue.new
             Thread.new do
                 @@pool = NeverBlock::Pool::FiberPool.new(workers_max)
@@ -87,7 +87,7 @@ module ModSpox
         # Set maximum number of workers to process tasks
         def Pool.max_workers=(max)
             t = Models::Config.find_or_create(:name => 'pool_workers_max')
-            t.value = min
+            t.value = max
             t.save
         end
         
