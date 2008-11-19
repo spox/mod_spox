@@ -64,6 +64,7 @@ module ModSpox
                     if(@handlers.has_key?(key))
                         Logger.log("Message of type #{key} is now being handled by #{@handlers[key]}", 10)
                         if(@sync.include?(key))
+                            Logger.log("Message of type #{key} requires synchronized processing", 50)
                             @queue << lambda do
                                 @lock.synchronize do
                                     message = @handlers[key].process(message)

@@ -59,7 +59,7 @@ module ModSpox
         end
 
         def queue(action)
-            create if @proc_queue.size > (@workers.size / 2) || @workers.size < @min_workers
+            create if @proc_queue.size > 0 || @workers.size < @min_workers
             @proc_queue << action
         end
 
@@ -166,7 +166,6 @@ module ModSpox
                                 end
                             rescue Timeout::Error => boom
                                 Logger.log("Worker timed out processing block. (exceeded #{@timeout} seconds)")
-                                Database.reset_connections
                             end
                         else
                             block.call

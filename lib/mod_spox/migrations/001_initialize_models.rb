@@ -3,6 +3,7 @@ module ModSpox
         class InitializeModels < Sequel::Migration
 
             def up
+                Database.db << "SET FOREIGN_KEY_CHECKS = 0" if Database.type == :mysql
                 Database.db.create_table(:nicks) do
                     primary_key :id, :null => false
                     varchar :nick, :null => false, :unique => true
@@ -33,7 +34,7 @@ module ModSpox
                     boolean :services, :null => false, :default => false
                     varchar :mask, :unique => true, :default => nil
                     boolean :authed, :null => false, :default => false
-                    foreign_key :nick_id, :unique => true, :table => :nicks
+                    foreign_key :nick_id, :table => :nicks, :unique => true, :null => false, :key => :id
                 end unless Database.db.table_exists?(:auths)
                 Database.db.create_table(:groups) do
                     primary_key :id, :null => false
@@ -61,7 +62,7 @@ module ModSpox
                     primary_key :id, :null => false
                     varchar :signature, :null => false
                     varchar :params
-                    foreign_key :group_id, :table => :groups, :default => nil
+                    foreign_key :group_id, :table => :groups, :default => nil, :key => :id
                     varchar :method, :null => false
                     varchar :plugin, :null => false
                     varchar :description
@@ -73,32 +74,33 @@ module ModSpox
                     boolean :active, :null => false, :default => false
                 end unless Database.db.table_exists?(:triggers)
                 Database.db.create_table(:auth_groups) do
-                    foreign_key :group_id, :table => :groups, :null => false
-                    foreign_key :auth_id, :table => :auths, :null => false
+                    foreign_key :group_id, :table => :groups, :null => false, :key => :id
+                    foreign_key :auth_id, :table => :auths, :null => false, :key => :id
                     primary_key [:group_id, :auth_id]
                 end unless Database.db.table_exists?(:auth_groups)
                 Database.db.create_table(:channel_modes) do
                     primary_key :id, :null => false
                     varchar :mode, :null => false
-                    foreign_key :channel_id, :table => :channels, :unique => true, :null => false
+                    foreign_key :channel_id, :table => :channels, :unique => true, :null => false, :key => :id
                 end unless Database.db.table_exists?(:channel_modes)
                 Database.db.create_table(:nick_channels) do
-                    foreign_key :nick_id, :table => :nicks, :null => false
-                    foreign_key :channel_id, :table => :channels, :null => false
+                    foreign_key :nick_id, :table => :nicks, :null => false, :key => :id
+                    foreign_key :channel_id, :table => :channels, :null => false, :key => :id
                     primary_key [:nick_id, :channel_id]
                 end unless Database.db.table_exists?(:nick_channels)
                 Database.db.create_table(:nick_groups) do
-                    foreign_key :group_id, :table => :groups, :null => false
-                    foreign_key :nick_id, :table => :nicks, :null => false
+                    foreign_key :group_id, :table => :groups, :null => false, :key => :id
+                    foreign_key :nick_id, :table => :nicks, :null => false, :key => :id
                     primary_key [:nick_id, :group_id]
                 end unless Database.db.table_exists?(:nick_groups)
                 Database.db.create_table(:nick_modes) do
                     primary_key :id, :null => false
                     varchar :mode, :null => false
-                    foreign_key :nick_id, :table => :nicks, :null => false
-                    foreign_key :channel_id, :table => :channels
+                    foreign_key :nick_id, :table => :nicks, :null => false, :key => :id
+                    foreign_key :channel_id, :table => :channels, :key => :id
                     index [:nick_id, :channel_id]
                 end unless Database.db.table_exists?(:nick_modes)
+                Database.db << "SET FOREIGN_KEY_CHECKS = 1" if Database.type == :mysql
             end
 
             def down

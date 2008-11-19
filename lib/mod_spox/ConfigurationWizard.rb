@@ -11,26 +11,7 @@ module ModSpox
         def initialize
             @echo = nil
             @config = Array.new
-            @config << {:id => :db_username, :string => 'Database username: ', :regex => '[a-zA-Z].*', :default => 'mod_spox', :value => nil, :echo => true}
-            @config << {:id => :db_password, :string => 'Database password: ', :regex => '.*', :default => nil, :value => nil, :echo => false}
-            @config << {:id => :db_host, :string => 'Database host: ', :regex => '.+', :default => 'localhost', :value => nil, :echo => true}
-            @config << {:id => :db_database, :string => 'Database name: ', :regex => '.+', :default => 'mod_spox', :value => nil, :echo => true}
-            @config << {:id => :db_adapter, :string => 'Database type (mysql|pgsql|sqlite): ', :regex => '(mysql|pgsql|sqlite)', :default => nil, :value => nil, :echo => true}
-            @config << {:id => :irc_server, :string => 'IRC Server: ', :regex => '.+', :default => nil, :value => nil, :echo => true}
-            @config << {:id => :irc_port, :string => 'IRC Port: ', :regex => '[0-9]+', :default => nil, :value => nil, :echo => true}
-            @config << {:id => :reconnect_wait, :string => 'Reconnect wait time: ', :regex => '[0-9]+', :default => '10', :value => nil, :echo => true}
-            @config << {:id => :bot_nick, :string => 'IRC Nick: ', :regex => '[a-zA-Z].*', :default => 'mod_spox', :value => nil, :echo => true}
-            @config << {:id => :bot_password, :string => 'IRC Nick Password: ', :regex => '.*', :default => nil, :value => nil, :echo => false}
-            @config << {:id => :bot_username, :string => 'IRC Username: ', :regex => '.+', :default => 'mod_spox', :value => nil, :echo => true}
-            @config << {:id => :bot_realname, :string => 'IRC Real Name: ', :regex => '.+', :default => 'mod_spox IRC bot', :value => nil, :echo => true}
-            @config << {:id => :socket_burst, :string => 'Socket burst rate (lines): ', :regex => '[0-9]+', :default => '3', :value => nil, :echo => true}
-            @config << {:id => :socket_burst_in, :string => 'Socket burst time: ', :regex => '[0-9]+', :default => '2', :value => nil, :echo => true}
-            @config << {:id => :socket_burst_delay, :string => 'Socket burst delay: ', :regex => '[0-9]+', :default => '2', :value => nil, :echo => true}
-            @config << {:id => :admin_nick, :string => 'Administrator nick: ', :regex => '[a-zA-Z].*', :default => nil, :value => nil, :echo => true}
-            @config << {:id => :admin_password, :string => 'Administrator password: ', :regex => '.+', :default => nil, :value => nil, :echo => false}
-            @config << {:id => :plugin_directory, :string => 'Plugin directory (bot must have write priviliges): ', :regex => '.+', :default => nil, :echo => true}
-            @config << {:id => :trigger, :string => 'Trigger character for plugins: ', :regex => '.', :default => '!', :value => nil, :echo => true}
-            @config << {:id => :memcache, :string => 'Use memcache (EXPERIMENTAL): ', :regex => '(yes|no)', :default => 'no', :value => nil, :echo => true}            
+            @config_db = Hash.new
             @stuck_visible = true
             begin
                 require 'termios'
@@ -41,51 +22,107 @@ module ModSpox
     
         # Run the configuration wizard
         def run
+            config = {}
             puts "*********************************"
             puts "* mod_spox Configuration Wizard *"
             puts "*********************************"
             puts ""
-            @config.each{|v|
-                v[:value] = get_input(v[:string], v[:regex], v[:echo], v[:default])
-            }
+            config[:irc_server] = get_input('IRC Server: ', '.+', true, nil)
+            config[:irc_port] = get_input('IRC Port: ', '\d+', true, '6667')
+            config[:reconnect_wait] = get_input('Reconnect wait time: ', '\d+', true, 10)
+            config[:bot_nick] = get_input('IRC Nick: ', '[a-zA-Z].*', true, 'mod_spox')
+            config[:bot_password] = get_input('IRC Nick Password (for nickserv): ', '.*', false, nil)
+            config[:bot_username] = get_input('IRC Username: ', '.+', true, 'mod_spox')
+            config[:bot_realname] = get_input('IRC Real Name: ', '.+', true, 'mod_spox IRC bot')
+            config[:socket_burst] = get_input('Socket burst rate (lines): ', '\d+', true, '3')
+            config[:socket_burst_in] = get_input('Socket burst time: ', '\d+', true, '2')
+            config[:socket_burst_delay] = get_input('Socket burst delay: ', '\d+', true, '2')
+            config[:admin_nick] = get_input('Administator nick: ', '[a-zA-Z].*', true, nil)
+            config[:admin_password] = get_input('Administrator password: ', '.+', false, nil)
+            config[:plugin_directory] = get_input('Plugin temp data driectory (bot needs write permission): ', '.+', true, '/tmp')
+            config[:trigger] = get_input('Default trigger: ', '.+', true, '!')
+            config[:memcache] = get_input('Use memcache (EXPERIMENTAL): ', '(yes|no)', true, 'no')
+            valid_connection = false
+            until valid_connection do
+                config[:db_adapter] = get_input('Database type (mysql|pgsql|sqlite): ', '(mysql|pgsql|sqlite)', true, nil)
+                unless(config[:db_adapter] == 'sqlite')
+                    config[:db_username] = get_input('Database username: ', '.+', true, 'mod_spox')
+                    config[:db_password] = get_input('Database password: ', '.*', false, nil)
+                    config[:db_host] = get_input('Database host: ', '.*', true, 'localhost')
+                    config[:db_database] = get_input('Database name: ', '.+', true, 'mod_spox')
+                end
+                begin
+                    print 'Testing database connection... '
+                    config[:db_adapter] == 'sqlite' ? test_connection(config[:db_adapter]) : test_connection(config[:db_adapter], config[:db_username], config[:db_password], config[:db_host], config[:db_database])
+                    puts 'OK'
+                    valid_connection = true
+#                 rescue Sequel::DatabaseError => boom
+#                     puts 'Failed'
+#                     puts 'Error: Connection to database failed'
+#                     puts "Info: #{boom}"
+                rescue Object => boom
+                    puts 'Failed'
+                    puts 'Error: Unexpected error encountered.'
+                    puts "Info: #{boom}\n#{boom.backtrace.join("\n")}"
+                    exit 1
+                ensure
+                    $stdout.flush
+                end
+            end
             print "Storing configuration values... "
-            save_configuration
-            puts "OK"
-            puts "mod_spox is now configured and ready for use"
+            begin
+                save_configuration(config)
+                puts 'OK'
+                puts 'mod_spox is now configured and ready for use'
+            rescue Object => boom
+                puts 'Failed'
+                puts "Error: #{boom}\n#{boom.backtrace.join("\n")}"
+                puts 'Please try running the configuration again'
+            end
+        end
+        
+        def update
+            run
         end
         
         private
         
-        def find(key)
-            @config.each{|c|
-                if(c[:id] == key)
-                    return c[:value]
-                end
-            }
-            return nil
+        def test_connection(type, username=nil, password=nil, host=nil, name=nil)
+            case type
+                when 'mysql'
+                    test = Sequel.mysql(name, :user => username, :password => password, :host => host)
+                when 'pgsql'
+                    test = Sequel.open("postgres://#{username}:#{password}@#{host}/#{name}")
+                when 'sqlite'
+                    test = Sequel.sqlite
+            end
         end
         
         # Save our configuration values
-        def save_configuration
+        def save_configuration(uconfig)
             config = BaseConfig.new(BotConfig[:userconfigpath])
-            @config.each{|value|
-                config[value[:id]] = value[:value] if value[:id].to_s =~ /^(db|memcache)/
-            }
+            uconfig.each_pair do |key,value|
+                config[key] = value if key.to_s =~ /^(db|memcache)/
+            end
             config.write_configuration
             initialize_bot
             require  'mod_spox/models/Models'
             require 'mod_spox/Helpers'
             Sequel::Migrator.apply(Database.db, BotConfig[:libpath] + '/migrations')
-            @config.each{|value|
-                Models::Config[value[:id]] = value[:value] unless value[:id].to_s =~ /^(db|irc|admin|trigger)/
-            }
-            s = Models::Server.find_or_create(:host => find(:irc_server), :port => find(:irc_port))
-            n = Models::Nick.find_or_create(:nick => find(:admin_nick))
+            uconfig.each_pair do |key,value|
+                unless key.to_s =~ /^(db|irc|admin|trigger)/
+                    m = Models::Config.find_or_create(:name => key.to_s)
+                    m.value = value
+                    m.save
+                end
+            end
+            s = Models::Server.find_or_create(:host => uconfig[:irc_server], :port => uconfig[:irc_port])
+            n = Models::Nick.find_or_create(:nick => uconfig[:admin_nick])
             a = Models::Auth.find_or_create(:nick_id => n.pk)
             a.group = Models::Group.find_or_create(:name => 'admin')
-            a.password = find(:admin_password)
+            a.password = uconfig[:admin_password]
             a.save
-            t = Models::Trigger.find_or_create(:trigger => find(:trigger))
+            t = Models::Trigger.find_or_create(:trigger => uconfig[:trigger])
             t.update_with_params(:active => true)
             t.save
         end
@@ -121,8 +158,8 @@ module ModSpox
             return response
         end
         
-        # output:: varchar(255) to send before user input
-        # regex:: pattern user input must match (^ and $ not need. applied automatically)
+        # output:: to send before user input
+        # regex:: pattern user input must match (^ and $ not needed. applied automatically)
         # echo:: echo user's input
         # default:: default value if no value is entered
         def get_input(output, regex, echo=true, default=nil)

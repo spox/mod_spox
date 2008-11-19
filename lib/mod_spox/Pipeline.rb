@@ -99,7 +99,7 @@ module ModSpox
             @populate_lock.synchronize do
                 @signatures = {}
                 Models::Signature.all.each do |s|
-                    Logger.log("Signature being processed: #{s.signature}")
+                    Logger.log("Signature being processed: #{s.signature} with params: #{s.params.join(', ')}")
                     c = s.signature[0].chr.downcase
                     if(c =~ /^[a-z]$/)
                         type = c.to_sym
@@ -169,10 +169,11 @@ module ModSpox
                     esc_trig = trigger.nil? ? '' : Regexp.escape(trigger)
                     res = message.message.scan(/^#{esc_trig}#{sig.signature}$/)
                     if(res.size > 0)
-                        next unless message.source.auth_groups.include?(sig.group) || message.source.auth_groups.include?(@admin) ||sig.group.nil?
+                        next unless message.source.auth_groups.include?(sig.group) || message.source.auth_groups.include?(@admin) || sig.group.nil?
                         next if sig.requirement == 'private' && message.is_public?
                         next if sig.requirement == 'public' && message.is_private?
                         params = Hash.new
+                        puts "WTF IS THIS: #{sig.pk} | #{sig.signature} | #{sig.params.join(', ')}"
                         sig.params.size.times do |i|
                             params[sig.params[i].to_sym] = res[0][i]
                             Logger.log("Signature params: #{sig.params[i].to_sym} = #{res[0][i]}")

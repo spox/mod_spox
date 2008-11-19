@@ -470,11 +470,11 @@ class Banner < ModSpox::Plugin
             timestamp :stamp, :null => false
             integer :bantime, :null => false, :default => 1
             integer :remaining, :null => false, :default => 1
-            text :mask, :null => false
+            varchar :mask, :null => false
             boolean :invite, :null => false, :default => false
             boolean :removed, :null => false, :default => false
-            foreign_key :channel_id, :null => false, :table => :channels
-            foreign_key :nick_id, :null => false, :table => :nicks
+            foreign_key :channel_id, :null => false, :table => :channels, :key => :id
+            foreign_key :nick_id, :null => false, :table => :nicks, :key => :id
         end
 
         before_create do
@@ -493,11 +493,11 @@ class Banner < ModSpox::Plugin
     class BanMask < Sequel::Model
         set_schema do
             primary_key :id
-            text :mask, :unique => true, :null => false
+            varchar :mask, :unique => true, :null => false
             timestamp :stamp, :null => false
             integer :bantime, :null => false, :default => 1
             text :message
-            foreign_key :channel_id, :null => false, :table => :channels
+            foreign_key :channel_id, :null => false, :table => :channels, :key => :id
         end
 
         def channel
@@ -518,8 +518,8 @@ class Banner < ModSpox::Plugin
     class BanNickExempt < Sequel::Model
         set_schema do
             primary_key :id
-            foreign_key :nick_id, :table => :nicks, :null => false
-            foreign_key :channel_id, :table => :channels
+            foreign_key :nick_id, :table => :nicks, :null => false, :key => :id
+            foreign_key :channel_id, :table => :channels, :key => :id
         end
 
         def nick
@@ -535,7 +535,7 @@ class Banner < ModSpox::Plugin
         set_schema do
             primary_key :id
             varchar :source, :null => false
-            foreign_key :channel_id, :table => :channels
+            foreign_key :channel_id, :table => :channels, :key => :id
         end
 
         def channel
@@ -556,7 +556,7 @@ class Banner < ModSpox::Plugin
         set_schema do
             primary_key :id
             varchar :mode, :null => false
-            foreign_key :channel_id, :table => :channels
+            foreign_key :channel_id, :table => :channels, :key => :id
             index [:channel_id, :mode]
         end
 

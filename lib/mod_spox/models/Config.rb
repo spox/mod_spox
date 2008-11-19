@@ -10,7 +10,11 @@ module ModSpox
         class Config < Sequel::Model
 
             def name=(config_name)
-                update_values :name => config_name.downcase
+                values[:name] = config_name.downcase
+            end
+            
+            def value=(val)
+                values[:value] = val
             end
 
             # key:: name of the config item

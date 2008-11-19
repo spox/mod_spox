@@ -59,8 +59,10 @@ module ModSpox
                 end
             rescue Timeout::Error => boom
                 Logger.log("Command execution exceeded allowed time (command: #{command} | timeout: #{timeout})")
+                raise "Command execution exceeded allowed time (timeout: #{timeout})"
             rescue Object => boom
                 Logger.log("Command generated an exception (command: #{command} | error: #{boom})")
+                raise "Command generated an exception: #{boom}"
             end
         end
 

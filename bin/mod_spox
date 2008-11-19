@@ -62,7 +62,7 @@ opts.each do |opt, arg|
         when '--config'
             require 'mod_spox/ConfigurationWizard'
             wizard = ConfigurationWizard.new
-            wizard.run
+            BotConfig.configured? ? wizard.update : wizard.run
             exit
         when '--path'
             $MOD_SPOX_PATH = arg

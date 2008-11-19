@@ -35,6 +35,7 @@ module ModSpox
             end
             
             def address=(address)
+                return if values[:address] == address || values[:host] == address
                 oldaddress = values[:address]
                 begin
                     info =  Object::Socket.getaddrinfo(address, nil)

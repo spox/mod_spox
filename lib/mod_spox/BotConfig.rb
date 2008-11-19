@@ -18,7 +18,7 @@ module ModSpox
         # :userpath => path to mod_spox directory in user's home directory
         # :userpluginpath => path to user's plugin directory
         # :userconfigpath => path to the user configuration file        
-        def self.populate
+        def BotConfig.populate(createdir=true)
             gemname, gem = Gem.source_index.find{|name, spec|
                 spec.name == 'mod_spox' && spec.version.version = $BOTVERSION
             }
@@ -33,23 +33,31 @@ module ModSpox
                            :userpath => "#{up}/.mod_spox",
                            :userpluginpath => "#{up}/.mod_spox/plugins",
                            :userconfigpath => "#{up}/.mod_spox/config"}
-                [@@config[:userpath], @@config[:userpluginpath]].each do |path|
-                    Dir.mkdir(path) unless File.exists?(path)
+                if(createdir)
+                    [@@config[:userpath], @@config[:userpluginpath]].each do |path|
+                        Dir.mkdir(path) unless File.exists?(path)
+                    end
                 end
             else
-                p gem
-                p gemname
                 raise Exceptions::InstallationError.new('Failed to find mod_spox gem')
             end
         end
         
         # name:: Name of the path string you would like
         # Provides access to important path values
-        def self.[](name)
+        def BotConfig.[](name)
             BotConfig.populate unless @@config
             name = name.to_sym unless name.is_a?(Symbol)
             raise Exceptions::UnknownKey.new("Failed to find given key: #{name}") unless @@config.has_key?(name)
             return @@config[name]
+        end
+        
+        # Returns if the bot has been configured
+        def BotConfig.configured?
+            BotConfig.populate(false)
+            path = BotConfig[:userpath]
+            @@config = nil
+            return File.exists?(path)
         end
     
     end
