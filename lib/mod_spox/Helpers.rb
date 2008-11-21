@@ -101,10 +101,15 @@ module ModSpox
                     end
                 end
                 unless(nick)
-                    nick = Models::Nick.locate(string, create)
-                    if(nick.nil?)
+                    begin
+                        nick = Models::Nick.locate(string, create)
+                        if(nick.nil?)
+                            Database.reconnect
+                            return string
+                        end
+                    rescue Object => boom
+                        Logger.warn("Caught an error. Assuming the database barfed: #{boom}")
                         Database.reconnect
-                        return string
                     end
                     @@nick_cache[string.downcase.to_sym] = nick.pk if nick.is_a?(Models::Nick)
                     Logger.info('Nick was retrieved from database')
