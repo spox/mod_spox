@@ -2,7 +2,7 @@
 
 ## include our needed libraries ##
 
-['rubygems', 'sequel', 'thread', 'etc', 'getoptlong', 'neverblock', 'logger'].each do |file|
+['rubygems', 'sequel', 'thread', 'etc', 'getoptlong', 'logger'].each do |file|
     begin
         require file
     rescue Object => boom
@@ -16,18 +16,6 @@ begin
     require 'fastthread'
 rescue Object => boom
     # ignore if not found #
-end
-
-begin
-    require 'mysqlplus'
-    class Object::Mysql
-        unless method_defined? :sync_query
-            alias :sync_query :query
-            alias :query :async_query
-        end
-    end
-rescue Object => boom
-    # just ignore
 end
 
 $BOTVERSION='0.1.0.1'
