@@ -7,7 +7,9 @@ class PoolConfig < ModSpox::Plugin
                 :desc => 'Show/set max number of worker threads', :params => [:max])
         add_sig(:sig => 'pool worker timeout(\s(\d+))?', :method => :max_timeout, :group => group,
                 :desc => 'Show/set max worker timeout', :params => [:max])
-        add_sig(:sig => 'pool workers available', :method => :workers_available, :group => group,
+        add_sig(:sig => 'pool workers total', :method => :workers_total, :group => group,
+                :desc => 'Show current number of workers in pool')
+        add_sig(:sig => 'pool workers sleeping', :method => :workers_sleeping, :group => group,
                 :desc => 'Show current number of workers in pool')
     end
 
@@ -45,8 +47,12 @@ class PoolConfig < ModSpox::Plugin
         end
     end
 
-    def workers_available(message, params)
+    def workers_total(message, params)
         reply message.replyto, "Current number of worker threads in pool: #{Pool.workers}"
+    end
+    
+    def workers_sleeping(message, params)
+        reply message.replyto, "Current number of worker threads sleeping: #{Pool.sleepers}"
     end
 
 end
