@@ -31,8 +31,8 @@ module ModSpox
 
         # Create a Bot
         def initialize
-            Pool.create_pool
             Logger.initialize($LOGTO, $LOGLEVEL)
+            Pool.instance
             clean_models
             @start_time = Time.now
             @pipeline = Pipeline.new
