@@ -30,7 +30,6 @@ spec = Gem::Specification.new do |s|
     s.rubyforge_project = 'modspox'
     s.has_rdoc = false
     s.add_dependency 'sequel'
-    s.add_dependency 'espace-neverblock'
 end
 
 Rake::GemPackageTask.new(spec) do |package|
