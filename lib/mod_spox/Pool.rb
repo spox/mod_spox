@@ -14,7 +14,7 @@ module ModSpox
                 until @kill do
                     begin
                         action = nil
-                        if(Pool.workers > 1)
+                        if(Pool.workers > Pool.workers_min)
                             Timeout::timeout(60) do
                                 action = @pool.queue.pop
                             end
@@ -71,6 +71,14 @@ module ModSpox
             Pool.instance.threads.size
         end
         
+        def Pool.workers_min
+            return Pool.instance.min
+        end
+        
+        def Pool.workers_max
+            return Pool.instance.max
+        end
+        
         def Pool.sleepers
             'not implemented'
         end
@@ -85,8 +93,32 @@ module ModSpox
             create_pool_thread if @queue.size > @min
         end
         
+        # Return maximum number of seconds actions are allowed to process
+        def Pool.worker_timeout
+            Pool.instance.timeout
+        end
+
+        # time:: number of seconds actions are allowed
+        # Set number of seconds actions are allowed to work
+        def Pool.worker_timeout=(time)
+            Pool.instance.timeout = time
+        end
+
+        # Set maximum number of workers to process tasks
+        def Pool.workers_max=(max)
+            Pool.instance.workers_max = max
+        end
+        
+        # Not currently implemented
+        def Pool.workers_min=(min)
+            Pool.instance.workers_min = min
+        end
+        
         attr_reader :threads
         attr_reader :queue
+        attr_reader :min
+        attr_reader :max
+        attr_reader :timeout
         
         private
     
@@ -94,9 +126,9 @@ module ModSpox
             @queue = Queue.new
             @threads = []
             @lock = Mutex.new
-            @timeout = 0
-            @max = Database.type != :pgsql ? 1 : 50
-            @min = Database.type != :pgsql ? 1 : 9
+            @timeout = get_value('pool_timeout', 0).to_i
+            @max = Database.type != :pgsql ? 1 : get_value('pool_workers_max', 7).to_i
+            @min = Database.type != :pgsql ? 1 : get_value('pool_workers_min', 5).to_i
             @min.times{create_pool_thread}
         end
         
@@ -106,42 +138,31 @@ module ModSpox
             @threads << pt
             return pt
         end
-
-        # Return maximum number of seconds actions are allowed to process
-        def Pool.max_exec_time
-            @@timeout
-        end
-
-        # time:: number of seconds actions are allowed
-        # Set number of seconds actions are allowed to work
-        def Pool.max_exec_time=(time)
-            @@timeout = time
-            t = Models::Config.find_or_create(:name => 'pool_timeout')
-            t.value = time
-            t.save
-        end
-
-        # returns maximum number of workers
-        def Pool.max_workers
-            t = Models::Config.filter(:name => 'pool_workers_max').first
-            return t.nil? ? 30 : t.value
-        end
-
-        # Set maximum number of workers to process tasks
-        def Pool.max_workers=(max)
-            t = Models::Config.find_or_create(:name => 'pool_workers_max')
-            t.value = max
-            t.save
+        
+        def get_value(n, default)
+            m = Models::Config.filter(:name => n).first
+            return m.nil? ? default : m.value
         end
         
-        # Not currently implemented
-        def Pool.min_workers
-            'not implemented'
+        def set_value(n, v)
+            m = Models::Config.find_or_create(:name => n)
+            m.value = v
+            m.save
         end
         
-        # Not currently implemented
-        def Pool.min_workers=(min)
-            'not implemented'
+        def timeout=(v)
+            set_value('pool_timeout', v.to_i)
+            @timeout = v.to_i
+        end
+        
+        def workers_max=(v)
+            set_value('pool_workers_max', v.to_i)
+            @max = v.to_i
+        end
+        
+        def workers_min=(v)
+            set_value('pool_workers_min', v.to_i)
+            @min = v.to_i
         end
 
     end
