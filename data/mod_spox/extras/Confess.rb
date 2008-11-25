@@ -16,8 +16,18 @@ class Confess < ModSpox::Plugin
             Logger.warn('Error: This plugin requires the HTMLEntities gem. Please install and reload plugin.')
             raise Exceptions::BotException.new("Missing required HTMLEntities library")
         end
-        Confession.create_table unless Confession.table_exists?
-        Signature.find_or_create(:signature => 'confess ?(?!score|count|fetcher|\+\+|\-\-)(.+)?', :plugin => name, :method => 'confess',
+        @db = nil
+        begin
+            @db = Sequel.sqlite(BotConfig[:userpath] + '/confessions.db')
+            Confession.db = @db
+        rescue Object => boom
+            Logger.warn("Error: Unable to initialize this plugin: #{boom}")
+            raise Exceptions::BotException.new("Failed to create database: #{boom}")
+        end
+        Confession.build_confession && Confession.create_table unless Confession.table_exists?
+        Signature.find_or_create(:signature => 'confess', :plugin => name, :method => 'confess',
+            :description => 'Print a confession')
+        Signature.find_or_create(:signature => 'confess (?!score|count|fetcher|\+\+|\-\-)(.+)?', :plugin => name, :method => 'confess',
             :description => 'Print a confession').params = [:term]
         Signature.find_or_create(:signature => 'confess(\+\+|\-\-) ?(\d+)?', :plugin => name, :method => 'score',
             :description => 'Score a confession').params = [:score, :id]
@@ -31,60 +41,88 @@ class Confess < ModSpox::Plugin
         @last_confession = {}
         @fetch = false
         @mutex = Mutex.new
+        @lock = Mutex.new
         @coder = HTMLEntities.new
         start_fetcher if Config[:confess] == 'fetch'
     end
     
     def confess(message, params)
-        c = nil
-        if(params[:term])
-            return if params[:term] == 'count'
-            if(params[:term] =~ /^\d+$/)
-                c = Confession[params[:term].to_i]
-             else
-                 cs = Database.db[:confessions].full_text_search(:confession, params[:term].gsub(/\s+/, '.*'), :language => 'english').map(:id)
-                 c = Confession[cs[rand(cs.size)].to_i]
-             end
-        else
-            c = Confession[rand(Confession.count) + 1]
-        end
-        if(c)
-            reply message.replyto, "\2[#{c.pk}]\2: #{c.confession}"
-            @last_confession[message.target.pk] = c.pk
-        else
-            reply message.replyto, "\2Error:\2 Failed to find confession"
+        begin
+            c = nil
+            pk = nil
+            @lock.synchronize do
+                if(params[:term])
+                    return if params[:term] == 'count'
+                    if(params[:term] =~ /^\d+$/)
+                        c = Confession[params[:term].to_i]
+                    else
+                        cs = Confession.search(params[:term])
+                        c = Confession[cs[rand(cs.size)].to_i]
+                    end
+                else
+                    c = Confession[rand(Confession.count) + 1]
+                end
+                unless c.nil?
+                    pk = c.pk
+                    c = c.confession
+                end
+            end
+            if(c)
+                reply message.replyto, "\2[#{c.pk}]\2: #{c.confession}"
+                @last_confession[message.target.pk] = c.pk
+            else
+                reply message.replyto, "\2Error:\2 Failed to find confession"
+            end
+        rescue Object => boom
+            reply message.replyto, "Failed to locate a match. Error encountered: #{boom}"
         end
     end
     
     def show_score(message, params)
-        c = Confession[params[:id].to_i]
-        if(c)
-            reply message.replyto, "\2[#{c.pk}]:\2 #{c.score.to_i}% of raters gave this confession a positive score"
+        pk = nil
+        score = nil
+        @lock.synchronize do
+            c = Confession[params[:id].to_i]
+            if(c)
+                pk = c.pk
+                score = c.score.to_i
+            end
+        end
+        if(pk)
+            reply message.replyto, "\2[#{pk}]:\2 #{score}% of raters gave this confession a positive score"
         else
             reply message.replyto, "\2Error:\2 Failed to find confession with ID: #{params[:id]}"
         end
     end
     
     def score(message, params)
-        if(params[:id])
-            c = Confession[params[:id].to_i]
-        else
-            c = Confession[@last_confession[message.target.pk]] if @last_confession.has_key?(message.target.pk)
+        @lock.synchronize do
+            if(params[:id])
+                c = Confession[params[:id].to_i]
+            else
+                c = Confession[@last_confession[message.target.pk]] if @last_confession.has_key?(message.target.pk)
+            end
         end
         if(c)
-            if(params[:score] == '++')
-                c.update_with_params(:positive => c.positive.to_i + 1)
-            else
-                c.update_with_params(:negative => c.negative.to_i + 1)
+            @lock.synchronize do
+                if(params[:score] == '++')
+                    c.update_with_params(:positive => c.positive.to_i + 1)
+                else
+                    c.update_with_params(:negative => c.negative.to_i + 1)
+                end
+                c.update_with_params(:score => ((c.positive.to_f) / (c.positive.to_f + c.negative.to_f)) * 100.0)
             end
-            c.update_with_params(:score => ((c.positive.to_f) / (c.positive.to_f + c.negative.to_f)) * 100.0)
         else
             reply message.replyto, "\2Error:\2 Failed to find confession to score"
         end
     end
     
     def count(message, params)
-        reply message.replyto, "Current number of stored confessions: #{Confession.count}"
+        c = 0
+        @lock.synchronize do
+            c = Confession.count
+        end
+        reply message.replyto, "Current number of stored confessions: #{c}"
     end
     
     def fetcher(message, params)
@@ -121,7 +159,9 @@ class Confess < ModSpox::Plugin
                 Logger.info("Match turned into: #{conf}")
                 if conf.length < 300
                     begin
-                        Confession.new(:confession => conf, :hash => Digest::MD5.hexdigest(conf)).save
+                        @lock.synchronize do
+                            Confession.new(:confession => conf, :hash => Digest::MD5.hexdigest(conf)).save
+                        end
                     rescue Object => boom
                         Logger.warn('Warning: Fetched confession already found in database')
                     end
@@ -151,15 +191,34 @@ class Confess < ModSpox::Plugin
         end
     end
 
-    class Confession < Sequel::Model
+    class Confession < Sequel::Model    
+        def Confession.build_confession
+            db << 'CREATE VIRTUAL TABLE `confessions_confession` USING FTS3(`confession` TEXT NOT NULL)'
+        end
+        
         set_schema do
-            text :confession, :null => false
             text :hash, :null => false, :unique => true
             integer :positive, :null => false, :default => 0
             integer :negative, :null => false, :default => 0
             float :score, :null => false, :default => 0
             primary_key :id
-            full_text_index :confession
+        end
+        
+        def confession=(c)
+            if(confession)
+                db[:confessions_confession].filter('docid = ?', pk).update(:confession => c)
+            else
+                db[:confessions_confession] << {:docid => pk, :confession => c}
+            end
+        end
+        
+        def confession
+            c = db[:confessions_confession].select(:confession).where('docid = ?', pk).first
+            return c.nil? ? nil : c[:confession]
+        end
+        
+        def Confession.search(terms)
+            results = db['select docid from confessions_confession where confession match ?', terms].map(:docid)
         end
     end
 
