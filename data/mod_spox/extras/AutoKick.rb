@@ -136,5 +136,24 @@ class AutoKick < ModSpox::Plugin
             ModSpox::Models::Channel[channel_id]
         end
     end
+    
+    class AutoKickPersonal < Sequel::Model
+        set_schema do
+            primary_key :id
+            varchar :pattern, :default => nil
+            integer :bantime, :null => false, :default => 60
+            varchar :message, :null => false
+            foreign_key :nick_id, :table => :nicks
+            foreign_key :channel_id, :table => :channels
+        end
+        
+        def nick
+            ModSpox::Models::Nick[nick_id]
+        end
+        
+        def channel
+            ModSpox::Models::Channel[channel_id]
+        end
+    end
 
 end
