@@ -68,8 +68,8 @@ class Confess < ModSpox::Plugin
                 end
             end
             if(c)
-                reply message.replyto, "\2[#{c.pk}]\2: #{c.confession}"
-                @last_confession[message.target.pk] = c.pk
+                reply message.replyto, "\2[#{pk}]\2: #{c}"
+                @last_confession[message.target.pk] = pk
             else
                 reply message.replyto, "\2Error:\2 Failed to find confession"
             end
@@ -146,8 +146,8 @@ class Confess < ModSpox::Plugin
     
     def grab_page
         begin
-            connection = Net::HTTP.new('grouphug.us', 80)
-            response = connection.request_get("/confessions/new?page=#{rand(17349)+1}", nil)
+            connection = Net::HTTP.new('www.grouphug.us', 80)
+            response = connection.request_get("/frontpage?page=#{rand(17349)+1}", nil)
             response.value
             page = response.body.gsub(/[\r\n]/, ' ')
             Logger.info("Processing matches")

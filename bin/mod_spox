@@ -75,6 +75,7 @@ opts.each do |opt, arg|
         when '--daemon'
             begin
                 $DAEMON_BOT = true
+                require 'daemons'
             rescue Object => boom
                 puts 'Error: You must install the Daemons gem: (http://daemons.rubyforge.org)'
                 exit 1
@@ -90,8 +91,7 @@ initialize_bot
 require 'mod_spox/Bot'
 
 if($DAEMON_BOT)
-    require 'daemons'
-    Daemons.daemonize
+    Daemonize.daemonize(nil, 'mod_spox')
 end
 
 bot = Bot.new
