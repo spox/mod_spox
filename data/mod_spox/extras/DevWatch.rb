@@ -83,7 +83,7 @@ class DevWatch < ModSpox::Plugin
     def run
         check_updates
         if(Setting[:devwatch].has_key?(:url) && Setting[:devwatch][:channels].size > 0)
-            @pipeline << ModSpox::Messages::Internal::TimerAdd.new(self, Setting[:devwatch][:interval].to_i, nil, true){check_updates}
+            @pipeline << ModSpox::Messages::Internal::TimerAdd.new(self, Setting[:devwatch][:interval].to_i, nil, true){run}
         end
     end
     
