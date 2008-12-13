@@ -10,6 +10,7 @@ class Translate < ModSpox::Plugin
             :description => 'Add a nick to the autotranslate service').params = [:lang, :nick]
         Signature.find_or_create(:signature => 'autotranslate remove (\S+)', :plugin => name, :method => 'auto_remove',
             :description => 'Remove a nick from the autotranslate service').params = [:nick]
+        @pipeline.hook(self, :listener, :Incoming_Privmsg)
         @watchers = {}
         @cache = {}
     end
@@ -51,7 +52,8 @@ class Translate < ModSpox::Plugin
     def listener(message)
         if(message.is_public? && @watchers.has_key?(message.target.pk))
             if(@watchers[message.target.pk].has_key?(message.source.pk))
-                reply message.replyto, "\2Translation (#{message.source.nick}):\2 #{do_translation("#{@watchers[message.target.pk][message.source.pk]}en", message.message)}"
+                trans_message = do_translation("#{@watchers[message.target.pk][message.source.pk]}en", message.message)
+                reply message.replyto, "\2Translation (#{message.source.nick}):\2 #{trans_message}" unless trans_message == message.message
             elsif(message.message =~ /^(\S+)[:,]/)
                 Logger.info("Translate matched a followed nick: #{$1}")
                 nick = Helpers.find_model($1, false)
@@ -95,14 +97,6 @@ class Translate < ModSpox::Plugin
             end
         else
             raise "Failed to receive result from server"
-        end
-    end
-    
-    def hook
-        if(@watchers.size == 1)
-            @pipeline.hook(self, :listener, :Incoming_Privmsg)
-        else
-            @pipeline.unhook(self, :listener, :Incoming_Privmsg)
         end
     end
     
