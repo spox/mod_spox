@@ -14,11 +14,11 @@ module ModSpox
         def initialize(pipeline)
             @pipeline = pipeline
             @timers = Array.new
-            @monitor = Monitors::Timer.new
             @thread = nil
             @stop_timer = false
             @owners = {}
             @owners_lock = Mutex.new
+            @awake_lock = Mutex.new
             @add_lock = Monitors::Boolean.new
             @adding = false
             {:Internal_TimerAdd => :add_message,
@@ -31,7 +31,7 @@ module ModSpox
         # Wakes the timer up early
         def wakeup
             Logger.info("Timer has been explicitly told to wakeup")
-            @monitor.wakeup unless @thread.nil?
+            @awake_lock.synchronize{ @thread.wakeup } unless @thread.nil?
         end
 
         # message:: TimerAdd message
@@ -95,6 +95,7 @@ module ModSpox
         def start
             raise Exceptions::AlreadyRunning.new('Timer is already running') unless @thread.nil?
             @thread = Thread.new{
+                @awake_lock.lock
                 until @stop_timer do
                     to_sleep = nil
                     @timers.each do |a|
@@ -102,7 +103,9 @@ module ModSpox
                         to_sleep = a.remaining if !a.remaining.nil? && a.remaining < to_sleep
                     end
                     Logger.info("Timer is set to sleep for #{to_sleep.nil? ? 'forever' : "#{to_sleep} seconds"}")
-                    actual_sleep = @monitor.wait(to_sleep)
+                    @awake_lock.unlock
+                    actual_sleep = to_sleep.nil? ? sleep : sleep(to_sleep)
+                    @awake_lock.lock
                     tick(actual_sleep)
                     Logger.info("Timer was set to sleep for #{to_sleep.nil? ? 'forever' : "#{to_sleep} seconds"}. Actual sleep time: #{actual_sleep} seconds")
                     @add_lock.wakeup
