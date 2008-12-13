@@ -7,7 +7,7 @@ class Karma < ModSpox::Plugin
         Datatype::Karma.create_table unless Datatype::Karma.table_exists?
         Datatype::Alias.create_table unless Datatype::Alias.table_exists?
         alias_group = Models::Group.find_or_create(:name => 'alias')
-        Models::Signature.find_or_create(:signature => 'karma (?!(fight|alias|dealias|aliases|reset) (\S+|\(.+?\)) ?(\S+|\(.+?\))?$)(.+)', :plugin => name, :method => 'score', :description => 'Returns karma for given thing').params = [:crap, :crap2, :crap3, :thing]
+        Models::Signature.find_or_create(:signature => 'karma (?!(fight|alias|dealias|aliases|reset) (\S+|\(.+?\)) ?(\S+|\(.+?\))?$)(\S+|\(.+?\))', :plugin => name, :method => 'score', :description => 'Returns karma for given thing').params = [:crap, :crap2, :crap3, :thing]
         Models::Signature.find_or_create(:signature => 'karma reset (\S+|\(.+?\))', :plugin => name, :method => 'reset',
             :group_id => Models::Group.filter(:name => 'admin').first.pk, :description => 'Reset a karma score').params = [:thing]
         Models::Signature.find_or_create(:signature => 'karma alias (\S+|\(.+?\)) (\S+|\(.+?\))', :plugin => name, :method => 'aka',
@@ -53,11 +53,13 @@ class Karma < ModSpox::Plugin
 
     def score(message, params)
         return unless message.is_public?
-        karma = Datatype::Karma.filter(:thing => params[:thing].downcase, :channel_id => message.target.pk).first
+        thing = params[:thing]
+        thing = thing[1..-2].downcase if thing[0..0] == '(' && thing[-1..-1] == ')'
+        karma = Datatype::Karma.filter(:thing => thing, :channel_id => message.target.pk).first
         if(karma)
-            @pipeline << Privmsg.new(message.replyto, "Karma for \2#{params[:thing]}\2 is #{Datatype::Alias.score_object(karma.pk)}")
+            @pipeline << Privmsg.new(message.replyto, "Karma for \2#{thing}\2 is #{Datatype::Alias.score_object(karma.pk)}")
         else
-            @pipeline << Privmsg.new(message.replyto, "\2Error:\2 #{params[:thing]} has no karma")
+            @pipeline << Privmsg.new(message.replyto, "\2Error:\2 #{thing} has no karma")
         end
         if(@eggs.has_key?(params[:thing].downcase.to_sym))
             @pipeline << Messages::Internal::TimerAdd.new(self, rand(5) + 1, nil, true){ egg(params[:thing].downcase, message) }
