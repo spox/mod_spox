@@ -11,7 +11,7 @@ class Topten < ModSpox::Plugin
             :description => 'Show topten from given date', :requirement => 'public').params = [:date]
         Signature.find_or_create(:signature => 'stats ?(\S+)?', :plugin => name, :method => 'stats', :description => 'Show stats on nick',
             :requirement => 'public').params = [:nick]
-        Signature.find_or_create(:signature => 'stats lifetime? (\S+)?', :plugin => name, :method => 'life_stats',
+        Signature.find_or_create(:signature => 'stats lifetime (\S+)?', :plugin => name, :method => 'life_stats',
             :description => 'Show stat totals for given nick', :requirement => 'public').params = [:nick]
         @pipeline.hook(self, :log_stats, :Incoming_Privmsg)
     end
@@ -62,9 +62,9 @@ class Topten < ModSpox::Plugin
     def life_stats(m, p)
         nick = p[:nick] ? Nick.locate(p[:nick], false) : m.source
         if(nick)
-            result = ChatStat.group(:nick_id).select(:SUM[:bytes] => :tbytes, :SUM[:words] => :twords, :SUM[:questions] => :tquestions).filter(:nick_id => nick.pk).first
-            bytes = (result.tbytes > 1023) ? "#{sprintf('%.2f', (result.tbytes / 1024.0))}kb" : "#{result.tbytes}b"
-            reply m.replyto, "#{nick.nick} (total): #{bytes} logged, #{result.twords} words spoken and #{result.tquestions} questions asked"
+            result = ChatStat.group(:nick_id).select(:SUM[:bytes].as(:tbytes), :SUM[:words].as(:twords), :SUM[:questions].as(:tquestions)).filter(:nick_id => nick.pk).first
+            bytes = (result[:tbytes] > 1023) ? "#{sprintf('%.2f', (result[:tbytes] / 1024.0))}kb" : "#{result[:tbytes]}b"
+            reply m.replyto, "#{nick.nick} (total): #{bytes} logged, #{result[:twords]} words spoken and #{result[:tquestions]} questions asked"
         else
             reply m.replyto, "\2Error:\2 Failed to find #{p[:nick]}"
         end
@@ -76,7 +76,7 @@ class Topten < ModSpox::Plugin
         stat = ChatStat.find_or_create(:nick_id => m.source.pk, :channel_id => m.target.pk, :daykey => key)
         words = m.message.scan(/([^ ]+ |[^ ]$)/).size
         bytes = m.message.gsub(/[^a-zA-Z0-9`\~\!@#\$%\^&\*\(\)_\+\[\]\}\{;:'"\/\?\.>,<\\|\-=]/, '').length
-        questions = m.message.scan(/.+?(\? |\?$)/).size
+        questions = m.message.scan(/.+?(!?\?!? |!?\?!?$)/).size
         stat.words += words
         stat.bytes += bytes
         stat.questions += questions
