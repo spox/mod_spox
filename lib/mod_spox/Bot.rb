@@ -37,6 +37,7 @@ module ModSpox
             @start_time = Time.now
             @pipeline = Pipeline.new
             @timer = Timer.new(@pipeline)
+            @timer.start
             @config = BaseConfig.new(BotConfig[:userconfigpath])
             @factory = MessageFactory.new(@pipeline)
             @socket = nil
@@ -64,7 +65,6 @@ module ModSpox
             trap('SIGINT'){ Logger.warn("Caught SIGINT"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit; }
             trap('SIGQUIT'){ Logger.warn("Caught SIGQUIT"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit; }
             until @shutdown do
-                @timer.start
                 @pipeline << Messages::Internal::BotInitialized.new
                 begin
                     @waiter.wait

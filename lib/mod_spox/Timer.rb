@@ -30,8 +30,19 @@ module ModSpox
 
         # Wakes the timer up early
         def wakeup
-            Logger.info("Timer has been explicitly told to wakeup")
-            @awake_lock.synchronize{ @thread.wakeup } unless @thread.nil?
+            unless(@thread.nil? || @awake_lock.locked?)
+                Logger.info("Timer has been explicitly told to wakeup")
+                @awake_lock.synchronize do
+                    until(@thread.stop?) do
+                        sleep(0.1)
+                    end
+                    @thread.wakeup
+                end
+                if(['sleep', 'run'].include?(@thread.status))
+                    @thread = nil
+                    start
+                end
+            end
         end
 
         # message:: TimerAdd message
@@ -94,8 +105,7 @@ module ModSpox
         # Starts the timer
         def start
             raise Exceptions::AlreadyRunning.new('Timer is already running') unless @thread.nil?
-            @thread = Thread.new{
-                @awake_lock.lock
+            @thread = Thread.new do
                 until @stop_timer do
                     to_sleep = nil
                     @timers.each do |a|
@@ -103,15 +113,14 @@ module ModSpox
                         to_sleep = a.remaining if !a.remaining.nil? && a.remaining < to_sleep
                     end
                     Logger.info("Timer is set to sleep for #{to_sleep.nil? ? 'forever' : "#{to_sleep} seconds"}")
-                    @awake_lock.unlock
                     actual_sleep = to_sleep.nil? ? sleep : sleep(to_sleep)
-                    @awake_lock.lock
                     tick(actual_sleep)
                     Logger.info("Timer was set to sleep for #{to_sleep.nil? ? 'forever' : "#{to_sleep} seconds"}. Actual sleep time: #{actual_sleep} seconds")
                     @add_lock.wakeup
                     @add_lock.wait while @adding
                 end
-            }
+            end
+            
         end
 
         # Stops the timer
