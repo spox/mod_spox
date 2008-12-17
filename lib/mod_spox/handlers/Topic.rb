@@ -11,6 +11,7 @@ module ModSpox
             def process(string)
                 if(string =~ /#{RPL_TOPIC}.+?(\S+)\s:(.+)$/)
                     channel = find_model($1)
+                    channel.update(:topic => $2)
                     return Messages::Incoming::Topic.new(string, channel, $2)
                 elsif(string =~ /#{RPL_NOTOPIC}.+?(\S+)\s:/)
                     channel = find_model($1)

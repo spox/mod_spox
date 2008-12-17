@@ -47,11 +47,15 @@ module ModSpox
             # Removes a nick from this channel
             def nick_remove(nick)
                 NickChannel.filter(:channel_id => pk, :nick_id => nick.pk).first.destroy
+                if(NickChannel.filter(:channel_id => pk).count < 1)
+                    update_values :parked => false
+                end
             end
 
             # Removes all nicks from this channel
             def clear_nicks
                 NickChannel.filter(:channel_id => pk, :nick_id => nick.pk).each{|o| o.destroy}
+                update_values :parked => false
             end
 
             # Purges all channel information
