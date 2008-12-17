@@ -200,9 +200,9 @@ class PhpFuncLookup < ModSpox::Plugin
     
     def parse_wildcard(m, name)
         matches = []
-        pattern = name.gsub(/\*/, '.*?')
+        pattern = name.gsub(/\*/, '.*?').gsub(/_/, '-')
         Dir.open(@manual).each do |file|
-            if(file =~ /^(.+?#{pattern}.+?)\.html/)
+            if(file =~ /^(function\.#{pattern})\.html/)
                 match = $1
                 if(match =~ /^function\.(.+?)\-/)
                     if(@classlist.include?($1.downcase))
@@ -211,11 +211,9 @@ class PhpFuncLookup < ModSpox::Plugin
                     else
                         match.gsub!(/[-]/, '_')
                     end
-                    match.gsub!(/^function\./, '')
-                else
-                    match = nil
                 end
-                matches << match unless match.nil?
+                match.gsub!(/^function\./, '')
+                matches << match unless match.empty?
             end
         end
         matches.sort!
@@ -223,6 +221,7 @@ class PhpFuncLookup < ModSpox::Plugin
         if(matches.empty?)
             output = "\2Error:\2 No matches found"
         else
+            output << "Matches against term: \2#{name}:\2"
             output << matches.values_at(0..19).join(', ')
         end
         reply m.replyto, output
@@ -248,10 +247,24 @@ class PhpFuncLookup < ModSpox::Plugin
         Logger.info "parse_operator name=#{name}"
         name.downcase!
         type, title, ejemplo = @ops[name]
-        output = ["\2#{name}\2 is the \2#{title.to_a.join("\2 or \2")}\2 operator"]
-        type.to_a.each do |t|
-            output << "http://php.net/manual/en/language.operators.#{t}.php"
+        if(title.is_a?(Array))
+            output = ["\2#{name}\2 is the \2#{title.join("\2 or \2")}\2 operator"]
+            if(ejemplo.is_a?(Array))
+                (0..(ejemplo.count - 1)).each do |i|
+                    output << "\2Example (#{type[i]}):\2 #{ejemplo[i]}"
+                end
+            elsif(!ejemplo.nil?)
+                output << "\2Example (#{type}):\2 #{ejemplo}"
+            end
+            type.each do |t|
+                output << "http://php.net/manual/en/language.operators.#{t}.php"
+            end
+        else
+            output = ["\2#{name}\2 is the \2#{title}\2 operator"]
+            output << "\2Example usage:\2 #{ejemplo}" unless ejemplo.nil? || ejemplo.empty?
+            output << "http://php.net/manual/en/language.operators.#{type}.php"
         end
+        reply m.replyto, output
     end
     
     def populate_classes
