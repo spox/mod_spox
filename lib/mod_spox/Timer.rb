@@ -14,13 +14,13 @@ module ModSpox
         def initialize(pipeline)
             @pipeline = pipeline
             @timers = Array.new
-            @thread = nil
+            @timer_thread = nil
             @stop_timer = false
             @owners = {}
             @owners_lock = Mutex.new
             @awake_lock = Mutex.new
-            @add_lock = Monitors::Boolean.new
-            @adding = false
+            @add_lock = Mutex.new
+            @new_actions = Queue.new
             {:Internal_TimerAdd => :add_message,
              :Internal_TimerRemove => :remove_message,
              :Internal_TimerClear => :clear}.each_pair do |type,method|
@@ -30,17 +30,10 @@ module ModSpox
 
         # Wakes the timer up early
         def wakeup
-            unless(@thread.nil? || @awake_lock.locked?)
-                Logger.info("Timer has been explicitly told to wakeup")
-                @awake_lock.synchronize do
-                    until(@thread.stop?) do
-                        sleep(0.1)
-                    end
-                    @thread.wakeup
-                end
-                if(['sleep', 'run'].include?(@thread.status))
-                    @thread = nil
-                    start
+            @awake_lock.synchronize do
+                if(@timer_thread.status == 'sleep')
+                    Logger.info('Timer has been explicitly told to wakeup')
+                    @timer_thread.wakeup
                 end
             end
         end
@@ -50,16 +43,9 @@ module ModSpox
         def add_message(message)
             Logger.info("New block is being added to the timer")
             action = nil
-            action = add(message.period, message.once, message.data, &message.block)
-            @owners[message.requester.name.to_sym] = [] unless @owners.has_key?(message.requester.name.to_sym)
-            @owners[message.requester.name.to_sym] << action
-            begin
-                @pipeline << Messages::Internal::TimerResponse.new(message.requester, action, true, message.id)
-                Logger.info("New block was successfully added to the timer")
-            rescue Object => boom
-                Logger.warn("Failed to add block to timer: #{boom}")
-                @pipeline << Messages::Internal::TimerResponse.new(message.requester, action, false, message.id)
-            end
+            @new_actions << {:period => message.period, :once => message.once, :data => message.data,
+                             :block => message.block, :requester => message.requester, :m_id => message.id}
+            wakeup
         end
 
         # message:: TimerRemove message
@@ -77,12 +63,7 @@ module ModSpox
         # Adds a new action to the timer
         def add(period, once=false, data=nil, &func)
             action = Action.new(self, period, data, once, &func)
-            @adding = true
-            wakeup
-            @add_lock.wait
             @timers << action
-            @adding = false
-            @add_lock.wakeup
             return action
         end
 
@@ -104,31 +85,34 @@ module ModSpox
 
         # Starts the timer
         def start
-            raise Exceptions::AlreadyRunning.new('Timer is already running') unless @thread.nil?
-            @thread = Thread.new do
+            raise Exceptions::AlreadyRunning.new('Timer is already running') unless @timer_thread.nil?
+            @timer_thread = Thread.new do
+            begin
                 until @stop_timer do
-                    to_sleep = nil
-                    @timers.each do |a|
-                        to_sleep = a.remaining if to_sleep.nil?
-                        to_sleep = a.remaining if !a.remaining.nil? && a.remaining < to_sleep
-                    end
+                    to_sleep = get_min_sleep
                     Logger.info("Timer is set to sleep for #{to_sleep.nil? ? 'forever' : "#{to_sleep} seconds"}")
-                    actual_sleep = to_sleep.nil? ? sleep : sleep(to_sleep)
+                    if((to_sleep.nil? || to_sleep > 0) && @new_actions.empty?)
+                        actual_sleep = to_sleep.nil? ? sleep : sleep(to_sleep)
+                    else
+                        actual_sleep = 0
+                    end
+                    Logger.info("Timer was set to sleep for #{to_sleep.nil? ? 'forever' : "#{to_sleep} seconds"}. Actual sleep: #{actual_sleep} seconds")
                     tick(actual_sleep)
-                    Logger.info("Timer was set to sleep for #{to_sleep.nil? ? 'forever' : "#{to_sleep} seconds"}. Actual sleep time: #{actual_sleep} seconds")
-                    @add_lock.wakeup
-                    @add_lock.wait while @adding
+                    add_waiting_actions
                 end
+            rescue Object => boom
+                Logger.warn("Timer error encountered: #{boom}")
             end
-            
+            Logger.warn("Timer has completed running.")
+            end
         end
 
         # Stops the timer
         def stop
-            raise Exceptions::NotRunning.new('Timer is not running') if @thread.nil?
+            raise Exceptions::NotRunning.new('Timer is not running') if @timer_thread.nil?
             @stop_timer = true
             wakeup
-            @thread.join
+            @timer_thread.join
         end
 
         # Clears all actions in the timer's queue
@@ -148,6 +132,26 @@ module ModSpox
         end
 
         private
+
+        def get_min_sleep
+            @timers.map{|t| t.remaining}.sort[0]
+        end
+
+        def add_waiting_actions
+            until(@new_actions.empty?) do
+                a = @new_actions.pop
+                action = add(a[:period], a[:once], a[:data], &a[:block])
+                @owners[a[:requester].name.to_sym] = [] unless @owners.has_key?(a[:requester].name.to_sym)
+                @owners[a[:requester].name.to_sym] << action
+                begin
+                    @pipeline << Messages::Internal::TimerResponse.new(a[:requester], action, true, a[:m_id])
+                    Logger.info("New block was successfully added to the timer")
+                rescue Object => boom
+                    Logger.warn("Failed to add block to timer: #{boom}")
+                    @pipeline << Messages::Internal::TimerResponse.new(a[:requester], action, false, a[:m_id])
+                end
+            end
+        end
 
         # time_passed:: time passed since last tick
         # Decrements all Actions the given amount of time
