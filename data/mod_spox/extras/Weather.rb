@@ -42,7 +42,7 @@ class Weather < ModSpox::Plugin
                 end
                 output = ["Weather for: \2#{location}\2"]
                 output << "Current Temp: #{curtemp} - Feels like: #{feeltemp}"
-                output << "[UV Index: #{uv.gsub(/&.+?;/, '')}][Wind: #{wind.gsub(/&.+?;/, '')}][Humiditiy: #{humid.gsub(/&.+?;/, '')}][Pressure: #{pressure.gsub(/&.+?;/, '')}][Dew Point: #{dewpoint.gsub(/&.+?;/, '')}][Visibility: #{visibility.gsub(/&.+?;/, '')}]"
+                output << "[UV Index: #{uv.gsub(/&.+?;/, '')}][Wind: #{wind.gsub(/&.+?;/, '')}][Humidity: #{humid.gsub(/&.+?;/, '')}][Pressure: #{pressure.gsub(/&.+?;/, '')}][Dew Point: #{dewpoint.gsub(/&.+?;/, '')}][Visibility: #{visibility.gsub(/&.+?;/, '')}]"
                 output << future.values_at(0..2).join(' ')
                 reply message.replyto, output
             else
