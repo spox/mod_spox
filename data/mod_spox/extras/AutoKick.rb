@@ -89,7 +89,7 @@ class AutoKick < ModSpox::Plugin
         return unless message.is_public?
         if(@map.keys.include?(message.target.pk))
             bmessage = nil
-            time = 0
+            btime = 0
             @map[message.target.pk].each do |pattern|
                 reg = Regexp.new(pattern, Regexp::IGNORECASE)
                 unless(reg.match(message.message).nil?)
@@ -97,9 +97,9 @@ class AutoKick < ModSpox::Plugin
                     bmessage = record.message
                     btime += record.bantime
                 end
-                unless(bmessage.nil?)
-                    @pipeline << plugin_const(:Banner_Ban).new(message.source, message.target, :kickban, bmessage, btime, false, true)
-                end
+            end
+            unless(bmessage.nil?)
+                @pipeline << plugin_const(:Banner_Ban).new(message.source, message.target, :kickban, bmessage, btime, false, true)
             end
         end
         if(@colors.include?(message.target.pk))
