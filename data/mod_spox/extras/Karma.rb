@@ -54,12 +54,14 @@ class Karma < ModSpox::Plugin
     def score(message, params)
         return unless message.is_public?
         thing = params[:thing]
-        thing = thing[1..-2].downcase if thing[0..0] == '(' && thing[-1..-1] == ')'
+        orig = thing[1..-2] if thing[0..0] == '(' && thing[-1..-1] == ')'
+        orig = thing if orig.nil?
+        thing = orig.downcase
         karma = Datatype::Karma.filter(:thing => thing, :channel_id => message.target.pk).first
         if(karma)
-            @pipeline << Privmsg.new(message.replyto, "Karma for \2#{thing}\2 is #{Datatype::Alias.score_object(karma.pk)}")
+            @pipeline << Privmsg.new(message.replyto, "Karma for \2#{orig}\2 is #{Datatype::Alias.score_object(karma.pk)}")
         else
-            @pipeline << Privmsg.new(message.replyto, "\2Error:\2 #{thing} has no karma")
+            @pipeline << Privmsg.new(message.replyto, "\2Error:\2 #{orig} has no karma")
         end
         if(@eggs.has_key?(params[:thing].downcase.to_sym))
             @pipeline << Messages::Internal::TimerAdd.new(self, rand(5) + 1, nil, true){ egg(params[:thing].downcase, message) }
@@ -80,16 +82,16 @@ class Karma < ModSpox::Plugin
     end
 
     def fight(message, params)
-        thing = params[:thing].downcase
-        thang = params[:thang].downcase
+        thing = params[:thing]
+        thang = params[:thang]
         thing = thing[1..-2] if thing[0..0] == '(' && thing[-1..-1] == ')'
         thang = thang[1..-2] if thang[0..0] == '(' && thang[-1..-1] == ')'
-        thing = Datatype::Karma.find_or_create(:thing => thing, :channel_id => message.target.pk)
-        thang = Datatype::Karma.find_or_create(:thing => thang, :channel_id => message.target.pk)
-        thing_score = Datatype::Alias.score_object(thing.pk)
-        thang_score = Datatype::Alias.score_object(thang.pk)
-        winner = thing_score > thang_score ? thing.thing : thang.thing
-        loser = thing_score > thang_score ? thang.thing : thing.thing
+        rthing = Datatype::Karma.find_or_create(:thing => thing.downcase, :channel_id => message.target.pk)
+        rthang = Datatype::Karma.find_or_create(:thing => thang.downcase, :channel_id => message.target.pk)
+        thing_score = Datatype::Alias.score_object(rthing.pk)
+        thang_score = Datatype::Alias.score_object(rthang.pk)
+        winner = thing_score > thang_score ? thing : thang
+        loser = thing_score > thang_score ? thang : thing
         distance = (thing_score - thang_score).abs
         output = "\2KARMA FIGHT RESULTS:\2 "
         if(distance > 0)
