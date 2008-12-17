@@ -44,7 +44,7 @@ class ChatLogger < ModSpox::Plugin
         type = 'action' if message.is_action?
         if(message.is_public?)
             PublicLog.new(:message => message.message, :type => type, :sender_id => message.source.pk,
-                :channel => message.target.pk, :received => message.time).save
+                :channel_id => message.target.pk, :received => message.time).save
         else
             PrivateLog.new(:message => message.message, :type => type, :sender_id => message.source.pk,
                 :receiver_id => message.target.pk, :received => message.time).save
@@ -90,20 +90,20 @@ class ChatLogger < ModSpox::Plugin
                 if(record.is_a?(PublicLog))
                     case record.values[:type]
                         when 'join'
-                            message = "joining #{Channel[record.channel].name}"
+                            message = "joining #{record.channel.name}"
                         when 'part'
-                            message = "parting #{Channel[record.channel].name} with the message: #{record.message}"
+                            message = "parting #{record.channel.name} with the message: #{record.message}"
                         when 'privmsg'
-                            message = "in #{Channel[record.channel].name} saying: #{record.message}"
+                            message = "in #{record.channel.name} saying: #{record.message}"
                         when 'action'
-                            message = "in #{Channel[record.channel].name} saying: * #{p[:nick]} #{record.message}"
+                            message = "in #{record.channel.name} saying: * #{p[:nick]} #{record.message}"
                         when 'notice'
-                            message = "in #{Channel[record.channel].name} saying: #{record.message}"
+                            message = "in #{record.channel.name} saying: #{record.message}"
                         when 'kick'
                             if(record.message =~ /^([0-9]+)\|/)
                                 kickee = Nick[$1.to_i]
                                 reason = $2
-                                message = "kicking #{kickee.nick} from #{Channel[record.channel].name} (#{record.message})"
+                                message = "kicking #{kickee.nick} from #{record.channel.name} (#{record.message})"
                             end
                         end
                 else
@@ -121,8 +121,8 @@ class ChatLogger < ModSpox::Plugin
     def spoke(m, p)
         nick = Helpers.find_model(p[:nick], false)
         if(nick.is_a?(Models::Nick))
-            record = PublicLog.filter(:sender => nick.pk).filter("type in ('privmsg', 'action')").order(:received).last
-            record_p = PrivateLog.filter(:sender => nick.pk).order(:received).last
+            record = PublicLog.filter(:sender_id => nick.pk).filter("type in ('privmsg', 'action')").order(:received).last
+            record_p = PrivateLog.filter(:sender_id => nick.pk).order(:received).last
             record = record_p if !record || (record_p && record && record_p.received > record.received)
             if(record)
                 if(record.is_a?(PublicLog))
@@ -150,11 +150,11 @@ class ChatLogger < ModSpox::Plugin
         end
         
         def sender
-            Nick[sender_id]
+            Models::Nick[sender_id]
         end
         
         def receiver
-            Nick[receiver_id]
+            Models::Nick[receiver_id]
         end
     end
     
@@ -170,11 +170,11 @@ class ChatLogger < ModSpox::Plugin
         end
         
         def sender
-            Nick[sender_id]
+            Models::Nick[sender_id]
         end
         
         def channel
-            Channel[channel_id]
+            Models::Channel[channel_id]
         end
         
     end
