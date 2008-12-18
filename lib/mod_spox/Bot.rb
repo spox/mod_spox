@@ -7,7 +7,6 @@
  'mod_spox/Timer',
  'mod_spox/messages/Messages',
  'mod_spox/models/Models',
- 'mod_spox/Monitors',
  'mod_spox/Helpers',
  'mod_spox/Pool'].each{|f|require f}
 module ModSpox
@@ -54,20 +53,23 @@ module ModSpox
             @socket = Sockets.new(self)
             @nick = nil
             @thread = Thread.current
-            @waiter = Monitors::Boolean.new
+            @lock = Mutex.new
+            @waiter = ConditionVariable.new
             hook_pipeline
         end
 
         # Run the bot
         def run
-            trap('SIGTERM'){ Logger.warn("Caught SIGTERM"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit; }
-            trap('SIGKILL'){ Logger.warn("Caught SIGKILL"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit; }
-            trap('SIGINT'){ Logger.warn("Caught SIGINT"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit; }
-            trap('SIGQUIT'){ Logger.warn("Caught SIGQUIT"); @shutdown = true; @waiter.wakeup; sleep(0.1); Thread.current.exit; }
+            trap('SIGTERM'){ Logger.warn("Caught SIGTERM"); start_shutdown }
+            trap('SIGKILL'){ Logger.warn("Caught SIGKILL"); start_shutdown }
+            trap('SIGINT'){ Logger.warn("Caught SIGINT"); start_shutdown }
+            trap('SIGQUIT'){ Logger.warn("Caught SIGQUIT"); start_shutdown }
             until @shutdown do
                 @pipeline << Messages::Internal::BotInitialized.new
                 begin
-                    @waiter.wait
+                    @lock.synchronize do
+                        @waiter.wait(@lock)
+                    end
                 rescue Object => boom
                     Logger.fatal("Caught exception: #{boom}")
                 ensure
@@ -497,6 +499,15 @@ module ModSpox
         end
 
         private
+
+        def start_shutdown
+            @shutdown = true
+            @lock.synchronize do
+                @waiter.signal
+            end
+            sleep(0.1)
+            Thread.current.exit
+        end
 
         # Cleans information from models to avoid
         # stale values

@@ -2,8 +2,7 @@
  'mod_spox/Pipeline',
  'mod_spox/Pool',
  'mod_spox/Action',
- 'mod_spox/Exceptions',
- 'mod_spox/Monitors'].each{|f|require f}
+ 'mod_spox/Exceptions'].each{|f|require f}
 
 module ModSpox
 
