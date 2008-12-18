@@ -4,6 +4,12 @@ class Translate < ModSpox::Plugin
     
     def initialize(pipeline)
         super(pipeline)
+        begin
+            require 'htmlentities'
+        rescue Object => boom
+            Logger.warn('Error: This plugin requires the HTMLEntities gem. Please install and reload plugin.')
+            raise Exceptions::BotException.new("Missing required HTMLEntities library")
+        end
         Signature.find_or_create(:signature => 'translate ([a-z]{2}\|[a-z]{2}) (.+)', :plugin => name, :method => 'translate',
             :description => 'Translate text').params = [:lang, :text]
         Signature.find_or_create(:signature => 'autotranslate add ([a-z]{2}) (\S+)', :plugin => name, :method => 'auto_add',
@@ -13,6 +19,7 @@ class Translate < ModSpox::Plugin
         @pipeline.hook(self, :listener, :Incoming_Privmsg)
         @watchers = {}
         @cache = {}
+        @coder = HTMLEntities.new
     end
     
     def auto_add(message, params)
@@ -21,7 +28,6 @@ class Translate < ModSpox::Plugin
         if(nick && nick.channels.include?(message.target))
             @watchers[message.target.pk] = {} unless @watchers.has_key?(message.target.pk)
             @watchers[message.target.pk][nick.pk] = params[:lang] unless @watchers[message.target.pk].has_key?(nick.pk)
-            hook
             reply message.replyto, "#{params[:nick]} is now being tracked for auto translation"
         else
             reply message.replyto, "\2Error:\2 Failed to locate #{params[:nick]}"
@@ -35,7 +41,6 @@ class Translate < ModSpox::Plugin
             if(@watchers.has_key?(message.target.pk))
                 @watchers[message.target.pk].delete(nick.pk) if @watchers[message.target.pk].has_key?(nick.pk)
                 @watchers.delete(message.target.pk) if @watchers[message.target.pk].empty?
-                hook
                 reply message.replyto, "#{params[:nick]} is no longer being tracked for auto translation"
             else
                 reply message.replyto, "No one is currently being tracked"
@@ -91,7 +96,7 @@ class Translate < ModSpox::Plugin
                     @cache[langs] = {} unless @cache.has_key?(langs)
                     @cache[langs][text] = tr
                 end
-                return tr
+                return @coder.decode(tr).strip
             else
                 raise 'Failed to locate translation'
             end
