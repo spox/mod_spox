@@ -1,4 +1,5 @@
 require 'cgi'
+require 'open-uri'
 
 # Inspired from an old plugin for the original mod_spox
 # Original development: spox & Ryan "pizza_milkshake" Flynn
@@ -93,7 +94,7 @@ class PhpFuncLookup < ModSpox::Plugin
     
     def fetch(m, params)
         reply m.replyto, "Fetching PHP manual (This could take a few minutes)"
-        fetch_manual
+        fetch_manual(m)
     end
     
     def listen(m)
@@ -156,14 +157,8 @@ class PhpFuncLookup < ModSpox::Plugin
 
     def fetch_manual(message=nil, params=nil)
         Thread.new do
-            manual_site = 'http://us.php.net/'
-            Logger.info "Fetching PHP manual from #{manual_site}"
-            connection = Net::HTTP.new("us.php.net", 80)
-            File.open("#{@path}/manual.tar.gz", 'w'){ |manual|
-                connection.get('/distributions/manual/php_manual_en.tar.gz', nil){ |line|
-                    manual.write(line)
-                }
-            }
+            Logger.info 'Fetching PHP manual from http://us.php.net'
+            open("#{@path}/manual.tar.gz", 'w').write(open('http://us.php.net/distributions/manual/php_manual_en.tar.gz').read)
             Dir.chdir(@path)
             Helpers.safe_exec("tar -xzf #{@path}/manual.tar.gz", 60)
             Logger.info "PHP manual fetching complete."
