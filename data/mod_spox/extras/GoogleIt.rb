@@ -7,7 +7,7 @@ class GoogleIt < ModSpox::Plugin
     def git(m, params)
         link = "http://www.letmegooglethatforyou.com/?q=#{URI.escape(params[:term])}"
         output = ["Oh please, let me google: \2#{params[:term]}\2 for you."]
-        output << "#{link} -> #{Helpers.tinyurl(link)}"
+        output << "\2Result:\2 #{Helpers.tinyurl(link)}"
         reply m.replyto, output
     end
 end
