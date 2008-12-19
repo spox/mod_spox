@@ -16,21 +16,42 @@ class Translate < ModSpox::Plugin
             :description => 'Add a nick to the autotranslate service').params = [:lang, :nick]
         Signature.find_or_create(:signature => 'autotranslate remove (\S+)', :plugin => name, :method => 'auto_remove',
             :description => 'Remove a nick from the autotranslate service').params = [:nick]
+        add_sig(:sig => 'translate languages', :method => 'langs', :description => 'Show available languages')
         @pipeline.hook(self, :listener, :Incoming_Privmsg)
         @watchers = {}
         @cache = {}
         @coder = HTMLEntities.new
+        @allowed = {'zh'=>'Chinese-simplified','zt'=>'Chinese-traditional','en'=>'English','nl'=>'Dutch',
+                    'fr'=>'French','de'=>'German','el'=>'Greek','it'=>'Italian','ja'=>'Japanese',
+                    'ko'=>'Korean','pt'=>'Portuguese','ru'=>'Russian','es'=>'Spanish'}
+        @allowed_trans = ['zh_en','zh_zt', 'zt_en', 'zt_zh', 'en_zh', 'en_zt', 'en_nl', 'en_fr', 'en_de',
+                          'en_el', 'en_it', 'en_ja', 'en_ko', 'en_pt', 'en_ru', 'en_es', 'nl_en', 'nl_fr',
+                          'fr_nl', 'fr_en', 'fr_de', 'fr_el', 'fr_it', 'fr_pt', 'fr_es', 'de_en', 'de_fr',
+                          'el_en', 'el_fr', 'it_en', 'it_fr', 'ja_en', 'ko_en', 'pt_en', 'pt_fr', 'ru_en',
+                          'es_en', 'es_fr']
+    end
+    
+    def langs(m, params)
+        output = ['Available languages for translate:']
+        s = []
+        @allowed.each_pair{|k,v| s << "#{v} (\2#{k}\2)"}
+        output << s.join(', ')
+        reply m.replyto, output
     end
     
     def auto_add(message, params)
         return unless message.is_public?
-        nick = Helpers.find_model(params[:nick], false)
-        if(nick && nick.channels.include?(message.target))
-            @watchers[message.target.pk] = {} unless @watchers.has_key?(message.target.pk)
-            @watchers[message.target.pk][nick.pk] = params[:lang] unless @watchers[message.target.pk].has_key?(nick.pk)
-            reply message.replyto, "#{params[:nick]} is now being tracked for auto translation"
+        if(@allowed_trans.include?("en_#{params[:lang]}") && @allowed_trans.include?("#{params[:lang]}_en"))
+            nick = Helpers.find_model(params[:nick], false)
+            if(nick && nick.channels.include?(message.target))
+                @watchers[message.target.pk] = {} unless @watchers.has_key?(message.target.pk)
+                @watchers[message.target.pk][nick.pk] = params[:lang] unless @watchers[message.target.pk].has_key?(nick.pk)
+                reply message.replyto, "#{params[:nick]} is now being tracked for auto translation"
+            else
+                reply message.replyto, "\2Error:\2 Failed to locate #{params[:nick]}"
+            end
         else
-            reply message.replyto, "\2Error:\2 Failed to locate #{params[:nick]}"
+            reply message.replyt, "\2Error:\2 Unsupported bi-directional translation"
         end
     end
     
@@ -51,7 +72,11 @@ class Translate < ModSpox::Plugin
     end
     
     def translate(message, params)
-        reply message.replyto, "\2Translation:\2 #{do_translation(params[:lang], params[:text])}"
+        begin
+            reply message.replyto, "\2Translation:\2 #{do_translation(params[:lang], params[:text])}"
+        rescue Object => boom
+            reply message.replyto, "\2Error:\2 #{boom}"
+        end
     end
     
     def listener(message)
@@ -73,6 +98,7 @@ class Translate < ModSpox::Plugin
     private
     
     def do_translation(langs, text)
+        raise 'Unsupported language combination for translation' unless @allowed_trans.include?(langs.gsub(/\|/, '_'))
         if(@cache.has_key?(langs) && @cache[langs].has_key?(text))
             return @cache[langs][text]
         end
