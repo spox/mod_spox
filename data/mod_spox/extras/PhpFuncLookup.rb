@@ -84,8 +84,10 @@ class PhpFuncLookup < ModSpox::Plugin
         if name =~ /^\S+$/ && name =~ /\*/
             parse_wildcard(m, name) 
         elsif name =~ /^\$/
-            parse_predefined(m, name) 
-        elsif name =~ /^\S+$/ && filename = find_file(name)
+            parse_predefined(m, name)
+        elsif name =~ /^\S+$/ && filename = find_control_file(name)
+            parse_control(m, name, filename)
+        elsif name =~ /^\S+$/ && filename = find_function_file(name)
             parse_function(m, name, filename) 
         elsif @ops.has_key?(name)
             parse_operator(m, name) 
@@ -148,9 +150,16 @@ class PhpFuncLookup < ModSpox::Plugin
     
     private
 
-    def find_file(name)
+    def find_function_file(name)
         Dir.new(@manual).each do |filename|
             return filename if filename.downcase == "function.#{name.gsub(/(_|->)/, '-').downcase}.html"
+        end
+        return nil
+    end
+    
+    def find_control_file(name)
+        Dir.new(@manual).each do |filename|
+            return filename if filename.downcase == "control-structures.#{name}.html"
         end
         return nil
     end
@@ -259,6 +268,21 @@ class PhpFuncLookup < ModSpox::Plugin
             output << "\2Example usage:\2 #{ejemplo}" unless ejemplo.nil? || ejemplo.empty?
             output << "http://php.net/manual/en/language.operators.#{type}.php"
         end
+        reply m.replyto, output
+    end
+    
+    def parse_control(m, name, filename)
+        page = File.open("#{@manual}/#{filename}", 'r').readlines.join('')
+        page.gsub!(/[\r\n]/, '')
+        con = page =~ /<h2 class="title"><i>([^<]+)</ ? $1 : '(UNKNOWN)'
+        par = page =~ /^.+?<p class="para">(.+?)<div/ ? $1.strip : '(UNKNOWN)'
+        Logger.info("Match: #{par}")
+        par = par.gsub(/<.+?>/, ' ').gsub(/\s{2,}/, ' ')
+        par.gsub!(/\.[^\.]+:$/, '.')
+        #par.slice!(0..199) if par.size > 200
+        output = ["\2Control structure: #{con}\2"]
+        output << par
+        output << "http://www.php.net/manual/en/#{filename.gsub(/\.html$/, '.php')}"
         reply m.replyto, output
     end
     
