@@ -236,7 +236,7 @@ class PhpFuncLookup < ModSpox::Plugin
         page.gsub!(/[\r\n]/, '')
         versions = page =~ /<p class="verinfo">(.+?)<\/p>/i ? $1 : '(UNKNOWN)'
         proto = page =~ /<div class="methodsynopsis dc-description">(.+?)<\/div>/i ? $1 : name
-        desc = page =~ /<p class="refpurpose dc-title">.+? — (.+?)<\/p>/i ? $1 : '(UNKNOWN)'
+        desc = page =~ /<p class="(para rdfs-comment|simpara)">(.+?)<\/p>/i ? $2.strip : '(UNKNOWN)'
         versions = CGI::unescapeHTML(versions)
         proto = CGI::unescapeHTML(proto.gsub(/<.+?>/, ' ').gsub(/[\s]+/, ' '))
         desc = CGI::unescapeHTML(desc.gsub(/<.+?>/, ' ').gsub(/[\s]+/, ' '))
