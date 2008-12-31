@@ -135,8 +135,12 @@ module ModSpox
         def unload_plugins
             Models::Signature.destroy_all
             @plugins.each_pair do |sym, holder|
-                holder.plugin.destroy unless holder.plugin.nil?
-                @pipeline.unhook_plugin(holder.plugin)
+                begin
+                    holder.plugin.destroy unless holder.plugin.nil?
+                    @pipeline.unhook_plugin(holder.plugin)
+                rescue Object => boom
+                    Logger.warn("Plugin destruction error: #{boom}")
+                end
             end
             @plugins_module = Module.new
             @pipeline << Messages::Internal::TimerClear.new
