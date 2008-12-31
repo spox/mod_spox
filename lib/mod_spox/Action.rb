@@ -19,13 +19,30 @@ module ModSpox
             @timer = timer
             @completed = false
             @wait_remaining = @period
+            @owner = nil
+        end
+        
+        def owner=(o)
+            unless(o.is_a?(Symbol))
+                if(o.is_a?(ModSpox::Plugin))
+                    o = o.name.to_sym
+                else
+                    raise Exceptions::BotException.new('Unsupported type given for owner')
+                end
+            end
+            @owner = o
+        end
+        
+        def owner
+            @owner
         end
         
         # amount:: number of seconds passed
         # Decrement wait time by given number of seconds
         def tick(amount)
-            @wait_remaining = @wait_remaining - amount
+            @wait_remaining = @wait_remaining - amount if @wait_remaining > 0
             @wait_remaining = 0 if @wait_remaining < 0
+            @completed = true if @once && @wait_remaining <= 0
         end
         
         # Returns true if action is due to run
@@ -69,7 +86,6 @@ module ModSpox
             rescue Object => boom
                 Logger.warn("Action generated an exception during run: #{boom}\n#{boom.backtrace.join("\n")}")
             end
-            @completed = true if @once
         end
     end
 

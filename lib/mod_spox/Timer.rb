@@ -15,8 +15,6 @@ module ModSpox
             @timers = Array.new
             @timer_thread = nil
             @stop_timer = false
-            @owners = {}
-            @owners_lock = Mutex.new
             @awake_lock = Mutex.new
             @add_lock = Mutex.new
             @new_actions = Queue.new
@@ -118,30 +116,32 @@ module ModSpox
         def clear(message=nil)
             if(message.nil? || message.plugin.nil?)
                 @timers.clear
-                @owners.clear
+                @new_actions.clear
+                wakeup
             else
-                @owners_lock.synchronize do
-                    if(@owners.has_key?(message.plugin))
-                        @owners[message.plugin].each do |action|
-                            remove(action)
-                        end
-                    end
-                end
+                @timers.each{ |action| @timers.delete(action) if action.owner == message.plugin}
+                wakeup
             end
         end
 
         private
 
         def get_min_sleep
-            @timers.map{|t| t.remaining}.sort[0]
+            Logger.info("Total number of actions in timer: #{@timers.size}")
+            Logger.info("Actions belong to: #{@timers.map{|a| a.owner}.join(', ')}")
+            min = @timers.map{|t| t.remaining}.sort[0]
+            unless(min.nil? || min > 0)
+                @timers.each{|t| @timers.delete(t) if t.remaining == 0} # kill stuck actions
+                min = get_min_sleep
+            end
+            return min
         end
 
         def add_waiting_actions
             until(@new_actions.empty?) do
                 a = @new_actions.pop
                 action = add(a[:period], a[:once], a[:data], &a[:block])
-                @owners[a[:requester].name.to_sym] = [] unless @owners.has_key?(a[:requester].name.to_sym)
-                @owners[a[:requester].name.to_sym] << action
+                action.owner = a[:requester]
                 begin
                     @pipeline << Messages::Internal::TimerResponse.new(a[:requester], action, true, a[:m_id])
                     Logger.info("New block was successfully added to the timer")
@@ -155,21 +155,19 @@ module ModSpox
         # time_passed:: time passed since last tick
         # Decrements all Actions the given amount of time
         def tick(time_passed)
-            ready = []
             for action in @timers do
                 action.tick(time_passed)
                 if(action.due?)
-                    ready << action.schedule
+                    remove(action) if action.is_complete?
+                    Pool << lambda{processor(action.schedule)}
                 end
             end
-            ready.each{|action| Pool << lambda{ processor(action) }}
         end
 
         # Process the actions
         def processor(action)
             begin
                 action.run
-                remove(action) if action.is_complete?
             rescue Object => boom
                 Logger.warn("Timer block generated an exception: #{boom}\n#{boom.backtrace.join("\n")}")
             end
