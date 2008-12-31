@@ -16,10 +16,8 @@ class Confess < ModSpox::Plugin
             Logger.warn('Error: This plugin requires the HTMLEntities gem. Please install and reload plugin.')
             raise Exceptions::BotException.new("Missing required HTMLEntities library")
         end
-        @db = nil
         begin
-            @db = Sequel.sqlite(BotConfig[:userpath] + '/confessions.db')
-            Confession.db = @db
+            Confession.db = Sequel.sqlite(BotConfig[:userpath] + '/confessions.db')
         rescue Object => boom
             Logger.warn("Error: Unable to initialize this plugin: #{boom}")
             raise Exceptions::BotException.new("Failed to create database: #{boom}")
@@ -46,6 +44,10 @@ class Confess < ModSpox::Plugin
         start_fetcher if Config[:confess] == 'fetch'
     end
     
+    def destroy
+        Confession.db.disconnect
+    end
+    
     def confess(message, params)
         begin
             c = nil
@@ -57,10 +59,15 @@ class Confess < ModSpox::Plugin
                         c = Confession[params[:term].to_i]
                     else
                         cs = Confession.search(params[:term])
-                        c = Confession[cs[rand(cs.size)].to_i]
+                        Logger.info("Size of confession results: #{cs.size}")
+                        rand_idx = rand(cs.size - 1)
+                        rand_id = cs[rand_idx].to_i
+                        Logger.info("Random index to be used: #{rand_idx}")
+                        Logger.info("Random ID to be used for confession: #{rand_id}")
+                        c = Confession[rand_id]
                     end
                 else
-                    c = Confession[rand(Confession.count) + 1]
+                    c = Confession[rand(Confession.count) - 1]
                 end
                 unless c.nil?
                     pk = c.pk
@@ -160,7 +167,8 @@ class Confess < ModSpox::Plugin
                 if conf.length < 300
                     begin
                         @lock.synchronize do
-                            Confession.new(:confession => conf, :hash => Digest::MD5.hexdigest(conf)).save
+                            c = Confession.new(:hash => Digest::MD5.hexdigest(conf)).save
+                            c.confession = conf 
                         end
                     rescue Object => boom
                         Logger.warn('Warning: Fetched confession already found in database')
@@ -171,7 +179,7 @@ class Confess < ModSpox::Plugin
             Logger.warn("Error fetching data: #{boom}")
         end
         if(Config[:confess] == 'fetch')
-            @pipeline << Messages::Internal::TimerAdd.new(self, rand(500), nil, true){ grab_page }
+            @pipeline << Messages::Internal::TimerAdd.new(self, rand(500) + 30, nil, true){ grab_page }
         else
             stop_fetcher
         end

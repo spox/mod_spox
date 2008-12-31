@@ -8,6 +8,8 @@ module ModSpox
         # and stored for later retrieval
         class Setting < Sequel::Model
 
+            #serialize(:value, :format => :marshal)
+
             def name=(setting_name)
                 update_values :name => setting_name.downcase
             end
