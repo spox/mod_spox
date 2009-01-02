@@ -24,6 +24,8 @@ $MOD_SPOX_PATH = nil
 $DAEMON_BOT = false
 $LOGTO = nil
 $LOGLEVEL = :info
+$JDBC = false
+
 Sequel::Model.unrestrict_primary_key
 
 begin
@@ -39,6 +41,7 @@ opts = GetoptLong.new(
     ['--debug', '-d', GetoptLong::OPTIONAL_ARGUMENT],
     ['--verbosity', '-V', GetoptLong::OPTIONAL_ARGUMENT],
     ['--version', '-v', GetoptLong::NO_ARGUMENT],
+    ['--jdbc', '-j', GetoptLong::NO_ARGUMENT],
     ['--help', '-h', GetoptLong::NO_ARGUMENT],
     ['--path', '-p', GetoptLong::REQUIRED_ARGUMENT],
     ['--daemon', '-D', GetoptLong::NO_ARGUMENT]
@@ -49,6 +52,8 @@ opts.each do |opt, arg|
         when '--help'
             puts 'Usage: mod_spox [opts]'
             puts '--config -c:                        starts configuration wizard'
+            puts '--path -p /config/path              path to configuration directory'
+            puts '--jdbc -j                           use jdbc database driver (jruby)'
             puts '--debug -d [logfile]:               turns on debugging and outputs to file (default STDOUT)'
             puts '--verbosity -V [(info|warn|fatal)]: verbosity of debug output (default info)'
             puts '--deamon -D:                        daemonizes the process'
@@ -59,6 +64,14 @@ opts.each do |opt, arg|
             puts "mod_spox IRC bot version: #{$BOTVERSION}"
             puts 'http://rubyforge.org/projects/modspox'
             exit
+        when '--jdbc'
+            $JDBC = true
+            begin
+                require 'jdbc/postgres'
+            rescue Object => boom
+                puts 'Failed to load JDBC Postgres gem'
+                exit 1
+            end
         when '--debug'
             if(arg && File.writable?(arg))
                 $LOGTO = arg

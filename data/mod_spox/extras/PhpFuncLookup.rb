@@ -254,7 +254,7 @@ class PhpFuncLookup < ModSpox::Plugin
         if(title.is_a?(Array))
             output = ["\2#{name}\2 is the \2#{title.join("\2 or \2")}\2 operator"]
             if(ejemplo.is_a?(Array))
-                (0..(ejemplo.count - 1)).each do |i|
+                (0..(ejemplo.size - 1)).each do |i|
                     output << "\2Example (#{type[i]}):\2 #{ejemplo[i]}"
                 end
             elsif(!ejemplo.nil?)

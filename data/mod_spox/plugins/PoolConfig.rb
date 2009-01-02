@@ -9,8 +9,6 @@ class PoolConfig < ModSpox::Plugin
                 :desc => 'Show/set max worker timeout', :params => [:max])
         add_sig(:sig => 'pool workers total', :method => :workers_total, :group => group,
                 :desc => 'Show current number of workers in pool')
-        add_sig(:sig => 'pool workers sleeping', :method => :workers_sleeping, :group => group,
-                :desc => 'Show current number of workers in pool')
     end
 
     def max_workers(message, params)
@@ -32,14 +30,14 @@ class PoolConfig < ModSpox::Plugin
 
     def max_timeout(message, params)
         if(params[:max].nil?)
-            reply message.replyto, "Maximum number of seconds threads allowed per task: #{Pool.max_exec_time == 0 ? 'no limit' : Pool.max_exec_time}"
+            reply message.replyto, "Maximum number of seconds threads allowed per task: #{Pool.worker_timeout == 0 ? 'no limit' : Pool.worker_timeout}"
         else
             params[:max] = params[:max].strip.to_i
             if(params[:max] >= 0)
                 config = Config.find_or_create(:name => 'pool_timeout')
                 config.value = params[:max]
                 config.save
-                Pool.max_exec_time = params[:max]
+                Pool.worker_timeout = params[:max]
                 reply message.replyto, "\2Thread Pool Update:\2 Worker processing timeout updated to: #{params[:max]} seconds"
             else
                 reply message.replyto, "\2Error:\2 Threads are not able to finish executing before they start"
@@ -49,10 +47,6 @@ class PoolConfig < ModSpox::Plugin
 
     def workers_total(message, params)
         reply message.replyto, "Current number of worker threads in pool: #{Pool.workers}"
-    end
-    
-    def workers_sleeping(message, params)
-        reply message.replyto, "Current number of worker threads sleeping: #{Pool.sleepers}"
     end
 
 end

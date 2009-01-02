@@ -20,7 +20,7 @@ class Helper < ModSpox::Plugin
     def plugin_help(message, params)
         sigs = []
         Signature.all.each{|s| sigs << s if s.plugin.downcase == params[:plugin].downcase}
-        if(sigs.count > 0)
+        if(sigs.size > 0)
             output = []
             output << "Available triggers for plugin: \2#{params[:plugin]}\2"
             sigs.each do |sig|

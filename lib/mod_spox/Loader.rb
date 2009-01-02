@@ -32,7 +32,7 @@ module ModSpox
                         :password => config[:db_password], :host => config[:db_host], :max_connections => 20)
                 Database.type = :mysql
             when 'pgsql'
-                Database.db = Sequel.open("postgres://#{config[:db_username]}:#{config[:db_password]}@#{config[:db_host]}/#{config[:db_database]}")
+                Database.db = Sequel.connect("#{$JDBC ? 'jdbc:' : ''}postgres://#{config[:db_username]}:#{config[:db_password]}@#{config[:db_host]}/#{config[:db_database]}")
                 Database.type = :pgsql
             when 'sqlite'
                 Database.db = Sequel.sqlite("#{BotConfig[:userpath]}/mod_spox.db")

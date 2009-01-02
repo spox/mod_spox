@@ -18,6 +18,7 @@ class Karma < ModSpox::Plugin
             :description => 'Show all aliases for given thing').params = [:thing]
         Models::Signature.find_or_create(:signature => 'karma fight (\S+|\(.+?\)) (\S+|\(.+?\))', :plugin => name, :method => 'fight',
             :description => 'Make two karma objects fight').params = [:thing, :thang]
+        add_sig(:sig => 'antikarma (\S+|\(.+?\))', :method => :antikarma, :desc => 'Show things antikarma', :params => [:thing])
         @pipeline.hook(self, :check, :Incoming_Privmsg)
         @thing_maxlen = 32
         @karma_regex = /(\(.{1,#@thing_maxlen}?\)|\S{1,#@thing_maxlen})([+-]{2})(?:\s|$)/
@@ -65,6 +66,20 @@ class Karma < ModSpox::Plugin
         end
         if(@eggs.has_key?(params[:thing].downcase.to_sym))
             @pipeline << Messages::Internal::TimerAdd.new(self, rand(5) + 1, nil, true){ egg(params[:thing].downcase, message) }
+        end
+    end
+
+    def antikarma(message, params)
+        return unless message.is_public?
+        thing = params[:thing]
+        orig = thing[1..-2] if thing[0..0] == '(' && thing[-1..-1] == ')'
+        orig = thing if orig.nil?
+        thing = orig.downcase
+        karma = Datatype::Karma.filter(:thing => thing, :channel_id => message.target.pk).first
+        if(karma)
+            @pipeline << Privmsg.new(message.replyto, "Anti-Karma for \2#{orig}\2 is #{0 - Datatype::Alias.score_object(karma.pk).to_i}")
+        else
+            @pipeline << Privmsg.new(message.replyto, "\2Error:\2 #{orig} has no anti-karma")
         end
     end
 

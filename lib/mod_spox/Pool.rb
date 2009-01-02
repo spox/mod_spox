@@ -79,10 +79,6 @@ module ModSpox
             return Pool.instance.max
         end
         
-        def Pool.sleepers
-            'not implemented'
-        end
-        
         def remove(pt)
             @threads.delete(pt)
             Logger.info("Pool thread has been removed: #{pt}")

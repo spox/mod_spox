@@ -157,7 +157,8 @@ module ModSpox
                 else
                     type = :other
                 end
-                sig_check = @signatures.has_key?(type) && type != :other ? @signatures[type] + @signatures[:other] : @signatures[:other]
+                sig_check = @signatures.has_key?(type) ? @signatures[type] : []
+                sig_check = sig_check + @signatures[:other] if type != :other && @signatures.has_key?(:other)
                 sig_check.each do |sig|
                     Logger.info("Matching against: #{trigger}#{sig.signature}")
                     esc_trig = trigger.nil? ? '' : Regexp.escape(trigger)
