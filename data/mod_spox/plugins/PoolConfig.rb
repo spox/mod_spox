@@ -13,14 +13,14 @@ class PoolConfig < ModSpox::Plugin
 
     def max_workers(message, params)
         if(params[:max].nil?)
-            reply message.replyto, "Maximum number of worker threads allowed in pool: #{Pool.max_workers}"
+            reply message.replyto, "Maximum number of worker threads allowed in pool: #{Pool.workers_max}"
         else
             params[:max] = params[:max].strip.to_i
             if(params[:max] > 0)
                 config = Config.find_or_create(:name => 'pool_workers_min')
                 config.value = params[:max]
                 config.save
-                Pool.max_workers = params[:max]
+                Pool.workers_max = params[:max]
                 reply message.replyto, "\2Thread Pool Update:\2 Number of worker threads updated to: #{params[:max]}"
             else
                 reply message.replyto, "\2Error:\2 You must have at least one worker thread"

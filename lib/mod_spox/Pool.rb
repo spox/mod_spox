@@ -21,7 +21,7 @@ module ModSpox
                         else
                             action = @pool.queue.pop
                         end
-                        run(action)
+                        run(action) unless action.nil?
                     rescue Timeout::Error => boom
                         @kill = true
                     rescue Object => boom
@@ -44,7 +44,7 @@ module ModSpox
                     action.call
                 end
             rescue Timeout::Error => boom
-                Logger.warn("Pool worker timed out during execution of action (#{@timeout} sec limit)")
+                Logger.warn("Pool worker timed out during execution of action (#{@timeout} sec limit): #{action}")
             rescue Object => boom
                 Logger.warn("Pool worker caught an unknown exception: #{boom}")
             end
@@ -115,8 +115,6 @@ module ModSpox
         attr_reader :min
         attr_reader :max
         attr_reader :timeout
-        
-        private
     
         def initialize
             @queue = Queue.new
