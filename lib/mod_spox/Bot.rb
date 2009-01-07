@@ -82,7 +82,6 @@ module ModSpox
         def shutdown
             @shutdown = true
             @plugin_manager.destroy_plugins
-            @thread.run
             @timer.stop
             @pipeline << Messages::Internal::Shutdown.new
             sleep(0.1)
@@ -92,7 +91,9 @@ module ModSpox
 
         # Reload the bot (basically a restart)
         def reload
-            @thread.run
+            @lock.synchronize do
+                @waiter.signal
+            end
         end
 
         # message:: Messages::Internal::EstablishConnection message
@@ -170,7 +171,7 @@ module ModSpox
         # Stop the bot
         def halt(message)
             @shutdown = true
-            @thread.run
+            reload
         end
 
         # message:: Messages::Internal::ChangeNick message
@@ -302,7 +303,7 @@ module ModSpox
                 part.split("\n").each do |content|
                     while(content.size > 450)
                         output = content[0..450]
-                        content.slice!(0, 450) #(450, content.size)
+                        content.slice!(0, 451) #(450, content.size)
                         @socket << "PRIVMSG #{target} :#{message.is_ctcp? ? "\cA#{message.ctcp_type} #{output}\cA" : output}"
                     end
                     @socket << "PRIVMSG #{target} :#{message.is_ctcp? ? "\cA#{message.ctcp_type} #{content}\cA" : content}"
@@ -505,8 +506,6 @@ module ModSpox
             @lock.synchronize do
                 @waiter.signal
             end
-            sleep(0.1)
-            Thread.current.exit
         end
 
         # Cleans information from models to avoid
