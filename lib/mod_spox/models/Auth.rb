@@ -74,7 +74,11 @@ module ModSpox
             end
 
             def password=(pass)
-                update_values :password => Digest::SHA1.hexdigest(pass)
+                unless(pass.nil?)
+                    update_values :password => Digest::SHA1.hexdigest(pass)
+                else
+                    update_values :password => nil
+                end
             end
 
             # source:: source to apply mask to

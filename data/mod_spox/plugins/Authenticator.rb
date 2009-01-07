@@ -155,10 +155,10 @@ class Authenticator < ModSpox::Plugin
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Clear password field for given nick
-    def nick_clear(message, params)
+    def clear_pass(message, params)
         nick = Models::Nick.locate(params[:nick])
         nick.auth.password = nil
-        @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Nick #{params[:nick]} has been updated. Password has been set.")
+        @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Nick #{params[:nick]} has been updated. Password has been unset.")
     end
 
     # message:: ModSpox::Messages::Incoming::Privmsg
