@@ -3,7 +3,7 @@ module ModSpox
     module Messages
         module Internal
             # Request current bot status
-            class Status < Request
+            class StatusRequest < Request
             end
         end
     end

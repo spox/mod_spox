@@ -10,6 +10,8 @@ module ModSpox
 
     class Sockets
 
+        attr_reader :irc_socket
+
         def initialize(bot)
             @bot = bot
             @irc_socket = nil

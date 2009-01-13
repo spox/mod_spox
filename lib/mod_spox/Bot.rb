@@ -68,7 +68,9 @@ module ModSpox
                 @pipeline << Messages::Internal::BotInitialized.new
                 begin
                     @lock.synchronize do
+                        Logger.info('Putting main execution thread to sleep until shutdown')
                         @waiter.wait(@lock)
+                        Logger.info('Main execution thread has been restored.')
                     end
                 rescue Object => boom
                     Logger.fatal("Caught exception: #{boom}")
@@ -81,6 +83,7 @@ module ModSpox
         # Shut the bot down
         def shutdown
             @shutdown = true
+            Logger.info('Shutdown sequence initiated')
             @plugin_manager.destroy_plugins
             @timer.stop
             @pipeline << Messages::Internal::Shutdown.new
@@ -113,15 +116,15 @@ module ModSpox
         # message:: Messages::Internal::StatusRequest message
         # Returns the current status of the bot
         def status(message)
-            @pipeline << Messages::Internal::StatusResponse(message.requester, stats)
+            @pipeline << Messages::Internal::StatusResponse.new(message.requester, bot_stats)
         end
 
         # Returns status of the bot in a formatted string
-        def stats
-            return ["Uptime: #{Helpers::format_seconds(@start_time - Time.now)}",
-                    "Plugins: #{@plugins.plugins.size} loaded",
-                    "Lines sent: #{@socket.sent}",
-                    "Lines received: #{@socket.received}"].join(' ')
+        def bot_stats
+            return {:uptime => Helpers::format_seconds(Time.now - @start_time),
+                    :plugins => @plugin_manager.plugins.size,
+                    :sent => @socket.irc_socket.sent,
+                    :received => @socket.irc_socket.received}
         end
 
         # Adds hooks to pipeline for processing messages

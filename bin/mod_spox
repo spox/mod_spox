@@ -19,6 +19,7 @@ rescue Object => boom
 end
 
 $BOTVERSION='0.1.0.1'
+$BOTCODENAME='potato'
 $VERBOSITY = 0
 $MOD_SPOX_PATH = nil
 $DAEMON_BOT = false

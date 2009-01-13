@@ -11,24 +11,22 @@ module ModSpox
         # secs:: number of seconds
         # Converts seconds into a human readable string
         def Helpers.format_seconds(secs)
-            str = {}
-            d = (secs / 86400).to_i
-            secs = secs % 86400
-            h = (secs / 3600).to_i
-            secs = secs % 3600
-            m = (secs / 60).to_i
-            secs = secs % 60
-            {:day => d, :hour => h, :minute => m, :second => secs}.each_pair do |type, value|
-                if(value > 0)
-                    str[type] = "#{value} #{type}#{value == 1 ? '':'s'}"
-                end
+            arg = {:year => 29030400,
+                   :month => 2419200,
+                   :week => 604800,
+                   :day => 86400,
+                   :hour => 3600,
+                   :minute => 60,
+                   :second => 1}
+            res = ''
+            arg.each_pair do |k,v|
+                z = (secs / v).to_i
+                next unless z > 0
+                res += " #{z} #{k}#{z == 1 ? '':'s'}"
+                secs = secs % v
             end
-            output = ''
-            [:day, :hour, :minute, :second].each do |type|
-                output += str[type] + ' ' if str.has_key?(type)
-            end
-            output = '0 seconds' if output.empty?
-            return output.strip
+            res = '0 seconds' if res.empty?
+            return res.strip
         end
 
         # bytes:: number of bytes
