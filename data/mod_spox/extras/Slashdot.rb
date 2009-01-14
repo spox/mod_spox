@@ -26,7 +26,7 @@ class Slashdot < ModSpox::Plugin
             title = CGI::unescapeHTML(item.elements['title'].text)
             title = title.gsub(/<.+?>/, ' ').gsub(/[\r\n]/, '').gsub(/\s+/, ' ')
             title = @coder.decode(title)
-            output << "\2/.\2 #{title} \2->\2 #{Helpers.tinyurl(item.elements['link'].text)}"
+            output << "\2/.\2 #{title.strip} \2->\2 #{Helpers.tinyurl(item.elements['link'].text)}"
             break if num < 1
         end
         reply message.replyto, output
