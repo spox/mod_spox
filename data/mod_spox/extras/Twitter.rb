@@ -3,6 +3,12 @@ class Twitter < ModSpox::Plugin
     def initialize(pipeline)
         super
         begin
+            require 'htmlentities'
+        rescue Object => boom
+            Logger.warn('Error: This plugin requires the HTMLEntities gem. Please install and reload plugin.')
+            raise Exceptions::BotException.new("Missing required HTMLEntities library")
+        end
+        begin
             require 'twitter'
             Object::Twitter::Client.configure do |conf|
                 conf.user_agent = 'mod_spox twitter for twits'
@@ -24,14 +30,18 @@ class Twitter < ModSpox::Plugin
         add_sig(:sig => 'twitter friend (\S+)', :method => :add_friend, :desc => 'Add a friend', :params => [:twit], :group => admin)
         add_sig(:sig => 'twitter unfriend (\S+)', :method => :remove_friend, :desc => 'Remove a friend', :params => [:twit], :group => admin)
         add_sig(:sig => 'twitter info', :method => :info, :desc => 'Show twitter info')
-        add_sig(:sig => 'twat (\S+) (.+)', :method => :twat, :group => twitter, :desc => 'Send a direct tweet to twit', :params => [:twit, :message])
-        add_sig(:sig => 'tweets( \d+)', :method => :tweets, :desc => 'Get a given message or the current message', :params => [:m_id])
+        add_sig(:sig => 'twit (\S+) (.+)', :method => :twat, :group => twitter, :desc => 'Send a direct tweet to twit', :params => [:twit, :message])
+        add_sig(:sig => 'twit inbox', :method => :inbox, :group => twitter, :desc => 'Show inbox contents')
+        add_sig(:sig => 'twitter del (\d+)', :method => :inbox_del, :group => twitter, :desc => 'Delete direct message from twitter', :params => [:m_id])
+        add_sig(:sig => 'tweets del (\d+)', :method => :tweet_del, :group => twitter, :desc => 'Delete a status message from twitter', :params => [:m_id])
+        add_sig(:sig => 'tweets (\d+)', :method => :tweets, :desc => 'Get a given message or the current message', :params => [:m_id])
         add_sig(:sig => 'autotweets ?(on|off)?', :method => :auto_tweets, :desc => 'Turn on/off auto tweet for a channel', :params => [:action],
                 :group => admin, :req => 'public')
         add_sig(:sig => 'autotweets interval( \d+)?', :method => :auto_tweets_interval, :desc => 'Set/show interval for auto tweet checks',
                 :group => admin, :params => [:interval])
         @auth_info = Models::Setting.find_or_create(:name => 'twitter').value
         @twitter = Object::Twitter::Client.new
+        @coder = HTMLEntities.new
         unless(@auth_info.is_a?(Hash))
             @auth_info = {:username => nil, :password => nil, :interval => 0, :channels => []}
         else
@@ -40,6 +50,23 @@ class Twitter < ModSpox::Plugin
         @last_check = Time.now
         check_timeline if @auth_info[:interval] > 0
         @running = false
+    end
+    
+    def inbox(m, params)
+        msgs = @twitter.messages(:received)
+        reply m.replyto, "\2Twitter INBOX\2 Messages in inbox: #{msgs.size} (only last 5 displayed)"
+        msgs.slice(0..5).each do | msg |
+            reply m.replyto, "\2#{msg.sender.screen_name}:\2 [#{msg.id}] #{@coder.decode(msg.text)}"
+        end
+    end
+    
+    def inbox_del(m, params)
+        begin
+            @twitter.message(:delete, params[:m_id])
+            information m.replyto, "message with ID: #{params[:m_id]} has been deleted"
+        rescue Object => boom
+            warning m.replyto, "failed to delete message with ID: #{params[:m_id]}"
+        end
     end
     
     def info(m, params)
@@ -51,17 +78,21 @@ class Twitter < ModSpox::Plugin
     end
     
     def auto_tweets_interval(m, params)
-        int = params[:interval].strip.to_i
-        @auth_info[:interval] = int
-        save_info
-        check_timeline unless @running
-        information m.replyto, "auto tweet interval updated to: #{int > 0 ? int : 'stopped'}"
+        if(params[:interval])
+            int = params[:interval].strip.to_i
+            @auth_info[:interval] = int
+            save_info
+            check_timeline unless @running
+            information m.replyto, "auto tweet interval updated to: #{int > 0 ? int : 'stopped'}"
+        else
+            information m.replyto, "auto tweet interval is: #{@auth_info[:interval] > 0 ? "#{@auth_info[:interval]} seconds" : 'stopped'}"
+        end
     end
     
     def auto_tweets(m, params)
-        if(params[:active])
+        if(params[:action])
             on = @auth_info[:channels].include?(m.target.id)
-            if(params[:active] == 'on')
+            if(params[:action] == 'on')
                 if(on)
                     warning m.replyto, 'this channel is already enabled for auto tweets'
                 else
@@ -173,6 +204,19 @@ class Twitter < ModSpox::Plugin
         end
     end
     
+    def tweets(m, params)
+        begin
+            msg = @twitter.status(:get, params[:m_id].str)
+            if(msg)
+                reply m.replyto, "\2Tweet:\2 (#{msg.id}) #{@coder.decode(msg.text)}"
+            else
+                warning m.replyto, "failed to find message with ID: #{params[:m_id].strip}"
+            end
+        rescue Object => boom
+            error m.replyto, "error encountered while attempting to fetch message. (#{boom})"
+        end
+    end
+    
     private
     
     def check_timeline
@@ -180,8 +224,18 @@ class Twitter < ModSpox::Plugin
             @running = false
         else
             @running = true
+            things = []
+            @twitter.my(:friends).each do |f|
+                @twitter.timeline_for(:friend, :id => f.screen_name, :since => @last_check) do |status|
+                    things << status
+                end
+            end
             @twitter.timeline_for(:me, :since => @last_check) do |status|
-                @auth_info[:channels].each{|i| reply Models::Channel[i], "\2AutoTweet:\2 #{status.user.screen_name} -> #{status.text}"}
+                things << status
+            end
+            things.sort!{|x,y| x.created_at <=> y.created_at}
+            things.each do |status|
+                @auth_info[:channels].each{|i| reply Models::Channel[i], "\2AutoTweet:\2 #{status.user.screen_name} -> #{@coder.decode(status.text)}"}
             end
             @last_check = Time.now
             @pipeline << Messages::Internal::TimerAdd.new(self, @auth_info[:interval].to_i, nil, true){ check_timeline }
