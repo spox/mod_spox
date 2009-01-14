@@ -226,6 +226,7 @@ class Authenticator < ModSpox::Plugin
     # params:: Signature parameters
     # Send WHOIS for nick
     def send_whois(message, params)
+        message.source.clear_auth
         @pipeline << Messages::Outgoing::Whois.new(message.source.nick)
     end
 
