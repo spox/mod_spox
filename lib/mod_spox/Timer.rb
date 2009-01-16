@@ -127,13 +127,13 @@ module ModSpox
         private
 
         def get_min_sleep
-            Logger.info("Total number of actions in timer: #{@timers.size}")
-            Logger.info("Actions belong to: #{@timers.map{|a| a.owner}.join(', ')}")
             min = @timers.map{|t| t.remaining}.sort[0]
             unless(min.nil? || min > 0)
                 @timers.each{|t| @timers.delete(t) if t.remaining == 0} # kill stuck actions
                 min = get_min_sleep
             end
+            Logger.info("Total number of actions in timer: #{@timers.size}")
+            Logger.info("Actions belong to: #{@timers.map{|a| a.owner}.join(', ')}")
             return min
         end
 
@@ -159,7 +159,8 @@ module ModSpox
                 action.tick(time_passed)
                 if(action.due?)
                     remove(action) if action.is_complete?
-                    Pool << lambda{processor(action.schedule)}
+                    block = action.schedule
+                    Pool << lambda{processor(block)}
                 end
             end
         end
