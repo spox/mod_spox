@@ -47,7 +47,7 @@ class Headers < ModSpox::Plugin
                 location = $1
                 page = $2
             else
-                location = params[:url]
+                location = params[:url].gsub(/\/$/, '')
                 page = '/'
             end
             begin
