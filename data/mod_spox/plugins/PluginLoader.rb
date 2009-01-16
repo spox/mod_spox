@@ -91,6 +91,25 @@ class PluginLoader < ModSpox::Plugin
         @plugins_mod = message.module
     end
 
+    # Upgrades extra plugins to latest version
+    def extras_upgrade
+        Logger.info("Starting plugin upgrade to current version: #{$BOTVERSION}")
+        extras = plugin_discovery(BotConfig[:pluginextraspath])
+        pl = plugin_list
+        extras.keys.each{|d| extras.delete(d) unless pl.include?(d)}
+        extras.keys.each do |plugin|
+            path = loaded_path(plugin)
+            @pipeline << Messages::Internal::PluginUnloadRequest.new(self, path, plugin)
+        end
+        Logger.info('Waiting for plugins to complete unloading...')
+        sleep(3)
+        Logger.info('Loading active plugins back into the bot')
+        extras.each do |name, path|
+            @pipeline << Messages::Internal::PluginLoadRequest.new(self, path)
+        end
+        Logger.info("Plugin upgrade is now complete. Upgraded to version: #{$BOTVERSION}")
+    end
+
     private
 
     # Returns the list of currently loaded plugins
@@ -144,32 +163,18 @@ class PluginLoader < ModSpox::Plugin
     # Returns the file path the given plugin originated from
     def loaded_path(name)
         Dir.new(BotConfig[:userpluginpath]).each do |file|
-            next unless file =~ /\.rb$/
-            sandbox = Module.new
-            sandbox.module_eval(IO.readlines("#{BotConfig[:userpluginpath]}/#{file}").join("\n"))
-            sandbox.constants.each do |const|
-                return "#{BotConfig[:userpluginpath]}/#{file}" if const == name
+            begin
+                next unless file =~ /\.rb$/
+                sandbox = Module.new
+                sandbox.module_eval(IO.readlines("#{BotConfig[:userpluginpath]}/#{file}").join("\n"))
+                sandbox.constants.each do |const|
+                    return "#{BotConfig[:userpluginpath]}/#{file}" if const == name
+                end
+            rescue Object => boom
+                Logger.warn("Failed to load file: #{file}. Reason: #{boom}")
             end
         end
         return nil
-    end
-
-    # Upgrades extra plugins to latest version
-    def extras_upgrade
-        Logger.info("Starting plugin upgrade to current version: #{$BOTVERSION}")
-        loaded = plugin_list
-        plugins = find_plugins
-        available_plugins = plugin_discovery(BotConfig[:pluginextraspath])
-        plugin_list.each do |plugin|
-            @pipeline << Messages::Internal::PluginUnloadRequest.new(self, nil, plugin)
-        end
-        Logger.info('Waiting for all plugins to complete unloading...')
-        sleep(3)
-        Logger.info('Loading active plugins back into the bot')
-        loaded.each do |plugin|
-            @pipeline << Messages::Internal::PluginLoadRequest.new(self, plugins[plugin], nil)
-        end
-        Logger.info("Plugin upgrade is now complete. Upgraded to version: #{$BOTVERSION}")
     end
 
 end
