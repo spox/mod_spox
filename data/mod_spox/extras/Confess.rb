@@ -82,14 +82,13 @@ class Confess < ModSpox::Plugin
             end
         rescue Object => boom
             reply message.replyto, "Failed to locate a match. Error encountered: #{boom}"
-        ensure
-            @timer[:action].reset_period(rand(1000)+1) unless @timer[:action].nil?
         end
     end
     
     def show_score(message, params)
         pk = nil
         score = nil
+        c = nil
         @lock.synchronize do
             c = Confession[params[:id].to_i]
             if(c)
@@ -105,6 +104,7 @@ class Confess < ModSpox::Plugin
     end
     
     def score(message, params)
+        c = nil
         @lock.synchronize do
             if(params[:id])
                 c = Confession[params[:id].to_i]
@@ -180,6 +180,8 @@ class Confess < ModSpox::Plugin
             }
         rescue Object => boom
             Logger.warn("Error fetching data: #{boom}")
+        ensure
+            @timer[:action].reset_period(rand(1000)+1) unless @timer[:action].nil?
         end
     end
     
