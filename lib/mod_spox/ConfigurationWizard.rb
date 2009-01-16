@@ -27,29 +27,29 @@ module ModSpox
             puts "* mod_spox Configuration Wizard *"
             puts "*********************************"
             puts ""
-            config[:irc_server] = get_input('IRC Server: ', '.+', true, nil)
-            config[:irc_port] = get_input('IRC Port: ', '\d+', true, '6667')
-            config[:reconnect_wait] = get_input('Reconnect wait time: ', '\d+', true, 10)
-            config[:bot_nick] = get_input('IRC Nick: ', '[a-zA-Z].*', true, 'mod_spox')
-            config[:bot_password] = get_input('IRC Nick Password (for nickserv): ', '.*', false, nil)
-            config[:bot_username] = get_input('IRC Username: ', '.+', true, 'mod_spox')
-            config[:bot_realname] = get_input('IRC Real Name: ', '.+', true, 'mod_spox IRC bot')
-            config[:socket_burst] = get_input('Socket burst rate (lines): ', '\d+', true, '3')
-            config[:socket_burst_in] = get_input('Socket burst time: ', '\d+', true, '2')
-            config[:socket_burst_delay] = get_input('Socket burst delay: ', '\d+', true, '2')
-            config[:admin_nick] = get_input('Administator nick: ', '[a-zA-Z].*', true, nil)
-            config[:admin_password] = get_input('Administrator password: ', '.+', false, nil)
-            config[:plugin_directory] = get_input('Plugin temp data driectory (bot needs write permission): ', '.+', true, '/tmp')
-            config[:trigger] = get_input('Default trigger: ', '.+', true, '!')
-            config[:memcache] = get_input('Use memcache (EXPERIMENTAL): ', '(yes|no)', true, 'no')
+            config[:irc_server] = get_input('IRC Server: ', '.+', nil)
+            config[:irc_port] = get_input('IRC Port: ', '\d+', '6667')
+            config[:reconnect_wait] = get_input('Reconnect wait time: ', '\d+', 10)
+            config[:bot_nick] = get_input('IRC Nick: ', '[a-zA-Z].*', 'mod_spox')
+            config[:bot_password] = get_input('IRC Nick Password (for nickserv): ', '.*', nil)
+            config[:bot_username] = get_input('IRC Username: ', '.+', 'mod_spox')
+            config[:bot_realname] = get_input('IRC Real Name: ', '.+', 'mod_spox IRC bot')
+            config[:socket_burst] = get_input('Socket burst rate (lines): ', '\d+', '3')
+            config[:socket_burst_in] = get_input('Socket burst time: ', '\d+', '2')
+            config[:socket_burst_delay] = get_input('Socket burst delay: ', '\d+', '2')
+            config[:admin_nick] = get_input('Administator nick: ', '[a-zA-Z].*', nil)
+            config[:admin_password] = get_input('Administrator password: ', '.+', nil)
+            config[:plugin_directory] = get_input('Plugin temp data driectory (bot needs write permission): ', '.+', '/tmp')
+            config[:trigger] = get_input('Default trigger: ', '.+', '!')
+            config[:memcache] = get_input('Use memcache (EXPERIMENTAL): ', '(yes|no)', 'no')
             valid_connection = false
             until valid_connection do
-                config[:db_adapter] = get_input('Database type (pgsql): ', '(pgsql)', true, 'pgsql')
+                config[:db_adapter] = get_input('Database type (pgsql): ', '(pgsql)', 'pgsql')
                 unless(config[:db_adapter] == 'sqlite')
-                    config[:db_username] = get_input('Database username: ', '.+', true, 'mod_spox')
-                    config[:db_password] = get_input('Database password: ', '.*', false, nil)
-                    config[:db_host] = get_input('Database host: ', '.*', true, 'localhost')
-                    config[:db_database] = get_input('Database name: ', '.+', true, 'mod_spox')
+                    config[:db_username] = get_input('Database username: ', '.+', 'mod_spox')
+                    config[:db_password] = get_input('Database password: ', '.*', nil)
+                    config[:db_host] = get_input('Database host: ', '.*', '127.0.0.1')
+                    config[:db_database] = get_input('Database name: ', '.+', 'mod_spox')
                 end
                 begin
                     print 'Testing database connection... '
@@ -144,19 +144,19 @@ module ModSpox
         # default:: default value if response is empty
         # echo:: echo user's input
         # Reads users input
-        def read_input(pattern=nil, default=nil, echo=true)
-            input_echo(echo)
+        def read_input(pattern=nil, default=nil)
+            #input_echo(echo)
             response = $stdin.readline
             response.strip!
             set = response.length > 0
             unless(pattern.nil?)
                 response = nil unless response =~ /^#{pattern}$/
             end
-            if(default && response.nil? && !set)
+            if(default && !set)
                 response = default
             end
-            input_echo(true) unless echo
-            puts "" unless echo
+            #input_echo(true) unless echo
+            #puts "" unless echo
             return response
         end
         
@@ -164,13 +164,13 @@ module ModSpox
         # regex:: pattern user input must match (^ and $ not needed. applied automatically)
         # echo:: echo user's input
         # default:: default value if no value is entered
-        def get_input(output, regex, echo=true, default=nil)
+        def get_input(output, regex, default=nil)
             response = nil
             until(response) do
                 print output
                 print "[#{default}]: " unless default.nil?
                 $stdout.flush
-                response = read_input(regex, default, echo)
+                response = read_input(regex, default)
             end
             return response
         end
