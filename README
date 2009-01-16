@@ -23,7 +23,6 @@ mod_spox
  
 == Optional
 
- * termios
  * fastthread
  
 == Install

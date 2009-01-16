@@ -18,13 +18,13 @@ rescue Object => boom
     # ignore if not found #
 end
 
-$BOTVERSION='0.1.0.1'
-$BOTCODENAME='potato'
+$BOTVERSION='0.2.0'
+$BOTCODENAME='avocado'
 $VERBOSITY = 0
 $MOD_SPOX_PATH = nil
 $DAEMON_BOT = false
-$LOGTO = nil
-$LOGLEVEL = :info
+$LOGTO = $stdout
+$LOGLEVEL = :fatal
 $JDBC = false
 
 Sequel::Model.unrestrict_primary_key
@@ -56,7 +56,7 @@ opts.each do |opt, arg|
             puts '--path -p /config/path              path to configuration directory'
             puts '--jdbc -j                           use jdbc database driver (jruby)'
             puts '--debug -d [logfile]:               turns on debugging and outputs to file (default STDOUT)'
-            puts '--verbosity -V [(info|warn|fatal)]: verbosity of debug output (default info)'
+            puts '--verbosity -V [(info|warn|fatal)]: verbosity of debug output (default fatal)'
             puts '--deamon -D:                        daemonizes the process'
             puts '--version -v:                       output bot version information'
             puts '--help -h:                          print this help message'

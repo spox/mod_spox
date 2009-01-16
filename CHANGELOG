@@ -1,3 +1,39 @@
+0.2.0 Release (Beta status)
+    Core:
+    * Removed support for MySQL and SQLite (SQLite support may be added at a later date)
+    * Rebuilt and optimized timer
+    * Rebuilt and optimized pooling
+    * Fixed authentication bugs
+    * Added basic DCC support (still in alpha state)
+    * Added daemon support
+    * Updated tinyurl helper to use api
+    * Updated format_seconds helper
+    * Added a format_bytes helper method
+    * Fixed PluginManager to handle bad plugins better
+    * termios support has been removed
+    * Tested for full support on Ruby 1.8 and Ruby 1.9
+    * Tested for alpha support on JRuby > 1.1.3
+    Plugins:
+    * New plugins added:
+        * Status - Status and version information from the bot
+        * NickServ - Identify with services
+        * Twitter - Use twitter via IRC
+        * GoogleIt - Will help people unfamiliar with google
+        * Slashdot - Last 5 from the Slashdot feed
+        * PoolConfig - Configure bot thread pooling
+        * RegexTracker - Track regular expressions found in privmsgs
+        * TracTicket - Add help tickets to a trac system
+        * DCC - Basic DCC chat and file server (alpha state - only works with some clients)
+    * AutoRejoin plugin will automatically join channels on connect
+    * Confess fixed to use it's own sqlite database. See: http://dev.modspox.com/cgi-bin/trac.cgi/wiki/ConfessSqlite
+    * Headers fixed to support http and https plus support for non-standard ports
+    * PhpLookup fixed for new manual layout
+    * Translate fixed to interact with yahoo properly
+    * Karma now has standardized parenthesis usage as well as anti-karma
+    
+    Lots of other fixes throughout. Clean install is recommended. Please read the install
+    guide for an overview of what information you will need and what setup is required.
+    
 0.1.0.1 Release (Bug fix)
     * Fix made to work with sequel 2.2
     
