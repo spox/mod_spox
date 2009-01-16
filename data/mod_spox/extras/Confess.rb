@@ -38,9 +38,9 @@ class Confess < ModSpox::Plugin
         Config[:confess] = 'nofetch' if Config[:confess].nil?
         @last_confession = {}
         @fetch = false
-        @mutex = Mutex.new
-        @lock = Mutex.new
         @coder = HTMLEntities.new
+        @timer = {:action => nil, :id => nil}
+        @lock = Mutex.new
         start_fetcher if Config[:confess] == 'fetch'
     end
     
@@ -82,6 +82,8 @@ class Confess < ModSpox::Plugin
             end
         rescue Object => boom
             reply message.replyto, "Failed to locate a match. Error encountered: #{boom}"
+        ensure
+            @timer[:action].reset_period(rand(1000)+1) unless @timer[:action].nil?
         end
     end
     
@@ -144,6 +146,7 @@ class Confess < ModSpox::Plugin
         else
             if(Config[:confess] == 'fetch')
                 Config[:confess] = 'nofetch'
+                stop_fetcher
                 reply message.replyto, 'Confession fetcher has been stopped'
             else
                 reply message.replyto, 'Confession fetcher is not currently running'
@@ -178,24 +181,31 @@ class Confess < ModSpox::Plugin
         rescue Object => boom
             Logger.warn("Error fetching data: #{boom}")
         end
-        if(Config[:confess] == 'fetch')
-            @pipeline << Messages::Internal::TimerAdd.new(self, rand(500) + 30, nil, true){ grab_page }
-        else
-            stop_fetcher
-        end
     end
     
     private
     
     def start_fetcher
-        @mutex.synchronize do
-            grab_page unless @fetch
+        if(@timer[:action].nil?)
+            m = Messages::Internal::TimerAdd.new(self, rand(1000)+1){ grab_page }
+            @timer[:id] = m.id
+            @pipeline << m
+        end
+    end
+    
+    def get_timer(m)
+        if(m.id == @timer[:id])
+            if(m.action_added?)
+                @timer[:action] = m.action
+            else
+                @timer = {:action => nil, :id => nil}
+            end
         end
     end
     
     def stop_fetcher
-        @mutex.synchronize do
-            @fetch = false
+        unless(@timer[:action].nil?)
+            @pipeline << Messages::Internal::TimerRemove(@timer[:action])
         end
     end
 

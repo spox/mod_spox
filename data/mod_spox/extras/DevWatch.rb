@@ -21,7 +21,8 @@ class DevWatch < ModSpox::Plugin
         end
         @original = nil
         @new = nil
-        run
+        @timer = {:action => nil, :id => nil}
+        start_auto
     end
     
     def enable_watch(message, params)
@@ -36,7 +37,7 @@ class DevWatch < ModSpox::Plugin
                 reply(message.replyto, "#{channel.name} has been removed from the development watch list")
             end
             Setting.filter(:name => 'devwatch').first.value = vals
-            run
+            update_auto
         else
             reply(message.replyto, "\2Error:\2 I have no record of #{params[:channel]}.")
         end
@@ -58,7 +59,7 @@ class DevWatch < ModSpox::Plugin
             vals[:url] = params[:url]
             reply(message.replyto, "OK")
             Setting.filter(:name => 'devwatch').first.value = vals
-            run
+            update_auto
         else
             if(Setting[:devwatch].has_key?(:url))
                 reply(message.replyto, "\2Devwatch URL:\2 #{Setting[:devwatch][:url]}")
@@ -73,17 +74,14 @@ class DevWatch < ModSpox::Plugin
             vals = Setting[:devwatch]
             vals[:interval] = params[:time].to_i
             Setting.filter(:name => 'devwatch').first.value = vals
-            @timer.reset_period(params[:time].to_i) unless @timer.nil?
+            if(@timer[:action].nil?)
+                update_auto
+            else
+                @timer[:action].reset_period(params[:time].to_i)
+            end
             reply(message.replyto, "Devwatch announcement interval reset to: #{Helpers.format_seconds(params[:time].to_i)}")
         else
             reply(message.replyto, "Devwatch announcement interval set to: #{Helpers.format_seconds(Setting[:devwatch][:interval].to_i)}")
-        end
-    end
-    
-    def run
-        check_updates
-        if(Setting[:devwatch].has_key?(:url) && Setting[:devwatch][:channels].size > 0)
-            @pipeline << ModSpox::Messages::Internal::TimerAdd.new(self, Setting[:devwatch][:interval].to_i, nil, true){run}
         end
     end
     
@@ -127,6 +125,28 @@ class DevWatch < ModSpox::Plugin
                     reply(channel, item)
                 end
             end
+        end
+    end
+    
+    def get_timer(m)
+        if(m.id == @timer[:id])
+            @timer[:action] = m.action_added? ? m.action : nil
+        end
+    end
+    
+    def update_auto
+        unless(@timer[:action].nil?)
+            @pipeline << Messages::Internal::TimerRemove.new(@timer[:action])
+        end
+        sleep(0.01)
+        start_auto
+    end
+    
+    def start_auto
+        if(@timer[:action].nil? && Setting[:devwatch].has_key?(:url) && Setting[:devwatch][:channels].size > 0)
+            m = Messages::Internal::TimerAdd.new(self, Setting[:devwatch][:interval].to_i){ check_updates }
+            @timer[:id] = m.id
+            @pipeline << m
         end
     end
 
