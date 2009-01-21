@@ -55,10 +55,10 @@ class Headers < ModSpox::Plugin
             con.use_ssl = secure
             con.open_timeout = 5
             con.read_timeout = 5
-            response = con.get(page)
+            response = con.head(page)
             output = ["Response code: #{response.code}"]
             count = 0
-            response.each{|key,val|
+            response.each_capitalized{|key,val|
                 output << "#{key.slice(0..50)}: #{val.slice(0..200)}"
                 count += 1
                 break if @max != 0 && count >= @max
