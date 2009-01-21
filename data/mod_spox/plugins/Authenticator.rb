@@ -281,7 +281,9 @@ class Authenticator < ModSpox::Plugin
     end
 
     def check_join(message)
-        check_nickserv(message.nick)
+        if(@nickserv_nicks.include?(nick.nick.downcase))
+            @pipeline << Messages::Outgoing::Whois.new(message.nick) unless message.nick == me
+        end
     end
 
     def check_nicks(message)
