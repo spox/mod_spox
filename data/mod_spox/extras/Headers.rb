@@ -30,48 +30,48 @@ class Headers < ModSpox::Plugin
     end
 
     def fetch_headers(message, params)
-        @lock.synchronize do
-            secure = false
-            if(params[:url] =~ /^http:/)
-                port = 80
+        secure = false
+        if(params[:url] =~ /^http:/)
+            port = 80
+        else
+            port = 443
+            secure = true
+        end
+        params[:url].gsub!(/^https?:\/\//, '')
+        if(params[:url] =~ /:(\d+)/)
+            port = $1.to_i
+            params[:url].gsub!(/:(\d+)/, '')
+        end
+        if(params[:url] =~ /(.+?[a-zA-Z]{2,4})(\/.+)$/)
+            location = $1
+            page = $2
+        else
+            location = params[:url].gsub(/\/$/, '')
+            page = '/'
+        end
+        begin
+            reply message.replyto, "Connecting to: #{location} on port: #{port} retrieving: #{page}"
+            con = Net::HTTP.new(location, port)
+            con.use_ssl = secure
+            con.open_timeout = 5
+            con.read_timeout = 5
+            response = con.get(page)
+            output = ["Response code: #{response.code}"]
+            count = 0
+            response.each{|key,val|
+                output << "#{key.slice(0..50)}: #{val.slice(0..200)}"
+                count += 1
+                break if @max != 0 && count >= @max
+            }
+            if(count >= @max && @max != 0)
+                output << 'Maximum header limit reached.'
             else
-                port = 443
-                secure = true
+                output << 'Header listing complete'
             end
-            params[:url].gsub!(/^https?:\/\//, '')
-            if(params[:url] =~ /:(\d+)/)
-                port = $1.to_i
-                params[:url].gsub!(/:(\d+)/, '')
-            end
-            if(params[:url] =~ /(.+?[a-zA-Z]{2,4})(\/.+)$/)
-                location = $1
-                page = $2
-            else
-                location = params[:url].gsub(/\/$/, '')
-                page = '/'
-            end
-            begin
-                reply message.replyto, "Connecting to: #{location} on port: #{port} retrieving: #{page}"
-                con = Net::HTTP.new(location, port)
-                con.use_ssl = secure
-                response = con.get(page)
-                output = ["Response code: #{response.code}"]
-                count = 0
-                response.each{|key,val|
-                    output << "#{key.slice(0..50)}: #{val.slice(0..200)}"
-                    count += 1
-                    break if @max != 0 && count >= @max
-                }
-                if(count >= @max && @max != 0)
-                    output << 'Maximum header limit reached.'
-                else
-                    output << 'Header listing complete'
-                end
-                reply message.replyto, output
-            rescue Object => boom
-                reply message.replyto, "Error retrieving headers: #{boom}"
-                Logger.warn("#{boom}\n#{boom.backtrace.join("\n")}")
-            end
+            reply message.replyto, output
+        rescue Object => boom
+            reply message.replyto, "Error retrieving headers (#{location}): #{boom}"
+            Logger.warn("Headers plugin error: #{boom}")
         end
     end
 
