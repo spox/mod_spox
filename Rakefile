@@ -62,6 +62,7 @@ task :release => [:package] do
     require 'rubyforge'
     packages = %w( gem tgz zip ).collect{ |ext| "pkg/#{NAME}-#{BOTVERSION}.#{ext}" }
     rubyforge = RubyForge.new
+    rubyforge.configure
     rubyforge.login
     rubyforge.add_release(RUBYFORGENAME, RUBYFORGENAME, "REL #{BOTVERSION}", *packages)
 end
