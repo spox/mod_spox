@@ -1,36 +1,56 @@
-mod_spox
-    http://modspox.rubyforge.org
-    Author: spox
+== mod_spox IRC bot ==
+
+    mod_spox is an IRC robot, written in Ruby, and will completely
+    change your prospective on life. mod_spox is proof that doing
+    nothing is complex, and that doing nothing can, in fact, be
+    doing something.
     
-== Description
+    The core of mod_spox is basically a framework for interacting
+    with IRC. By itself, the bot does nothing of value, aside from
+    sucking up bandwidth and resources from the server it is connected
+    to. The core bot can connect to a server, format information from
+    the server, and send information back to the server properly. That's
+    pretty much it. 
+    
+    The framework that mod_spox provides is what allows it to quickly
+    transition from an old sack of moldy potatoes to an old sack of
+    moldy potatoes on fire. Luckly, mod_spox comes with a bunch of
+    prepackaged plugins, so you too can have an IRC bot of your very
+    own!
+    
+== Critical informations ==
 
-A Ruby IRC bot
+    Author: spox <spox@rubyforge.org>
+    Dev Site: http://dev.modspox.com
+    Rubyforge: http://rubyforge.org/projects/modspox
+    GitHub: http://github.com/spox/mod_spox/tree/master
+    
+== Aquiring ==
 
-== Usage
+    Gem:    gem install mod_spox
+    Source: git clone git://github.com/spox/mod_spox.git
+            or
+            svn co http://modspox.rubyforge.org/svn/
+            
+== Requirements ==
 
-Configuration:
+    + Sequel - http://sequel.rubyforge.org
+    + pg     - http://rubyforge.org/projects/ruby-pg/
+            
 
-mod_spox --config
+== Configuration ==
 
-Running:
+    mod_spox --config
 
-mod_spox
+== Running ==
 
-== Requirements
+    mod_spox
 
- * sequel
-  * database driver
- 
-== Optional
+== Extending ==
 
- * fastthread
- 
-== Install
+    Plugins HOWTO: http://dev.modspox.com/cgi-bin/trac.cgi/wiki/PluginHowto
 
-sudo gem install --include-dependencies mod_spox
+== License ==
 
-== License
-
-mod_spox is licensed under the GPLv3
-
-Copyright (c) 2008 spox <spox@modspox.com>
+    mod_spox is licensed under the GPLv3
+    Copyright (c) 2009 spox <spox@modspox.com>
