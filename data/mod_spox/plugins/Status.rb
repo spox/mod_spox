@@ -20,7 +20,7 @@ class Status < ModSpox::Plugin
     def get_status(m)
         @resp.uniq!
         @resp.each do |c|
-            reply c, "\2Status:\2 \2Uptime:\2 #{m.status[:uptime]} \2Plugins:\2 #{m.status[:plugins]} loaded \2Lines sent:\2 #{m.status[:sent]} \2Lines Received:\2 #{m.status[:received]}"            
+            reply c, "\2Status:\2 \2Uptime:\2 #{m.status[:uptime]} \2Plugins:\2 #{m.status[:plugins]} loaded \2Socket Connected:\2 #{m.status[:socket_connect].strftime("%Y/%m/%d-%H:%M:%S")} \2Lines sent:\2 #{m.status[:sent]} \2Lines Received:\2 #{m.status[:received]}"            
             @resp.delete(c)
         end
     end

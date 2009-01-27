@@ -123,6 +123,7 @@ module ModSpox
         def bot_stats
             return {:uptime => Helpers::format_seconds(Time.now - @start_time),
                     :plugins => @plugin_manager.plugins.size,
+                    :socket_connect => @socket.connected_at,
                     :sent => @socket.irc_socket.sent,
                     :received => @socket.irc_socket.received}
         end

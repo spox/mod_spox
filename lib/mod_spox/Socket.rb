@@ -18,6 +18,7 @@ module ModSpox
         attr_reader :server
         attr_reader :port
         attr_reader :socket
+        attr_reader :connected_at
 
         # factory:: MessageFactory to parse messages
         # server:: Server to connect to
@@ -44,6 +45,7 @@ module ModSpox
             @sendq = Queue.new
             @lock = Mutex.new
             @ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
+            @connected_at = nil
         end
 
         # Connects to the IRC server
@@ -53,6 +55,7 @@ module ModSpox
             server = Models::Server.find_or_create(:host => @server, :port => @port)
             server.connected = true
             server.save
+            @connected_at = Time.now
             Logger.info("Created new send queue: #{@sendq}")
         end
 
