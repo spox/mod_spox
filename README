@@ -29,8 +29,6 @@
 
     Gem:    gem install mod_spox
     Source: git clone git://github.com/spox/mod_spox.git
-            or
-            svn co http://modspox.rubyforge.org/svn/
             
 == Requirements ==
 
