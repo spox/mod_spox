@@ -18,12 +18,21 @@ class PhpCli < ModSpox::Plugin
             ini.write($ini)
             ini.close
         end
+        PhpFunction.create_table unless PhpFunction.table_exists?
         php = Group.find_or_create(:name => 'php')
+        phpfunc = Group.find_or_create(:name => 'phpfunc')
         admin = Group.filter(:name => 'admin').first
         Signature.find_or_create(:signature => 'php (on|off)', :plugin => name, :method => 'set_channel', :group_id => admin.pk,
             :description => 'Add or remove channel from allowing PHP command').params = [:action]
         Signature.find_or_create(:signature => 'php (?!on|off)(.+)', :plugin => name, :method => 'execute_php', :group_id => php.pk,
             :description => 'Execute PHP code').params = [:code]
+        add_sig(:sig => 'phpq (?!on|off)(.+)', :method => :quiet_php, :group => php, :params => [:code], :desc => 'Execute PHP quietly')
+        add_sig(:sig => 'pf add (.+)', :method => :add, :params => [:function], :group => phpfunc, :desc => 'Add a custom PHP function')
+        add_sig(:sig => 'pf remove (\d+)', :method => :remove, :params => [:func_id], :group => phpfunc, :desc => 'Remove a custom PHP function')
+        add_sig(:sig => 'pf list', :method => :list, :desc => 'List custom PHP functions')
+        add_sig(:sig => 'pf edit (.+)', :method => :edit, :params => [:function], :group => phpfunc, :desc => 'Overwrite existing custom PHP function')
+        @customfuncs = []
+        populate_customs
         @channels = Setting.filter(:name => 'phpcli').first
         @channels = @channels.nil? ? [] : @channels.value
     end
@@ -51,11 +60,15 @@ class PhpCli < ModSpox::Plugin
         end
     end
 
-    def execute_php(message, params)
+    def quiet_php(message, params)
+        execute_php(message, params, true)
+    end
+
+    def execute_php(message, params, shh=false)
         return unless @channels.include?(message.target.pk)
         filepath = @path + "/#{rand(99999)}.bot.php"
         file = File.open(filepath, 'w')
-        file.write("<? $_SERVER = $_ENV = array(); #{params[:code]} ?>")
+        file.write("<? $_SERVER = $_ENV = array(); #{@customfuncs.join(' ')} #{params[:code]} ?>")
         file.close
         begin
             output = Helpers.safe_exec("php -c #{@path}/bot.ini -d max_execution_time=10 #{filepath} 2>&1 | head -n 4")
@@ -75,7 +88,7 @@ class PhpCli < ModSpox::Plugin
                 reply message.replyto, "PHP #{type}: "+warning
             end
             if(warning.nil? || type !~ /(Fatal|Parse)/)
-                reply message.replyto, "Result: "+output
+                reply message.replyto, "#{shh ? '' : 'Result: '}"+output
             end
             File.delete(filepath)
         rescue Timeout::Error => boom
@@ -85,8 +98,112 @@ class PhpCli < ModSpox::Plugin
             File.delete(filepath)
         end
     end
+    
+    def add(m, params)
+        if(params[:function] =~ /^function\s+([^\(]+)\(/)
+            name = $1.downcase
+            f = PhpFunction.filter(:name => name).first
+            unless(f)
+                begin
+                    parse(params[:function])
+                    save(params[:function], name, m.source)
+                    information m.replyto, "New function \2#{name}\2 added to custom PHP functions"
+                    populate_customs
+                rescue Object => boom
+                    error m.replyto, "Failed to add function #{name}. Error: #{boom}"
+                end
+            else
+                error m.replyto, "Function with name: #{name} already exists"
+            end
+        else
+            error m.replyto, "Function is not in proper format"
+        end
+    end
+    
+    def remove(m, params)
+        f = PhpFunction[params[:func_id].to_i]
+        if(f)
+            name = f.name
+            f.destroy
+            information m.replyto, "Function \2#{name}\2 has been removed"
+            populate_customs
+        else
+            error m.replyto, "Failed to locate function with ID: #{params[:func_id]}"
+        end
+    end
+    
+    def list(m, params)
+        output = ["\2Custom PHP functions:\2"]
+        PhpFunction.all.each do |f|
+            output << "\2ID:\2 #{f.pk} \2Name:\2 #{f.name} \2Author:\2 #{f.nick.nick} \2Added:\2 #{f.added.strftime("%Y/%m/%d-%H:%M:%S")}"
+        end
+        reply m.replyto, output
+    end
+    
+    def edit(m, params)
+        if(params[:function] =~ /^function\s+([^\(]+)\(/)
+            name = $1.downcase
+            begin
+                parse(params[:function])
+                save(params[:function], name, m.source)
+                information m.replyto, "New function \2#{name}\2 added to custom PHP functions"
+                populate_customs
+            rescue Object => boom
+                error m.replyto, "Failed to add function #{name}. Error: #{boom}"
+            end
+        else
+            error m.replyto, "Function is not in proper format"
+        end
+    end
+    
+    def parse(func)
+        filepath = @path + "/#{rand(99999)}.bot.php"
+        file = File.open(filepath, 'w')
+        file.write("<? #{func} ?>")
+        file.close
+        output = Helpers.safe_exec("php -l #{filepath} 2>&1 | head -n 4").strip.gsub(/\s{2,}/, ' ').gsub(/[\r\n]+/, ' ')
+        File.delete(filepath)
+        if(output =~ /(Parse error.+) in/)
+            raise "#{$1}"
+        end
+    end
+    
+    def save(func, name, nick)
+        f = PhpFunction.filter(:name => name).first
+        f = PhpFunction.new unless f
+        f.name = name
+        f.php_function = func
+        f.added = ::Time.now
+        f.nick = nick
+        f.save
+    end
+    
+    def populate_customs
+        @customfuncs = []
+        PhpFunction.all.each{|f| @customfuncs << f.php_function }
+    end
 
     class NoInterpreter < Exceptions::BotException
+    end
+    
+    class PhpFunction < Sequel::Model
+        set_schema do
+            text :php_function, :null => false
+            varchar :name, :null => false, :unique => true
+            timestamp :added, :null => false
+            foreign_key :nick_id, :null => false
+            primary_key :id
+        end
+        
+        serialize(:php_function, :format => :marshal)
+        
+        def nick
+            Models::Nick[nick_id]
+        end
+        
+        def nick=(n)
+            values[:nick_id] = n.pk
+        end
     end
 
 end
