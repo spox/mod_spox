@@ -58,6 +58,9 @@ module ModSpox
             end
         end
         
+        # Adds a new signature for the given plugin
+        # Required args: :sig and :method
+        # Optional args: :group, :req, and :params
         def add_sig(args)
             raise ModSpox::Exceptions::InvalidType.new('You must provide a hash for creating new signatures') unless args.is_a?(Hash)
             sig = Signature.find_or_create(:signature => args[:sig], :plugin => name, :method => args[:method].to_s)
@@ -66,6 +69,27 @@ module ModSpox
             sig.requirement = args[:req] if args.has_key?(:req)
             sig.params = args[:params] if args.has_key?(:params)
             sig.save
+        end
+        
+        # to:: Where message is going
+        # message:: message
+        # Send an information message to target
+        def information(to, message)
+            reply to, "\2#{name} (info):\2 #{message}"
+        end
+        
+        # to:: Where message is going
+        # message:: message
+        # Send an warning message to target
+        def warning(to, message)
+            reply to, "\2#{name} (warn):\2 #{message}"
+        end
+        
+        # to:: Where message is going
+        # message:: message
+        # Send an error message to target
+        def error(to, message)
+            reply to, "\2#{name} (error):\2 #{message}"
         end
 
     end

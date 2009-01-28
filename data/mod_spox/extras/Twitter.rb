@@ -323,18 +323,6 @@ class Twitter < ModSpox::Plugin
         end
     end
     
-    def information(to, message)
-        reply to, "\2Twitter (info):\2 #{message}"
-    end
-    
-    def warning(to, message)
-        reply to, "\2Twitter (warn):\2 #{message}"
-    end
-    
-    def error(to, message)
-        reply to, "\2Twitter (error):\2 #{message}"
-    end
-    
     def save_info
         i = Models::Setting.find_or_create(:name => 'twitter')
         i.value = @auth_info
