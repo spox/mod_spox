@@ -31,6 +31,7 @@ class PhpCli < ModSpox::Plugin
         add_sig(:sig => 'pf remove (\d+)', :method => :remove, :params => [:func_id], :group => phpfunc, :desc => 'Remove a custom PHP function')
         add_sig(:sig => 'pf list', :method => :list, :desc => 'List custom PHP functions')
         add_sig(:sig => 'pf edit (.+)', :method => :edit, :params => [:function], :group => phpfunc, :desc => 'Overwrite existing custom PHP function')
+        add_sig(:sig => 'pf show (\d+)', :method => :show, :params => [:func_id], :group => phpfunc, :desc => 'Show given PHP function source')
         @customfuncs = []
         populate_customs
         @channels = Setting.filter(:name => 'phpcli').first
@@ -153,6 +154,15 @@ class PhpCli < ModSpox::Plugin
             end
         else
             error m.replyto, "Function is not in proper format"
+        end
+    end
+    
+    def show(m, params)
+        f = PhpFunction[params[:func_id].to_i]
+        if(f)
+            reply m.replyto, ["Source for function \2#{f.name}\2:", f.php_function]
+        else
+            error m.replyto, "Failed to find custom PHP function with ID: #{params[:func_id]}"
         end
     end
     
