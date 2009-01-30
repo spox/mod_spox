@@ -128,6 +128,14 @@ module ModSpox
             @sendq << message
             Pool << lambda{ processor }
         end
+        
+        # target:: Target for outgoing message
+        # message:: Message to send
+        # This queues a message to be sent out of a prioritized
+        # queue. This allows for even message distribution rather
+        # than only on target at a time being flooded.
+        def prioritize_message(target, message)
+        end
 
         # Starts the thread for sending messages to the server
         def processor
