@@ -43,6 +43,7 @@ module ModSpox
             @check_burst = 0
             @pause = false
             @sendq = Queue.new
+            @prio_q = Hash.new
             @lock = Mutex.new
             @ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
             @connected_at = nil
@@ -135,12 +136,30 @@ module ModSpox
         # queue. This allows for even message distribution rather
         # than only on target at a time being flooded.
         def prioritize_message(target, message)
+            target.downcase!
+            @prio_q[target] = Queue.new unless @prio_q[target]
+            @prio_q[target] << message
+            Pool << lambda{ processor }
+        end
+
+        # Returns the next message to send based on priority
+        # (Instead of creating a complex algorithm to determine
+        #  who rightfully has the next turn to go, we just randomly
+        #  choose and hope the universe loves us)
+        def get_message
+            m = @sendq.pop(true)
+            return m unless m.nil?
+            key = @prio_q.keys[rand(@prio_q.keys.size)]
+            m = @prio_q[key].pop
+            @prio_q.delete(key) if @prio_q[key].empty?
+            return m
         end
 
         # Starts the thread for sending messages to the server
         def processor
+            return if @lock.locked?
             @lock.synchronize do
-                write(@sendq.pop(true))
+                write(get_message)
                 if((Time.now.to_i - @time_check) > @burst_in)
                     @time_check = nil
                     @check_burst = 0
