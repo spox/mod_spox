@@ -46,11 +46,14 @@ module ModSpox
                 id = $1.to_i
                 message = $2 + "\r\n"
                 sock_info = @mapped_sockets[id]
-                socket = sock_info[:socket]
+                sock_info[:socket] << message
             else
-                socket = @irc_socket
+                @irc_socket << message
             end
-            socket << message
+        end
+        
+        def prioritize_message(target, message)
+            @irc_socket.prioritize_message(target, message)
         end
 
         # message:: ModSpox::Messages::Incoming::Privmsg

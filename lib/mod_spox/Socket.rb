@@ -4,7 +4,8 @@
  'mod_spox/Exceptions',
  'mod_spox/messages/Messages',
  'mod_spox/models/Models',
- 'mod_spox/Pipeline'].each{|f|require f}
+ 'mod_spox/Pipeline',
+ 'mod_spox/PriorityQueue'].each{|f|require f}
 
 module ModSpox
 
@@ -42,8 +43,7 @@ module ModSpox
             @time_check = nil
             @check_burst = 0
             @pause = false
-            @sendq = Queue.new
-            @prio_q = Hash.new
+            @sendq = PriorityQueue.new
             @lock = Mutex.new
             @ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
             @connected_at = nil
@@ -57,7 +57,6 @@ module ModSpox
             server.connected = true
             server.save
             @connected_at = Time.now
-            Logger.info("Created new send queue: #{@sendq}")
         end
 
         # new_delay:: Seconds to delay between bursts
@@ -92,6 +91,7 @@ module ModSpox
         def write(message)
             return if message.nil?
             @socket.puts(message + "\n")
+            @socket.flush
             Logger.info("<< #{message}")
             @last_send = Time.new
             @sent += 1
@@ -126,7 +126,7 @@ module ModSpox
         # message:: String to be sent to server
         # Queues a message up to be sent to the IRC server
         def <<(message)
-            @sendq << message
+            @sendq.direct_queue(message)
             Pool << lambda{ processor }
         end
         
@@ -136,39 +136,30 @@ module ModSpox
         # queue. This allows for even message distribution rather
         # than only on target at a time being flooded.
         def prioritize_message(target, message)
-            target.downcase!
-            @prio_q[target] = Queue.new unless @prio_q[target]
-            @prio_q[target] << message
+            @sendq.priority_queue(target, message)
             Pool << lambda{ processor }
-        end
-
-        # Returns the next message to send based on priority
-        # (Instead of creating a complex algorithm to determine
-        #  who rightfully has the next turn to go, we just randomly
-        #  choose and hope the universe loves us)
-        def get_message
-            m = @sendq.pop(true)
-            return m unless m.nil?
-            key = @prio_q.keys[rand(@prio_q.keys.size)]
-            m = @prio_q[key].pop
-            @prio_q.delete(key) if @prio_q[key].empty?
-            return m
         end
 
         # Starts the thread for sending messages to the server
         def processor
-            return if @lock.locked?
-            @lock.synchronize do
-                write(get_message)
-                if((Time.now.to_i - @time_check) > @burst_in)
-                    @time_check = nil
-                    @check_burst = 0
-                elsif((Time.now.to_i - @time_check) <= @burst_in && @check_burst >= @burst)
-                    Logger.warn("Burst limit hit. Output paused for: #{@delay} seconds")
-                    sleep(@delay)
-                    @time_check = nil
-                    @check_burst = 0
+            return unless @lock.try_lock
+            begin
+                loop do
+                    write(@sendq.pop)
+                    if((Time.now.to_i - @time_check) > @burst_in)
+                        @time_check = nil
+                        @check_burst = 0
+                    elsif((Time.now.to_i - @time_check) <= @burst_in && @check_burst >= @burst)
+                        Logger.warn("Burst limit hit. Output paused for: #{@delay} seconds")
+                        sleep(@delay)
+                        @time_check = nil
+                        @check_burst = 0
+                    end
                 end
+            rescue Exceptions::EmptyQueue => boom
+                Logger.info('Socket reached an empty queue.')
+            ensure
+                @lock.unlock
             end
         end
 

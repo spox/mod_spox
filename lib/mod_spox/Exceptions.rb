@@ -30,6 +30,9 @@ module ModSpox
         
         class TimerInUse < BotException
         end
+        
+        class EmptyQueue < BotException
+        end
 
     end
 end

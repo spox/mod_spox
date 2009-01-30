@@ -308,9 +308,9 @@ module ModSpox
                     while(content.size > 450)
                         output = content[0..450]
                         content.slice!(0, 451) #(450, content.size)
-                        @socket << "PRIVMSG #{target} :#{message.is_ctcp? ? "\cA#{message.ctcp_type} #{output}\cA" : output}"
+                        @socket.prioritize_message(target, "PRIVMSG #{target} :#{message.is_ctcp? ? "\cA#{message.ctcp_type} #{output}\cA" : output}")
                     end
-                    @socket << "PRIVMSG #{target} :#{message.is_ctcp? ? "\cA#{message.ctcp_type} #{content}\cA" : content}"
+                    @socket.prioritize_message(target, "PRIVMSG #{target} :#{message.is_ctcp? ? "\cA#{message.ctcp_type} #{content}\cA" : content}")
                 end
             end
         end
@@ -400,14 +400,14 @@ module ModSpox
         # Sends WHO message to server
         def who(message)
             o = message.only_ops? ? 'o' : ''
-            @socket << "WHO #{message.mask} #{o}"
+            @socket.prioritize_message('*who', "WHO #{message.mask} #{o}")
         end
 
         # message:: Messages::Outgoing::Whois message
         # Sends WHOIS message to server
         def whois(message)
             nick = message.nick.is_a?(Models::Nick) ? message.nick.nick : message.nick
-            @socket << "WHOIS #{message.target_server} #{nick}"
+            @socket.prioritize_message('*whois', "WHOIS #{message.target_server} #{nick}")
         end
 
         # message:: Messages::Outgoing::WhoWas message
