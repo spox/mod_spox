@@ -143,9 +143,11 @@ module ModSpox
         # Starts the thread for sending messages to the server
         def processor
             return unless @lock.try_lock
+            did_write = false
             begin
                 loop do
                     write(@sendq.pop)
+                    did_write = true
                     if((Time.now.to_i - @time_check) > @burst_in)
                         @time_check = nil
                         @check_burst = 0
@@ -160,6 +162,7 @@ module ModSpox
                 Logger.info('Socket reached an empty queue.')
             ensure
                 @lock.unlock
+                Pool << lambda{ processor } if did_write
             end
         end
 
