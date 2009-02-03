@@ -1,4 +1,5 @@
 require 'net/http'
+require 'open-uri'
 require 'cgi'
 class Search < ModSpox::Plugin
 
@@ -6,7 +7,8 @@ class Search < ModSpox::Plugin
 
     def initialize(pipeline)
         super(pipeline)
-        Models::Signature.find_or_create(:signature => 'search (\d+)? ?(.+)', :plugin => name, :method => 'search', :description => 'Search the internet').params = [:number, :terms]
+        add_sig(:sig => 'search count (.+)', :method => 'search_count', :params => [:terms], :desc => 'Show number of results for given search')
+        Models::Signature.find_or_create(:signature => 'search (?!count)(\d+)? ?(.+)', :plugin => name, :method => 'search', :description => 'Search the internet').params = [:number, :terms]
     end
 
     def search(message, params)
@@ -32,5 +34,16 @@ class Search < ModSpox::Plugin
             @pipeline << Privmsg.new(message.replyto, "Failed to find any results for: #{params[:terms]} Reason: #{boom}")
             Logger.warn("Error: #{boom}\n#{boom.backtrace.join("\n")}")
         end
+    end
+    
+    def search_count(m, params)
+        buf = open("http://www.google.com/search?hl=en&q=#{CGI::escape(params[:terms])}", 'UserAgent' => 'mod_spox IRC bot').read
+        output = ''
+        if(buf =~ /of\s+about.+?([\d,]+)/)
+            output = "There are about \2#{$1}\2 results for the term \2#{params[:terms]}\2"
+        else
+            output = "There are no results found for the term \2#{params[:terms]}\2"
+        end
+        reply m.replyto, output
     end
 end
