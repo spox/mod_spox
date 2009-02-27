@@ -35,10 +35,17 @@ module ModSpox
         # port:: IRC port
         # Connect to the given IRC server
         def irc_connect(server, port)
+            irc_reconnect(server, port) unless @irc_socket.nil?
             @irc_socket = Socket.new(@bot, server, port)
             @irc_socket.connect
             @read_sockets << @irc_socket.socket
             restart_reader
+        end
+        
+        def irc_reconnect(server, port)
+            @read_sockets.delete(@irc_socket.socket)
+            @irc_socket = nil
+            irc_connect(server, port)
         end
 
         def <<(message)

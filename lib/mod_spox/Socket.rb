@@ -104,10 +104,10 @@ module ModSpox
             tainted_message = @socket.gets
             if(tainted_message.nil? || @socket.closed?) # || message =~ /^ERROR/)
                 @pipeline << Messages::Internal::Disconnected.new
-                shutdown
                 server = Models::Server.find_or_create(:host => @server, :port => @port)
                 server.connected = false
                 server.save
+                shutdown(true)
             elsif(tainted_message.length > 0)
                 message = @ic.iconv(tainted_message + ' ')[0..-2]
                 message.strip!

@@ -168,8 +168,8 @@ module ModSpox
         # message:: Messages::Internal::Disconnected
         # Disconnect the bot from the IRC server
         def disconnected(message)
-            @socket.shutdown
-            @socket = nil
+#             @socket.shutdown
+#             @socket = nil
         end
 
         # Stop the bot
