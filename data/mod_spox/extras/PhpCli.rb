@@ -101,6 +101,10 @@ class PhpCli < ModSpox::Plugin
     end
     
     def add(m, params)
+        if(params[:function].scan(/function\s+([^\(]+)\(/).size > 1)
+            error m.replyto, 'Only one function can be added at a time'
+            return
+        end
         if(params[:function] =~ /^function\s+([^\(]+)\(/)
             name = $1.downcase
             f = PhpFunction.filter(:name => name).first
