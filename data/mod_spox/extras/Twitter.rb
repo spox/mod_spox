@@ -109,7 +109,10 @@ class Twitter < ModSpox::Plugin
             output = ["Twitter match for: \2#{term}:\2"]
             result['results'].each do |item|
                 t = Time.parse(item['created_at'])
-                output << "[#{t.strftime("%Y/%m/%d-%H:%M:%S")}] <#{item['from_user']}> #{item['text']}"
+                output << "[#{t.strftime("%Y/%m/%d-%H:%M:%S")}] <#{item['from_user']}> #{@coder.decode(item['text'])}"
+            end
+            if(output.size < 2)
+                output = "\2Error:\2 No results found for term: #{term}"
             end
             return output
         rescue Object => boom
