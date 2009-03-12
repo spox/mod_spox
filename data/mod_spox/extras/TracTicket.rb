@@ -44,7 +44,7 @@ class TracTicket < ModSpox::Plugin
                     'Referer' => @site,
                     'Content-Type' => 'application/x-www-form-urlencoded'
                 }   
-                data = "reporter=#{URI.escape(message.source.nick)}&summary=#{URI.escape(params[:short])}&description=#{URI.escape(long)}&type=#{URI.escape(params[:type])}&action=create&status=new&priority=minor&__FORM_TOKEN=#{URI.escape(fid)}"
+                data = "field_reporter=#{URI.escape(message.source.nick)}&field_summary=#{URI.escape(params[:short])}&field_description=#{URI.escape(long)}&field_type=#{URI.escape(params[:type])}&field_status=new&submit=Create%20ticket&field_priority=minor&__FORM_TOKEN=#{URI.escape(fid)}"
                 resp, data = con.post(path, data, headers)
                 reply message.replyto, 'Ticket was successfully added to tracker'
             rescue Object => boom
