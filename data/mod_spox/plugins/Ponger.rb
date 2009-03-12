@@ -20,7 +20,7 @@ class Ponger < ModSpox::Plugin
     end
     
     def send_lag_ping
-        if(@attempts > 0)
+        if(@attempts > 2)
             @pipeline << Messages::Internal::Disconnected.new
             @lag = nil
             @last = nil

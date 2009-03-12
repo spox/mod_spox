@@ -44,7 +44,7 @@ module ModSpox
         
         def irc_reconnect(server, port)
             @read_sockets.delete(@irc_socket.socket)
-            @irc_socket = nil
+            @irc_socket.shutdown
             irc_connect(server, port)
         end
 
