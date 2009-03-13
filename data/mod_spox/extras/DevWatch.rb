@@ -23,6 +23,7 @@ class DevWatch < ModSpox::Plugin
         @new = nil
         @timer = {:action => nil, :id => nil}
         start_auto
+        check_updates
     end
     
     def enable_watch(message, params)
@@ -102,7 +103,7 @@ class DevWatch < ModSpox::Plugin
         end
     end
 
-    def print_new
+    def print_new(max=5)
         new_items = Array.new
         # run through the list until we hit a duplicate #
         i = 1
@@ -115,6 +116,7 @@ class DevWatch < ModSpox::Plugin
                 new_items << "#{item.elements['title'].text}: #{item.elements['link'].text}"
             end
             i += 1
+            break if i > max
         end
         @original = new_orig.nil? ? @original : new_orig
         if new_items.size > 0
