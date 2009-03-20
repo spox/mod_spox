@@ -1,44 +1,34 @@
+require 'openssl'
+
 class Bouncer < ModSpox::Plugin
-    
-    include Models
-    
+
     def initialize(pipeline)
         super
-        admin = Group.find_or_create(:name => 'bouncer')
-        Signature.find_or_create(:signature => 'bouncer port ?(\d+)?', :plugin => name, :method => 'port',
-            :group_id => admin.pk, :description => 'Show or set bouncer port').params = [:port]
-        Signature.find_or_create(:signature => 'bouncer (start|stop|restart)', :plugin => name, :method => 'do_service',
-            :group_id => admin.pk, :description => 'Start or stop the bouncer').params = [:action]
-        Signature.find_or_create(:signature => 'bouncer status', :plugin => name, :method => 'status',
-            :group_id => admin.pk, :description => 'Show current bouncer status')
-        Signature.find_or_create(:signature => 'bouncer disconnect', :plugin => name, :method => 'disconnect',
-            :group_id => admin.pk, :description => 'Disconnect all users connected to bouncer')
-        Signature.find_or_create(:signature => 'bouncer clients', :plugin => name, :method => 'clients',
-            :group_id => admin.pk, :description => 'List clients connected to bouncer')
+        bounce = Group.find_or_create(:name => 'bouncer')
+        add_sig(:sig => 'bouncer port( (\d+))?', :method => :port, :group => bounce, :desc => 'Show or set bouncer port',
+            :params => [:port])
+        add_sig(:sig => 'bouncer (start|stop|restart)', :method => :do_service, :group => bounce, :desc => 'Start, stop, or restart bouncer')
+        add_sig(:sig => 'bouncer status', :method => :status, :group => bounce, :desc => 'Show current bouncer status')
+        add_sig(:sig => 'bouncer disconnect', :method => :disconnect, :group => bounce, :desc => 'Disconnect all connected clients')
+        add_sig(:sig => 'bouncer clients'< :method => :clients, :group => bounce, :desc => 'List clients connected to bouncer')
         @pipeline.hook(self, :get_msgs, :Incoming)
         @listener = nil
         @clients = []
         @socket = nil
         @processor = nil
         @to_server = Queue.new
-        if(Config[:bouncer_port])
-            start_listener
-        end
+        start_listener if Models::Config.filter(:name => 'bouncer_port').count > 0
     end
     
     def get_msgs(message)
         unless(@clients.empty?)
-        Logger.info("BOUNCER: Sending to #{@clients.size} clients")
+            Logger.info("Bouncer has #{@clients.size} clients to send a message to")
             @clients.each do |client|
                 begin
-                    if(message.raw_content.is_a?(Array))
-                        message.raw_content.each do |m|
-                            client[:connection].puts(m + "\n")
-                        end
-                    else
-                        client[:connection].puts(message.raw_content + "\n")
-                    end
+                    output = message.raw_content.is_a?(Array) ? message.raw_content.join("\n") : message.raw_content + "\n"
+                    client[:connection].puts(output)
                 rescue Object => boom
+                    Logger.warn("Bouncer encountered unexpected error. Disconnecting client. #{boom}")
                     client[:thread].kill if client[:thread].alive?
                     @clients.delete(client)
                 end
@@ -46,53 +36,91 @@ class Bouncer < ModSpox::Plugin
         end
     end
     
-    def port(message, params)
-        unless(params[:port])
-            if(Config[:bouncer_port])
-                reply message.replyto, "Bouncer is currently listening on port: #{Config[:bouncer_port]}"
+    def port(m, params)
+        if(params[:port])
+            if(Models::Config.filter(:name => 'bouncer_port').count > 0)
+                reply m.replyto, "Bouncer port is set to: #{Models::Config.filter(:name => 'bouncer_port').first.value
             else
-                reply message.replyto, "\2Warning:\2 Listening port is not currently set for bouncer"
+                error m.replyo, 'No port has been set for bouncer'
             end
         else
-            Config[:bouncer_port] = params[:port].to_i
-            reply message.replyto, "Bouncer will now listen on port: #{params[:port].to_i}"
-            restart_listener
+            parmas[:port].strip!
+            c = Models::Config.find_or_create(:name => 'bouncer_port')
+            c.value = params[:port]
+            c.save
+            information m.replyto, "Bouncer port is not set to: #{params[:port]}"
         end
     end
     
-    def do_service(message, params)
-        if(params[:action] == 'start')
-            if(listening?)
-                reply message.replyto, "\2Error:\2 Bouncer is already running"
-            else
-                start_listener
-                reply message.replyto, "Bouncer has been started"
-            end
-        elsif(params[:action] == 'stop')
-            if(listening?)
+    def do_service(m, params)
+        begin
+            case params[:action]
+            when 'start'
+                if(listening?)
+                    error m.replyto, 'Bouncer is already running'
+                else
+                    start_listener
+                    information m.replyto, 'Bouncer has been started'
+                end
+            when 'stop'
+                if(listening?)
+                    stop_listener
+                    information m.replyto, 'Bouncer has been stopped'
+                else
+                    error m.replyto, 'Bouncer is not currently running'
+                end
+            when 'restart'
                 stop_listener
-                reply message.replyto, "Bouncer has been stopped"
-            else
-                reply message.replyto, "\2Error:\2 Bouncer is not currently running"
+                start_listener
+                information m.replyto, 'Bouncer has been restarted'
             end
-        elsif(params[:action] == 'restart')
-            stop_listener
-            start_listener
-            reply message.replyto, "Bouncer has been restarted"
+        rescue Object => boom
+            error m.replyto, "Error was encountered during #{params[:action]} process. (#{boom})"
+        end
+    end
+
+    def disconnect(m, params)
+        unless(@clients.empty?)
+            @clients.each do |client|
+                client[:connection].close unless client[:connection].closed?
+                @clients.delete(client)
+            end
+            information m.replyto, 'All clients have been disconnected'
+        else
+            warning m.replyto, 'No clients are connected to bouncer'
         end
     end
     
-    def disconnect(message, params)
-        unless(@clients.empty?)
-            @clients.each do |socket|
-                socket[:connection].close
-                @clients.delete(socket)
+    def status(m, params)
+        warning m.replyto, 'not implemented'
+    end
+
+    private
+    
+    def start_listener
+        port = Models::Config.filter(:name => 'bouncer_port').first
+        raise 'Port has not been set' unless port
+        port = port.value.to_i
+        @socket = OpenSSL::SSL::SSLServer.new(port)
+        @listener = Thread.new do
+            until(@socket.closed?)
+                begin
+                    new_con = @socket.accept_nonblock
+                    add_client(new_con)
+                rescue Errno::EAGAIN, Errno::EWOULDBLOCK, Errno::ECONNABORTED, Errno::EPROTO, Errno::EINTR
+                        IO.select([@socket])
+                        retry
+                rescue Object => boom
+                    Logger.warn "Bouncer listener encountered an error: #{boom}"
+                end
             end
-            reply message.replyto, "Bouncer has disconnected all clients"
-        else
-            reply message.replyto, "\2Error:\2 No clients connected to bouncer"
         end
     end
+    
+    def add_client
+    end
+
+class Bouncer < ModSpox::Plugin
     
     def status(message, params)
     end

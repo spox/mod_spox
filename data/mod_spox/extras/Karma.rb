@@ -7,17 +7,12 @@ class Karma < ModSpox::Plugin
         Datatype::Karma.create_table unless Datatype::Karma.table_exists?
         Datatype::Alias.create_table unless Datatype::Alias.table_exists?
         alias_group = Models::Group.find_or_create(:name => 'alias')
-        Models::Signature.find_or_create(:signature => 'karma (?!(fight|alias|dealias|aliases|reset) (\S+|\(.+?\)) ?(\S+|\(.+?\))?$)(\S+|\(.+?\))', :plugin => name, :method => 'score', :description => 'Returns karma for given thing').params = [:crap, :crap2, :crap3, :thing]
-        Models::Signature.find_or_create(:signature => 'karma reset (\S+|\(.+?\))', :plugin => name, :method => 'reset',
-            :group_id => Models::Group.filter(:name => 'admin').first.pk, :description => 'Reset a karma score').params = [:thing]
-        Models::Signature.find_or_create(:signature => 'karma alias (\S+|\(.+?\)) (\S+|\(.+?\))', :plugin => name, :method => 'aka',
-            :group_id => alias_group.pk, :description => 'Alias a karma object to another karma object').params = [:thing, :thang]
-        Models::Signature.find_or_create(:signature => 'karma dealias (\S+|\(.+?\)) (\S+|\(.+?\))', :plugin => name, :method => 'dealias',
-            :group_id => alias_group.pk, :description => 'Remove a karma alias').params = [:thing, :otherthing]
-        Models::Signature.find_or_create(:signature => 'karma aliases (\S+|\(.+?\))', :plugin => name, :method => 'show_aliases',
-            :description => 'Show all aliases for given thing').params = [:thing]
-        Models::Signature.find_or_create(:signature => 'karma fight (\S+|\(.+?\)) (\S+|\(.+?\))', :plugin => name, :method => 'fight',
-            :description => 'Make two karma objects fight').params = [:thing, :thang]
+        add_sig(:sig => 'karma (?!(fight|alias|dealias|aliases|reset) (\S+|\(.+?\)) ?(\S+|\(.+?\))?$)(\S+|\(.+?\))', :method => :score, :desc => 'Returns karma for given thing', :params => [:crap, :crap2, :crap3, :thing])
+        add_sig(:sig => 'karma reset (\S+|\(.+?\))', :method => :reset, :group => Models::Group.filter(:name => 'admin').first, :desc => 'Reset a karma score', :params => [:thing])
+        add_sig(:sig => 'karma alias (\S+|\(.+?\)) (\S+|\(.+?\))', :method => :aka, :group => alias_group, :desc => 'Alias a karma object to another karma object', :params => [:thing, :thang])
+        add_sig(:sig => 'karma dealias (\S+|\(.+?\)) (\S+|\(.+?\))', :method => :dealias, :group => alias_group, :desc => 'Remove a karma alias', :params => [:thing, :otherthing])
+        add_sig(:sig => 'karma aliases (\S+|\(.+?\))', :method => :show_aliases, :desc => 'Show all aliases for given thing', :params => [:thing])
+        add_sig(:sig => 'karma fight (\S+|\(.+?\)) (\S+|\(.+?\))', :method => :fight, :desc => 'Make two karma objects fight', :params => [:thing, :thang])
         add_sig(:sig => 'antikarma (\S+|\(.+?\))', :method => :antikarma, :desc => 'Show things antikarma', :params => [:thing])
         @pipeline.hook(self, :check, :Incoming_Privmsg)
         @thing_maxlen = 32

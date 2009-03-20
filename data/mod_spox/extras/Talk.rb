@@ -5,10 +5,8 @@ class Talk < ModSpox::Plugin
     def initialize(pipeline)
         super
         group = Group.find_or_create(:name => 'talk')
-        Signature.find_or_create(:signature => 'say (\S+) (.+)', :plugin => name, :method => 'talk', :group_id => group.pk,
-            :description => 'Make bot speak given text to target', :requirement => 'private').params = [:target, :text]
-        Signature.find_or_create(:signature => 'action (\S+) (.+)', :plugin => name, :method => 'action', :group_id => group.pk,
-            :description => 'Make bot perform action for target', :requirement => 'private').params = [:target, :text]
+        add_sig(:sig => 'say (\S+) (.+)', :method => :talk, :group => group, :desc => 'Make bot speak given text to target', :req => 'private', :params => [:target, :text])
+        add_sig(:sig => 'action (\S+) (.+)', :method => :action, :group => group, :desc => 'Make bot perform action for target', :req => 'private', :params = [:target, :text])
     end
     
     def talk(message, params)

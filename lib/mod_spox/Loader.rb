@@ -42,20 +42,15 @@ module ModSpox
     
     # check if the bot has been upgraded
     def check_upgrade
+        Sequel::Migrator.apply(Database.db, BotConfig[:libpath] + '/migrations')
         config = BaseConfig.new(BotConfig[:userconfigpath])
         config[:plugin_upgrade] = 'no'
         begin
-            do_upgrade(config) if config[:last_version] != $BOTVERSION
+            config[:plugin_upgrade] = 'yes' if config[:last_version] != $BOTVERSION
         rescue Exceptions::UnknownKey => boom
-            do_upgrade(config)
+            config[:plugin_upgrade] = 'yes'
         end
         config[:last_version] = $BOTVERSION
-    end
-    
-    # perform upgrade tasks
-    def do_upgrade(config)
-        Sequel::Migrator.apply(Database.db, BotConfig[:libpath] + '/migrations')
-        config[:plugin_upgrade] = 'yes'
     end
     
 end

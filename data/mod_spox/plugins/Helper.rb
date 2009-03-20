@@ -4,10 +4,8 @@ class Helper < ModSpox::Plugin
 
     def initialize(pipeline)
         super(pipeline)
-        Signature.find_or_create(:signature => 'help', :plugin => name, :method => 'default_help',
-            :description => 'Display default help information')
-        Signature.find_or_create(:signature => 'help (\S+)', :plugin => name, :method => 'plugin_help',
-            :description => 'Display help information from given plugin').params = [:plugin]
+        add_sig(:sig => 'help', :method => :default_help, :desc => 'Display default help information')
+        add_sig(:sig => 'help (\S+)', :method => :plugin_help, :desc => 'Display help information from given plugin', :params => [:plugin])
     end
 
     def default_help(message, params)

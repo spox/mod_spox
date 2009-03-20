@@ -13,10 +13,8 @@ class UrbanDictionary < ModSpox::Plugin
             Logger.warn('Error: This plugin requires the HTMLEntities gem. Please install and reload plugin.')
             raise Exceptions::BotException.new("Missing required HTMLEntities library")
         end
-        Signature.find_or_create(:signature => 'udefine (?!key)((\d+ )?(.+))', :plugin => name, :method => 'define',
-            :description => 'Find the definition of a word or phrase').params = [:fullmatch, :number, :term]
-        Signature.find_or_create(:signature => 'udefine key (.+)', :plugin => name, :method => 'key',
-            :group_id => Models::Group.filter(:name => 'admin').first.pk, :description => 'Set API key').params = [:key]
+        add_sig(:sig => 'udefine (?!key)((\d+ )?(.+))', :method => :define, :desc => 'Find the definition of a word or phrase', :params => [:fullmatch, :number, :term])
+        add_sig(:sig => 'udefine key (.+)', :method => :key, :group => Models::Group.filter(:name => 'admin').first, :desc => 'Set API key', :params => [:key])
         @coder = HTMLEntities.new
     end
 

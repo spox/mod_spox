@@ -5,9 +5,8 @@ class AOLSpeak < ModSpox::Plugin
     def initialize(pipeline)
         super
         group = Group.find_or_create(:name => 'banner')
-        Signature.find_or_create(:signature => 'aolspeak', :plugin => name, :method => 'aolspeak', :description => 'AOL speak')
-        Signature.find_or_create(:signature => 'aolkick (\S+) ?(\S+)?', :plugin => name, :method => 'aolkick', :description => 'AOL speak kick',
-            :group_id => group.pk).params = [:nick, :channel]
+        add_sig(:sig => 'aolspeak', :method => :aolspeak, :desc => 'AOL speak')
+        add_sig(:sig => 'aolkick (\S+) ?(\S+)?', :method => :aolkick, :desc => 'AOL speak kick', :group => group, :params => [:nick, :channel])
         build_aolspeak
     end
 

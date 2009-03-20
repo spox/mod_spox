@@ -6,18 +6,12 @@ class AutoMode < ModSpox::Plugin
         super
         @admin = Group.find_or_create(:name => 'moder')
         @user = Group.find_or_create(:name => 'modee')
-        Signature.find_or_create(:signature => 'addop (\S+)', :plugin => name, :method => 'addop', :group_id => @admin.pk,
-            :description => 'Add a nick to the auto op list', :requirement => 'public').params = [:nick]
-        Signature.find_or_create(:signature => 'addvoice (\S+)', :plugin => name, :method => 'addvoice', :group_id => @admin.pk,
-            :description => 'Add a nick to the auto voice list', :requirement => 'public').params = [:nick]
-        Signature.find_or_create(:signature => 'op', :plugin => name, :method => 'op', :group_id => @user.pk,
-            :description => 'Instruct bot to give you operator status', :requirement => 'public')
-        Signature.find_or_create(:signature => 'voice', :plugin => name, :method => 'voice', :group_id => @user.pk,
-            :description => 'Instruct bot to give you voice status', :requirement => 'public')
-        Signature.find_or_create(:signature => 'automode list (\S+)', :plugin => name, :method => 'list', :group_id => @admin.pk,
-            :description => 'Show list of current auto-modes for channel').params = [:channel]
-        Signature.find_or_create(:signature => 'delmode (\S+)', :plugin => name, :method => 'remove', :group_id => @admin.pk,
-            :description => 'Remove nick from any auto-modes in channel', :requirement => 'public').params = [:nick]
+        add_sig(:sig => 'addop (\S+)', :method => :addop, :group => @admin, :desc => 'Add a nick to the auto op list', :req => 'public', :params => [:nick])
+        add_sig(:sig => 'addvoice (\S+)', :method => :addvoice, :group => @admin, :desc => 'Add a nick to the auto voice list', :req => 'public', :params => [:nick])
+        add_sig(:sig => 'op', :method => :op, :group => @user, :desc => 'Instruct bot to give you operator status', :req => 'public')
+        add_sig(:sig => 'voice', :method => :voice, :group => @user, :desc => 'Instruct bot to give you voice status', :req => 'public')
+        add_sig(:sig => 'automode list (\S+)', :method => :list, :group => @admin, :desc => 'Show list of current auto-modes for channel', :params => [:channel])
+        add_sig(:sig => 'delmode (\S+)', :method => :remove, :group => @admin, :desc => 'Remove nick from any auto-modes in channel', :req => 'public', :params => [:nick])
         ModeRecord.create_table unless ModeRecord.table_exists?
         @pipeline.hook(self, :check_join, :Incoming_Join)
     end

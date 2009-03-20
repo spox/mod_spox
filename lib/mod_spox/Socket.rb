@@ -169,7 +169,7 @@ module ModSpox
         # restart:: Reconnect after closing connection
         # Closes connection to IRC server
         def shutdown(restart=false)
-            @socket.close unless @socket.closed?
+            @socket.close unless @socket.nil? || @socket.closed?
             @kill = true
             server = Models::Server.find_or_create(:host => @server, :port => @port)
             server.connected = false

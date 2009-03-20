@@ -47,6 +47,7 @@ module ModSpox
                 Logger.warn("Pool worker timed out during execution of action (#{@timeout} sec limit): #{action}")
             rescue Object => boom
                 Logger.warn("Pool worker caught an unknown exception: #{boom}")
+                Logger.warn(boom.backtrace.join("\n"))
             end
         end
     end

@@ -8,11 +8,9 @@ module ModSpox
         # description:: description of trigger
         class Signature < Sequel::Model
 
-            serialize(:signature, :format => :marshal)
-
             def params=(prms)
-                raise InvalidType.new('Parameter names must be provided in an array') unless prms.kind_of?(Array)
-                update_values(:params => prms.join('|'))
+                raise Exceptions::InvalidType.new('Parameter names must be provided in an array') unless prms.nil? || prms.kind_of?(Array)
+                update_values(:params => prms.join('|')) unless prms.nil?
             end
 
             def params
@@ -25,6 +23,30 @@ module ModSpox
 
             def group=(group)
                 update_values :group_id => group.pk
+            end
+
+            def signature=(v)
+                update_values :signature => [Marshal.dump(v)].pack('m')
+            end
+            
+            def signature
+                values[:signature] ? Marshal.load(values[:signature].unpack('m')[0]) : nil
+            end
+            
+            def Signature.find_or_create(args)
+                t = nil
+                if(args.has_key?(:signature) && args.has_key?(:params) && args.has_key?(:method) && args.has_key?(:plugin))
+                    args[:params] = [] if args[:params].nil?
+                    Signature.filter(:method => args[:method], :plugin => args[:plugin], :params => args[:params].join('|')).each do |s|
+                        t = s if s.signature == args[:signature]
+                    end
+                    args[:params] = nil if args[:params].empty?
+                end
+                unless(t)
+                    t = create(args)
+                end
+                t.update(:enabled => true)
+                return t
             end
 
         end

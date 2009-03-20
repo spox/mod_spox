@@ -4,12 +4,12 @@ class Roulette < ModSpox::Plugin
 
     def initialize(pipeline)
         super(pipeline)
-        Signature.find_or_create(:signature => 'roulette', :plugin => name, :method => 'roulette', :requirement => 'public')
-        Signature.find_or_create(:signature => 'suicide', :plugin => name, :method => 'suicide', :requirement => 'public')
-        Signature.find_or_create(:signature => 'shoot (\S+)', :plugin => name, :method => 'shoot', :requirement => 'public').params = [:nick]
-        Signature.find_or_create(:signature => 'roulette topten', :plugin => name, :method => 'topten', :requirement => 'public')
-        Signature.find_or_create(:signature => 'roulette stats ?(\S+)?', :plugin => name, :method => 'stats', :requirement => 'public').params = [:nick]
-        Signature.find_or_create(:signature => 'roulette chambers', :plugin => name, :method => 'chambers', :requirement => 'public')
+        add_sig(:sig => 'roulette', :method => :roulette, :req => 'public')
+        add_sig(:sig => 'suicide', :method => :suicide, :req => 'public')
+        add_sig(:sig => 'shoot (\S+)', :method => :shoot, :req => 'public', :params => [:nick])
+        add_sig(:sig => 'roulette topten', :method => :topten, :req => 'public')
+        add_sig(:sig => 'roulette stats ?(\S+)?', :method => :stats, :req => 'public', :params => [:nick])
+        add_sig(:sig => 'roulette chambers', :method => :chambers, :req => 'public')
         Game.create_table unless Game.table_exists?
         Info.create_table unless Info.table_exists?
         @banner = nil

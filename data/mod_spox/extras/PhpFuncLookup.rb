@@ -65,15 +65,12 @@ class PhpFuncLookup < ModSpox::Plugin
             "->"    => [ "?",           "Object member accessor thingy","" ],
         }
         admin = Group.filter(:name => 'admin').first
-        Signature.find_or_create(:signature => 'pfunc (\S+)', :plugin => name, :method => 'phpfunc', :description => 'Lookup PHP function').params = [:name]
-        Signature.find_or_create(:signature => 'fetch php manual', :plugin => name, :method => 'fetch', :group_id => admin.pk,
-            :description => 'Download and extract PHP manual')
-        Signature.find_or_create(:signature => 'pfunc trigger (\S+)', :plugin => name, :method => 'set_trigger', :group_id => admin.pk,
-            :description => 'Set the trigger for auto-lookups').params = [:trigger]
-        Signature.find_or_create(:signature => 'pfunc show trigger', :plugin => name, :method => 'show_trigger', :description => 'Show current trigger')
-        Signature.find_or_create(:signature => 'pfunc (add|remove) (\S+)', :plugin => name, :method => 'set_channels', :group_id => admin.pk,
-            :description => 'Add or remove channels from auto-lookups').params = [:action, :channel]
-        Signature.find_or_create(:signature => 'pfunc show channels', :plugin => name, :method => 'list_channels', :description => 'Show channels with auto lookup enabled')
+        add_sig(:sig => 'pfunc (\S+)', :method => :phpfunc, :desc => 'Lookup PHP function', :params => [:name])
+        add_sig(:sig => 'fetch php manual', :method => :fetch, :group => admin, :desc => 'Download and extract PHP manual')
+        add_sig(:sig => 'pfunc trigger (\S+)', :method => :set_trigger, :group => admin, :desc => 'Set the trigger for auto-lookups', :params => [:trigger])
+        add_sig(:sig => 'pfunc show trigger', :method => :show_trigger, :desc => 'Show current trigger')
+        add_sig(:sig => 'pfunc (add|remove) (\S+)', :method => :set_channels, :group => admin, :desc => 'Add or remove channels from auto-lookups', :params => [:action, :channel])
+        add_sig(:sig => 'pfunc show channels', :method => :list_channels, :desc => 'Show channels with auto lookup enabled')
         @pipeline.hook(self, :listen, :Incoming_Privmsg)
         populate_classes
     end

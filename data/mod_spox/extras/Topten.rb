@@ -5,14 +5,10 @@ class Topten < ModSpox::Plugin
     def initialize(pipeline)
         super
         ChatStat.create_table unless ChatStat.table_exists?
-        Signature.find_or_create(:signature => 'topten', :plugin => name, :method => 'topten',
-            :requirement => 'public', :description => 'Show topten users since midnight')
-        Signature.find_or_create(:signature => 'topten ([0-9]{4}\/[0-9]{2}\/[0-9]{2})', :plugin => name, :method => 'archive',
-            :description => 'Show topten from given date', :requirement => 'public').params = [:date]
-        Signature.find_or_create(:signature => 'stats ?(\S+)?', :plugin => name, :method => 'stats', :description => 'Show stats on nick',
-            :requirement => 'public').params = [:nick]
-        Signature.find_or_create(:signature => 'stats lifetime (\S+)?', :plugin => name, :method => 'life_stats',
-            :description => 'Show stat totals for given nick', :requirement => 'public').params = [:nick]
+        add_sig(:sig => 'topten', :method => :topten, :req => 'public', :desc => 'Show topten users since midnight')
+        add_sig(:sig => 'topten ([0-9]{4}\/[0-9]{2}\/[0-9]{2})', :method => :archive, :desc => 'Show topten from given date', :req => 'public', :params => [:date])
+        add_sig(:sig => 'stats ?(\S+)?', :method => :stats, :desc => 'Show stats on nick', :req => 'public', :params => [:nick])
+        add_sig(:sig => 'stats lifetime (\S+)?', :method => :life_stats, :desc => 'Show stat totals for given nick', :req => 'public', :params => [:nick])
         @pipeline.hook(self, :log_stats, :Incoming_Privmsg)
     end
     

@@ -5,17 +5,11 @@ class AutoKick < ModSpox::Plugin
     def initialize(pipeline)
         super
         group = Group.find_or_create(:name => 'autokick')
-        Signature.find_or_create(:signature => 'autokick list', :plugin => name, :method => 'list', :group_id => group.pk,
-            :description => 'List active autokick rules')
-        Signature.find_or_create(:signature => 'autokick add (#\S+) (\d+) (\S+) (.+)', :plugin => name, :method => 'add',
-            :group_id => group.pk, :description => 'Add new autokick rule for current channel',
-            :requirement => 'public').params = [:channel, :time, :regex, :message]
-        Signature.find_or_create(:signature => 'autokick add (\d+) (\S+) (.+)', :plugin => name, :method => 'add',
-            :group_id => group.pk, :description => 'Add a new autokick rule').params = [:time, :regex, :message]
-        Signature.find_or_create(:signature => 'autokick remove (\d+)', :plugin => name, :method => 'remove',
-            :group_id => group.pk, :description => 'Remove an autokick rule').params = [:id]
-        Signature.find_or_create(:signature => 'autokick colors ?(on|off)?', :plugin => name, :method => 'colors',
-            :group_id => group.pk, :description => 'Kick user for using colors', :requirement => 'public').params = [:action]
+        add_sig(:sig => 'autokick list', :method => :list, :group => group, :desc => 'List active autokick rules')
+        add_sig(:sig => 'autokick add (#\S+) (\d+) (\S+) (.+)', :method => :add, :group => group, :desc => 'Add new autokick rule for current channel', :req => 'public', :params => [:channel, :time, :regex, :message])
+        add_sig(:sig => 'autokick add (\d+) (\S+) (.+)', :method => :add, :group => group, :desc => 'Add a new autokick rule', :params => [:time, :regex, :message])
+        add_sig(:sig => 'autokick remove (\d+)', :method => :remove, :group => group, :desc => 'Remove an autokick rule', :params => [:id])
+        add_sig(:sig => 'autokick colors ?(on|off)?', :method => :colors, :group => group, :desc => 'Kick user for using colors', :req => 'public', :params => [:action])
         @map = nil
         @colors = Setting[:colorkick]
         @colors = Array.new unless @colors.is_a?(Array)

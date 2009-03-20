@@ -8,9 +8,8 @@ class Ponger < ModSpox::Plugin
         add_sig(:sig => 'lag', :method => :print_lag, :desc => 'Shows bot\'s current lag to server')
         @pipeline.hook(self, :ping, :Incoming_Ping)
         @pipeline.hook(self, :get_lag_pong, :Incoming_Pong)
-        @pipeline << Messages::Internal::TimerAdd.new(self, 60){ send_lag_ping }
         @lock = Mutex.new
-        send_lag_ping
+        @pipeline.hook(self, :start_ponger, :Incoming_Motd)
     end
     
     # message:: ModSpox::Messages::Incoming::Ping
@@ -49,6 +48,11 @@ class Ponger < ModSpox::Plugin
         else
             information m.replyto, "Current lag time: #{sprintf('%0.4f', @lag)} seconds"
         end
+    end
+    
+    def start_ponger(m)
+        send_lag_ping
+        @pipeline << Messages::Internal::TimerAdd.new(self, 60){ send_lag_ping }
     end
 
 end

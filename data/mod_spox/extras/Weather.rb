@@ -4,8 +4,7 @@ class Weather < ModSpox::Plugin
 
     def initialize(pipeline)
         super
-        Signature.find_or_create(:signature => 'weather (\d+)', :plugin => name, :method => 'weather',
-            :description => 'Show weather for given zipcode').params = [:zipcode]
+        add_sig(:sig => 'weather (\d+)', :method => :weather, :desc => 'Show weather for given zipcode', :params => [:zipcode])
     end
     
     def weather(message, params)

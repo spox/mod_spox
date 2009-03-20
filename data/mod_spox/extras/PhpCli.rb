@@ -22,10 +22,8 @@ class PhpCli < ModSpox::Plugin
         php = Group.find_or_create(:name => 'php')
         phpfunc = Group.find_or_create(:name => 'phpfunc')
         admin = Group.filter(:name => 'admin').first
-        Signature.find_or_create(:signature => 'php (on|off)', :plugin => name, :method => 'set_channel', :group_id => admin.pk,
-            :description => 'Add or remove channel from allowing PHP command').params = [:action]
-        Signature.find_or_create(:signature => 'php (?!on|off)(.+)', :plugin => name, :method => 'execute_php', :group_id => php.pk,
-            :description => 'Execute PHP code').params = [:code]
+        add_sig(:sig => 'php (on|off)', :method => :set_channel, :group => admin, :desc => 'Add or remove channel from allowing PHP command', :params => [:action])
+        add_sig(:sig => 'php (?!on|off)(.+)', :method => :execute_php, :group => php, :desc => 'Execute PHP code', :params => [:code])
         add_sig(:sig => 'phpq (?!on|off)(.+)', :method => :quiet_php, :group => php, :params => [:code], :desc => 'Execute PHP quietly')
         add_sig(:sig => 'pf add (.+)', :method => :add, :params => [:function], :group => phpfunc, :desc => 'Add a custom PHP function')
         add_sig(:sig => 'pf remove (\d+)', :method => :remove, :params => [:func_id], :group => phpfunc, :desc => 'Remove a custom PHP function')

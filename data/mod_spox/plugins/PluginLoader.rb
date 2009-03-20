@@ -3,16 +3,11 @@ class PluginLoader < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)
         admin = Models::Group.filter(:name => 'admin').first
-        Models::Signature.find_or_create(:signature => 'plugins available', :plugin => name, :method => 'available_plugins',
-            :group_id => admin.pk, :description => 'List all available plugins')
-        Models::Signature.find_or_create(:signature => 'plugins loaded', :plugin => name, :method => 'loaded_plugins',
-            :group_id => admin.pk, :description => 'List all plugins currently loaded')
-        Models::Signature.find_or_create(:signature => 'plugins load (\S+)', :plugin => name, :method => 'load_plugin',
-            :group_id => admin.pk, :description => 'Load the given plugin').params = [:plugin]
-        Models::Signature.find_or_create(:signature => 'plugins unload (\S+)', :plugin => name, :method => 'unload_plugin',
-            :group_id => admin.pk, :description => 'Unload given plugin').params = [:plugin]
-        Models::Signature.find_or_create(:signature => 'plugins reload ?(\S+)?', :plugin => name, :method => 'reload_plugin',
-            :group_id => admin.pk, :description => 'Reload single plugin or all plugins if names not provided').params = [:plugin]
+        add_sig(:sig => 'plugins available', :method => :available_plugins, :group => admin, :desc => 'List all available plugins')
+        add_sig(:sig => 'plugins loaded', :method => :loaded_plugins, :group => admin, :desc => 'List all plugins currently loaded')
+        add_sig(:sig => 'plugins load (\S+)', :method => :load_plugin, :group => admin, :desc => 'Load the given plugin', :params => [:plugin])
+        add_sig(:sig => 'plugins unload (\S+)', :method => :unload_plugin, :group => admin, :desc => 'Unload given plugin', :params => [:plugin])
+        add_sig(:sig => 'plugins reload ?(\S+)?', :method => :reload_plugin, :group => admin, :desc => 'Reload single plugin or all plugins if names not provided', :params => [:plugin])
         @pipeline.hook(self, :get_module, :Internal_PluginModuleResponse)
         @plugins_mod = nil
     end

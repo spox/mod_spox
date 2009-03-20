@@ -6,14 +6,10 @@ class Quotes < ModSpox::Plugin
         super
         Quote.create_table unless Quote.table_exists?
         group = Group.find_or_create(:name => 'quote')
-        Signature.find_or_create(:signature => 'quote ?(.+)?', :plugin => name, :method => 'quote',
-            :description => 'Display random quote, random quote containing search term, or quote with given ID').params = [:term]
-        Signature.find_or_create(:signature => 'addquote (.+)', :plugin => name, :method => 'addquote',
-            :description => 'Add a new quote').params = [:quote]
-        Signature.find_or_create(:signature => 'searchquote (.+)', :plugin => name, :method => 'searchquote',
-            :description => 'Return IDs of quotes matching term').params = [:term]
-        Signature.find_or_create(:signature => 'delquote (\d+)', :plugin => name, :method => 'delquote', :group_id => group.pk,
-            :description => 'Delete quote with given ID').params = [:id]
+        add_sig(:sig => 'quote ?(.+)?', :method => :quote, :desc => 'Display random quote, random quote containing search term, or quote with given ID', :params => [:term])
+        add_sig(:sig => 'addquote (.+)', :method => :addquote, :desc => 'Add a new quote', :params => [:quote])
+        add_sig(:sig => 'searchquote (.+)', :method => :searchquote, :desc => 'Return IDs of quotes matching term', :params => [:term])
+        add_sig(:sig => 'delquote (\d+)', :method => :delquote, :group => group, :desc => 'Delete quote with given ID', :params => [:id])
     end
     
     def quote(message, params)

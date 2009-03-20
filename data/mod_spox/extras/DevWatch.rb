@@ -8,14 +8,10 @@ class DevWatch < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)
         admin = Group.filter(:name => 'admin').first
-        Signature.find_or_create(:signature => 'devwatch (on|off) (\S+)', :plugin => name, :method => 'enable_watch', :group_id => admin.pk,
-            :description => 'Turn development watcher on/off in given channel').params = [:status, :channel]
-        Signature.find_or_create(:signature => 'devwatch list', :plugin => name, :method => 'watch_list', :group_id => admin.pk,
-            :description => 'List all channels on the development watch list')
-        Signature.find_or_create(:signature => 'devwatch url ?(\S+)?', :plugin => name, :method => 'set_url', :group_id => admin.pk,
-            :description => 'Set URL for development RSS feed').params = [:url]
-        Signature.find_or_create(:signature => 'devwatch interval ?(\d+)?', :plugin => name, :method => 'set_interval', :group_id => admin.pk,
-            :description => 'Set time interval for notifications').params = [:time]
+        add_sig(:sig => 'devwatch (on|off) (\S+)', :method => :enable_watch, :group => admin, :desc => 'Turn development watcher on/off in given channel', :params => [:status, :channel])
+        add_sig(:sig => 'devwatch list', :method => :watch_list, :group => admin, :desc => 'List all channels on the development watch list')
+        add_sig(:sig => 'devwatch url ?(\S+)?', :method => :set_url, :group => admin, :desc => 'Set URL for development RSS feed', :params => [:url])
+        add_sig(:sig => 'devwatch interval ?(\d+)?', :method => :set_interval, :group => admin, :desc => 'Set time interval for notifications', :params => [:time])
         if(Setting[:devwatch].nil?)
             Setting.find_or_create(:name => 'devwatch').value = {:channels => [], :interval => 300}
         end

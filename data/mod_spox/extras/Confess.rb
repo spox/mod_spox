@@ -23,18 +23,12 @@ class Confess < ModSpox::Plugin
             raise Exceptions::BotException.new("Failed to create database: #{boom}")
         end
         Confession.build_confession && Confession.create_table unless Confession.table_exists?
-        Signature.find_or_create(:signature => 'confess', :plugin => name, :method => 'confess',
-            :description => 'Print a confession')
-        Signature.find_or_create(:signature => 'confess (?!score|count|fetcher|\+\+|\-\-)(.+)?', :plugin => name, :method => 'confess',
-            :description => 'Print a confession').params = [:term]
-        Signature.find_or_create(:signature => 'confess(\+\+|\-\-) ?(\d+)?', :plugin => name, :method => 'score',
-            :description => 'Score a confession').params = [:score, :id]
-        Signature.find_or_create(:signature => 'confess score (\d+)', :plugin => name, :method => 'show_score',
-            :description => 'Show a confession\'s score').params = [:id]
-        Signature.find_or_create(:signature => 'confess count', :plugin => name, :method => 'count',
-            :description => 'Current count of cached confessions')
-        Signature.find_or_create(:signature => 'confess fetcher (start|stop)', :plugin => name, :method => 'fetcher',
-            :description => 'Turn confession fetcher on or off', :group_id => Group.filter(:name => 'admin').first.pk).params = [:status]
+        add_sig(:sig => 'confess', :method => :confess, :desc => 'Print a confession')
+        add_sig(:sig => 'confess (?!score|count|fetcher|\+\+|\-\-)(.+)?', :method => :confess, :desc => 'Print a confession', :params => [:term])
+        add_sig(:sig => 'confess(\+\+|\-\-) ?(\d+)?', :method => :score, :desc => 'Score a confession', :params => [:score, :id])
+        add_sig(:sig => 'confess score (\d+)', :method => :show_score, :desc => 'Show a confession\'s score', :params => [:id])
+        add_sig(:sig => 'confess count', :method => :count, :desc => 'Current count of cached confessions')
+        add_sig(:sig => 'confess fetcher (start|stop)', :method => :fetcher, :desc => 'Turn confession fetcher on or off', :group => Group.filter(:name => 'admin').first, :params => [:status])
         Config[:confess] = 'nofetch' if Config[:confess].nil?
         @last_confession = {}
         @fetch = false

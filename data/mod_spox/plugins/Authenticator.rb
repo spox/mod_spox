@@ -2,38 +2,22 @@ class Authenticator < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)
         group = Models::Group.filter(:name => 'admin').first
-        Models::Signature.find_or_create(:signature => 'auth (\S+)', :plugin => name, :method => 'authenticate',
-            :description => 'Authenticate with bot using a password').params = [:password]
-        Models::Signature.find_or_create(:signature => 'ident', :plugin => name, :method => 'send_whois',
-            :description => 'Instructs the bot to check your NickServ status')
-        Models::Signature.find_or_create(:signature => 'auth mask add (\S+) (\S+)', :plugin => name, :method => 'add_mask',
-            :group_id => group.pk, :description => 'Add authentication mask and set initial group').params = [:mask, :group]
-        Models::Signature.find_or_create(:signature => 'auth mask set (\d+) (.+)', :plugin => name, :method => 'set_mask_groups',
-            :group_id => group.pk, :description => 'Set groups for the given mask').params = [:id, :groups]
-        Models::Signature.find_or_create(:signature => 'auth mask unset (\d+) (.+)', :plugin => name, :method => 'del_mask_groups',
-            :group_id => group.pk, :description => 'Remove groups for the given mask').params = [:id, :groups]
-        Models::Signature.find_or_create(:signature => 'auth mask remove (\d+)', :plugin => name, :method => 'remove_mask',
-            :group_id => group.pk, :description => 'Remove authentication mask').params = [:id]
-        Models::Signature.find_or_create(:signature => 'auth mask list', :plugin => name, :method => 'list_mask',
-            :group_id => group.pk, :description => 'List all available authentication masks')
-        Models::Signature.find_or_create(:signature => 'auth nick ident (\S+) (true|false)', :plugin => name, :method => 'nick_ident',
-            :group_id => group.pk, :description => 'Allow authentication to nicks identified to NickServ').params = [:nick, :ident]
-        Models::Signature.find_or_create(:signature => 'auth nick password (\S+) (\S+)', :plugin => name, :method => 'nick_pass',
-            :group_id => group.pk, :description => 'Set authentication password for nick').params = [:nick, :password]
-        Models::Signature.find_or_create(:signature => 'auth nick clear password (\S+)', :plugin => name, :method => 'clear_pass',
-            :group_id => group.pk, :description => 'Clear nicks authentication password').params = [:nick]
-        Models::Signature.find_or_create(:signature => 'auth nick info (\S+)', :plugin => name, :method => 'nick_info',
-            :group_id => group.pk, :description => 'Return authentication information about given nick').params = [:nick]
-        Models::Signature.find_or_create(:signature => 'auth nick set (\S+) (\S+)', :plugin => name, :method => 'set_nick',
-            :group_id => group.pk, :description => 'Set the group for a given nick').params = [:nick, :group]
-        Models::Signature.find_or_create(:signature => 'auth nick unset (\S+) (\S+)', :plugin => name, :method => 'unset_nick',
-            :group_id => group.pk, :description => 'Unset the group for a given nick').params = [:nick, :group]
-        Models::Signature.find_or_create(:signature => 'auth group list', :plugin => name, :method => 'list_groups',
-            :group_id => group.pk, :description => 'List available authentication groups')
-        Models::Signature.find_or_create(:signature => 'auth group info (\S+)', :plugin => name, :method => 'group_info',
-            :group_id => group.pk, :description => 'List members of given group').params = [:group]
-        Models::Signature.find_or_create(:signature => 'groups', :plugin => name, :method => 'show_groups',
-            :description => 'Show user groups they are currently a member of')
+        add_sig(:sig => 'auth (\S+)', :method => :authenticate, :desc => 'Authenticate with bot using a password', :params => [:password])
+        add_sig(:sig => 'ident', :method => :send_whois, :desc => 'Instructs the bot to check your NickServ status')
+        add_sig(:sig => 'auth mask add (\S+) (\S+)', :method => :add_mask, :group => group, :desc => 'Add authentication mask and set initial group', :params => [:mask, :group])
+        add_sig(:sig => 'auth mask set (\d+) (.+)', :method => :set_mask_groups, :group => group, :desc => 'Set groups for the given mask', :params => [:id, :groups])
+        add_sig(:sig => 'auth mask unset (\d+) (.+)', :method => :del_mask_groups, :group => group, :desc => 'Remove groups for the given mask', :params => [:id, :groups])
+        add_sig(:sig => 'auth mask remove (\d+)', :method => :remove_mask, :group => group, :desc => 'Remove authentication mask', :params => [:id])
+        add_sig(:sig => 'auth mask list', :method => :list_mask, :group => group, :desc => 'List all available authentication masks')
+        add_sig(:sig => 'auth nick ident (\S+) (true|false)', :method => :nick_ident, :group => group, :desc => 'Allow authentication to nicks identified to NickServ', :params => [:nick, :ident])
+        add_sig(:sig => 'auth nick password (\S+) (\S+)', :method => :nick_pass, :group => group, :desc => 'Set authentication password for nick', :params => [:nick, :password])
+        add_sig(:sig => 'auth nick clear password (\S+)', :method => :clear_pass, :group => group, :desc => 'Clear nicks authentication password', :params => [:nick])
+        add_sig(:sig => 'auth nick info (\S+)', :method => :nick_info, :group => group, :desc => 'Return authentication information about given nick', :params => [:nick])
+        add_sig(:sig => 'auth nick set (\S+) (\S+)', :method => :set_nick, :group => group, :desc => 'Set the group for a given nick', :params => [:nick, :group])
+        add_sig(:sig => 'auth nick unset (\S+) (\S+)', :method => :unset_nick, :group => group, :desc => 'Unset the group for a given nick', :params => [:nick, :group])
+        add_sig(:sig => 'auth group list', :method => :list_groups, :group => group, :desc => 'List available authentication groups')
+        add_sig(:sig => 'auth group info (\S+)', :method => :group_info, :group => group, :desc => 'List members of given group', :params => [:group])
+        add_sig(:sig => 'groups', :method => :show_groups, :desc => 'Show user groups they are currently a member of')
         @whois_cache = []
         @nickserv_nicks = []
         populate_nickserv
@@ -247,7 +231,7 @@ class Authenticator < ModSpox::Plugin
         if(group)
             nicks = []
             masks = []
-            Models::AuthGroup.filter(:group_id => group.pk).each do |ag|
+            Models::AuthGroup.filter(:group => group.pk).each do |ag|
                 if(ag.auth.nick)
                     nicks << ag.auth.nick.nick
                 end

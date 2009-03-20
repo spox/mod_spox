@@ -4,7 +4,7 @@ class EightBall < ModSpox::Plugin
 
     def initialize(pipeline)
         super
-        Signature.find_or_create(:signature => '8ball .+\?$', :plugin => name, :method => 'eightball', :description => 'Ask the magic eightball a question')
+        add_sig(:sig => '8ball .+\?$', :method => :eightball, :desc => 'Ask the magic eightball a question')
         @responses = ['Ask Again Later',
                       'Better Not Tell You Now',
                       'Concentrate and Ask Again',

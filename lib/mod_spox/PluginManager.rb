@@ -41,7 +41,6 @@ module ModSpox
                     unload_plugins
                     load_plugins
                 end
-                @pipeline << Messages::Internal::SignaturesUpdate.new
             end
         end
 
@@ -116,7 +115,7 @@ module ModSpox
         # Loads and initializes plugins
         def load_plugins
             @pipeline << Messages::Internal::TimerClear.new
-            Models::Signature.destroy_all
+            Models::Signature.set(:enabled => false)
             [BotConfig[:pluginpath], BotConfig[:userpluginpath]].each do |path|
                 Dir.new(path).each do |file|
                     if(file =~ /^[^\.].+\.rb$/)
@@ -133,7 +132,6 @@ module ModSpox
 
         # Destroys plugins
         def unload_plugins
-            Models::Signature.destroy_all
             @plugins.each_pair do |sym, holder|
                 begin
                     holder.plugin.destroy unless holder.plugin.nil?

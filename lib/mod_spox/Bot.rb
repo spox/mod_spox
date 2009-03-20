@@ -305,9 +305,9 @@ module ModSpox
             messages = message.message.is_a?(Array) ? message.message : [message.message]
             messages.each do |part|
                 part.split("\n").each do |content|
-                    while(content.size > 450)
-                        output = content[0..450]
-                        content.slice!(0, 451) #(450, content.size)
+                    while(content.size > 400)
+                        output = content[0..400]
+                        content.slice!(0, 401) #(450, content.size)
                         @socket.prioritize_message(target, "PRIVMSG #{target} :#{message.is_ctcp? ? "\cA#{message.ctcp_type} #{output}\cA" : output}")
                     end
                     @socket.prioritize_message(target, "PRIVMSG #{target} :#{message.is_ctcp? ? "\cA#{message.ctcp_type} #{content}\cA" : content}")
@@ -518,7 +518,6 @@ module ModSpox
             Models::Nick.clean
             Models::Channel.clean
             Models::NickChannel.destroy_all
-            Models::Signature.delete_all
         end
     end
 

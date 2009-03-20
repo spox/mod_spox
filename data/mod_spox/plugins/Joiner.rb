@@ -2,7 +2,7 @@ class Joiner < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)
         admin = Models::Group.filter(:name => 'admin').first
-        Models::Signature.find_or_create(:signature => 'join (\S+)', :plugin => name, :method => 'join', :group_id => admin.pk).params = [:channel]
+        add_sig(:sig => 'join (\S+)', :method => :join, :group => admin, :params => [:channel])
         @pipeline.hook(self, :send_who, :Incoming_Join)
     end
     

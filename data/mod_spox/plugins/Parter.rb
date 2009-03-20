@@ -3,8 +3,8 @@ class Parter < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)
         admin = Models::Group.filter(:name => 'admin').first
-        Models::Signature.find_or_create(:signature => 'part (\S+)', :plugin => name, :method => 'part', :group_id => admin.pk).params = [:channel]
-        Models::Signature.find_or_create(:signature => 'part', :plugin => name, :method => 'direct_part', :group_id => admin.pk)
+        add_sig(:sig => 'part (\S+)', :method => :part, :group => admin, :params => [:channel])
+        add_sig(:sig => 'part', :method => :direct_part, :group => admin)
     end
     
     # message:: ModSpox::Messages::Incoming::Privmsg

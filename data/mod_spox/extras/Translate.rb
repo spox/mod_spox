@@ -10,13 +10,10 @@ class Translate < ModSpox::Plugin
             Logger.warn('Error: This plugin requires the HTMLEntities gem. Please install and reload plugin.')
             raise Exceptions::BotException.new("Missing required HTMLEntities library")
         end
-        Signature.find_or_create(:signature => 'translate ([a-z]{2}\|[a-z]{2}) (.+)', :plugin => name, :method => 'translate',
-            :description => 'Translate text').params = [:lang, :text]
-        Signature.find_or_create(:signature => 'autotranslate add ([a-z]{2}) (\S+)', :plugin => name, :method => 'auto_add',
-            :description => 'Add a nick to the autotranslate service').params = [:lang, :nick]
-        Signature.find_or_create(:signature => 'autotranslate remove (\S+)', :plugin => name, :method => 'auto_remove',
-            :description => 'Remove a nick from the autotranslate service').params = [:nick]
-        add_sig(:sig => 'translate languages', :method => 'langs', :description => 'Show available languages')
+        add_sig(:sig => 'translate ([a-z]{2}\|[a-z]{2}) (.+)', :method => :translate, :desc => 'Translate text', :params => [:lang, :text])
+        add_sig(:sig => 'autotranslate add ([a-z]{2}) (\S+)', :method => :auto_add, :desc => 'Add a nick to the autotranslate service', :params => [:lang, :nick])
+        add_sig(:sig => 'autotranslate remove (\S+)', :method => :auto_remove, :desc => 'Remove a nick from the autotranslate service', :params => [:nick])
+        add_sig(:sig => 'translate languages', :method => :langs, :desc => 'Show available languages')
         @pipeline.hook(self, :listener, :Incoming_Privmsg)
         @watchers = {}
         @cache = {}

@@ -6,33 +6,19 @@ class Banner < ModSpox::Plugin
     def initialize(pipeline)
         super
         admin = Group.find_or_create(:name => 'banner')
-        Signature.find_or_create(:signature => 'ban (\S+)', :plugin => name, :method => 'default_ban', :group_id => admin.pk,
-            :description => 'Kickban given nick from current channel').params = [:nick]
-        Signature.find_or_create(:signature => 'ban (\S+) (\S+)', :plugin => name, :method => 'channel_ban', :group_id => admin.pk,
-            :description => 'Kickban given nick from given channel').params = [:nick, :channel]
-        Signature.find_or_create(:signature => 'ban (\S+) (\S+) (\d+) ?(.+)?', :plugin => name, :method => 'full_ban', :group_id => admin.pk,
-            :description => 'Kickban given nick from given channel for given number of seconds').params = [:nick, :channel, :time, :message]
-        Signature.find_or_create(:signature => 'banmask (\S+) (\S+) (\d+) ?(.+)?', :plugin => name, :method => 'message_mask_ban', :group_id => admin.pk,
-            :description => 'Kickban given mask from given channel for given number of seconds providing an optional message'
-            ).params = [:mask, :channel, :time, :message]
-        Signature.find_or_create(:signature => 'banmask list', :plugin => name, :method => 'mask_list', :group_id => admin.pk,
-            :description => 'List all currently active banmasks')
-        Signature.find_or_create(:signature => 'banmask remove (\d+)', :plugin => name, :method => 'mask_remove', :group_id => admin.pk,
-            :description => 'Remove a currently enabled ban mask').params = [:id]
-        Signature.find_or_create(:signature => 'banlist', :plugin => name, :method => 'ban_list', :group_id => admin.pk,
-            :description => 'List all currently active bans generated from the bot')
-        Signature.find_or_create(:signature => 'banlist remove (\d+)', :plugin => name, :method => 'ban_remove', :group_id => admin.pk,
-            :description => 'Remove a current ban').params = [:id]
-        Signature.find_or_create(:signature => 'exempt mode ([ov]) ?(\S+)?', :plugin => name, :method => 'exempt_mode', :group_id => admin.pk,
-            :description => 'Exempt given modes from kick. Apply to all channels if one is not provided').params = [:mode, :channel]
-        Signature.find_or_create(:signature => 'exempt nick (\S+) ?(\S+)?', :plugin => name, :method => 'exempt_nick', :group_id => admin.pk,
-            :description => 'Exempt a nick from kicks globally or per channel').params = [:nick, :channel]
-        Signature.find_or_create(:signature => 'exempt source (\S+)', :plugin => name, :method => 'exempt_source', :group_id => admin.pk,
-            :description => 'Exempt a source from kicks globally or per channel').params = [:source, :channel]
-        Signature.find_or_create(:signature => 'exempt list (nick|mode|source)', :plugin => name, :method => 'exempt_list', :group_id => admin.pk,
-            :description => 'List current exemptions of given type').params = [:type]
-        Signature.find_or_create(:signature => 'exempt remove (nick|mode|source) (\d+)', :plugin => name, :method => 'exempt_remove', :group_id => admin.pk,
-            :description => 'Remove exemption from given type').params = [:type, :id]
+        add_sig(:sig => 'ban (\S+)', :method => :default_ban, :group => admin, :desc => 'Kickban given nick from current channel', :params => [:nick])
+        add_sig(:sig => 'ban (\S+) (\S+)', :method => :channel_ban, :group => admin, :desc => 'Kickban given nick from given channel', :params => [:nick, :channel])
+        add_sig(:sig => 'ban (\S+) (\S+) (\d+) ?(.+)?', :method => :full_ban, :group => admin, :desc => 'Kickban given nick from given channel for given number of seconds', :params => [:nick, :channel, :time, :message])
+        add_sig(:sig => 'banmask (\S+) (\S+) (\d+) ?(.+)?', :method => :message_mask_ban, :group => admin, :desc => 'Kickban given mask from given channel for given number of seconds providing an optional message', :params => [:mask, :channel, :time, :message])
+        add_sig(:sig => 'banmask list', :method => :mask_list, :group => admin, :desc => 'List all currently active banmasks')
+        add_sig(:sig => 'banmask remove (\d+)', :method => :mask_remove, :group => admin, :desc => 'Remove a currently enabled ban mask', :params => [:id])
+        add_sig(:sig => 'banlist', :method => :ban_list, :group => admin, :desc => 'List all currently active bans generated from the bot')
+        add_sig(:sig => 'banlist remove (\d+)', :method => :ban_remove, :group => admin, :desc => 'Remove a current ban', :params => [:id])
+        add_sig(:sig => 'exempt mode ([ov]) ?(\S+)?', :method => :exempt_mode, :group => admin, :desc => 'Exempt given modes from kick. Apply to all channels if one is not provided', :params => [:mode, :channel])
+        add_sig(:sig => 'exempt nick (\S+) ?(\S+)?', :method => :exempt_nick, :group => admin, :desc => 'Exempt a nick from kicks globally or per channel', :params => [:nick, :channel])
+        add_sig(:sig => 'exempt source (\S+)', :method => :exempt_source, :group => admin, :desc => 'Exempt a source from kicks globally or per channel', :params => [:source, :channel])
+        add_sig(:sig => 'exempt list (nick|mode|source)', :method => :exempt_list, :group => admin, :desc => 'List current exemptions of given type', :params => [:type])
+        add_sig(:sig => 'exempt remove (nick|mode|source) (\d+)', :method => :exempt_remove, :group => admin, :desc => 'Remove exemption from given type', :params => [:type, :id])
         @pipeline.hook(self, :mode_check, :Incoming_Mode)
         @pipeline.hook(self, :join_check, :Incoming_Join)
         @pipeline.hook(self, :who_check, :Incoming_Who)

@@ -93,6 +93,9 @@ module ModSpox
         def populate_signatures(m=nil)
             @populate_lock.synchronize do
                 @signatures = {}
+                a = Models::Signature.filter(:enabled => false)
+                Logger.warn("Killing #{a.count} signatures")
+                a.destroy
                 Models::Signature.all.each do |s|
                     c = s.signature[0].chr.downcase
                     if(c =~ /^[a-z]$/)

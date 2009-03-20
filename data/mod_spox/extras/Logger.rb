@@ -22,8 +22,8 @@ class ChatLogger < ModSpox::Plugin
         @pipeline.hook(self, :log_privmsg, :Incoming_Notice)
         @pipeline.hook(self, :log_outpriv, :Outgoing_Privmsg)
         @pipeline.hook(self, :log_outpriv, :Outgoing_Notice)
-        Signature.find_or_create(:signature => 'seen (\S+)', :plugin => name, :method => 'seen', :description => 'Report last sighting of nick').params = [:nick]
-        Signature.find_or_create(:signature => 'lastspoke (\S+)', :plugin => name, :method => 'spoke', :description => 'Report last time nick spoke').params = [:nick]
+        add_sig(:sig => 'seen (\S+)', :method => :seen, :desc => 'Report last sighting of nick', :params => [:nick])
+        add_sig(:sig => 'lastspoke (\S+)', :method => :spoke, :desc => 'Report last time nick spoke', :params => [:nick])
     end
     
     def log_outpriv(message)

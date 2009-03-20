@@ -2,7 +2,7 @@ class Pinger < ModSpox::Plugin
 
     def initialize(pipeline)
         super(pipeline)
-        Models::Signature.find_or_create(:signature => 'ping', :plugin => name, :method => 'ping')
+        add_sig(:sig => 'ping', :method => :ping)
     end
     
     def ping(message, params)

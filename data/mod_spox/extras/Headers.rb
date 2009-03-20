@@ -6,12 +6,9 @@ class Headers < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)
         admin = Models::Group.find_or_create(:name => 'headers')
-        Models::Signature.find_or_create(:signature => 'headers (https?:\/\/\S+)', :plugin => name, :method => 'fetch_headers',
-            :description => 'Fetch HTTP headers').params = [:url]
-        Models::Signature.find_or_create(:signature => 'headers max (\d+)', :plugin => name, :method => 'set_max',
-            :group_id => admin.pk, :description => 'Set maximum number of headers to return').params = [:max]
-        Models::Signature.find_or_create(:signature => 'headers max', :plugin => name, :method => 'show_max',
-            :group_id => admin.pk, :description => 'Show maximum number of headers to return ')
+        add_sig(:sig => 'headers (https?:\/\/\S+)', :method => :fetch_headers, :desc => 'Fetch HTTP headers', :params => [:url])
+        add_sig(:sig => 'headers max (\d+)', :method => :set_max, :group => admin, :desc => 'Set maximum number of headers to return', :params => [:max])
+        add_sig(:sig => 'headers max', :method => :show_max, :group => admin, :desc => 'Show maximum number of headers to return ')
         @lock = Mutex.new
         @max = Models::Config[:headers_max]
         @max = @max.nil? ? 0 : @max.to_i

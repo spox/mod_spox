@@ -5,12 +5,12 @@ include Messages::Outgoing
     def initialize(pipeline)
         super(pipeline)
         admin = Models::Group.filter(:name => 'admin').first
-        Models::Signature.find_or_create(:signature => 'triggers active', :plugin => name, :method => 'active', :group_id => admin.pk, :description => 'List all currently active triggers')
-        Models::Signature.find_or_create(:signature => 'triggers list', :plugin => name, :method => 'list', :group_id => admin.pk, :description => 'List all triggers and their current status')
-        Models::Signature.find_or_create(:signature => 'triggers add (\S+)', :plugin => name, :method => 'add', :group_id => admin.pk, :description => 'Add a new trigger and activate it').params = [:trigger]
-        Models::Signature.find_or_create(:signature => 'triggers remove (\d+)', :plugin => name, :method => 'remove', :group_id => admin.pk, :description => 'Remove trigger').params = [:id]
-        Models::Signature.find_or_create(:signature => 'triggers activate (\d+)', :plugin => name, :method => 'activate', :group_id => admin.pk, :description => 'Activate the trigger').params = [:id]
-        Models::Signature.find_or_create(:signature => 'triggers deactivate (\d+)', :plugin => name, :method => 'deactivate', :group_id => admin.pk, :description => 'Deactivate the trigger').params = [:id]
+        add_sig(:sig => 'triggers active', :method => :active, :group => admin, :desc => 'List all currently active triggers')
+        add_sig(:sig => 'triggers list', :method => :list, :group => admin, :desc => 'List all triggers and their current status')
+        add_sig(:sig => 'triggers add (\S+)', :method => :add, :group => admin, :desc => 'Add a new trigger and activate it', :params => [:trigger])
+        add_sig(:sig => 'triggers remove (\d+)', :method => :remove, :group => admin, :desc => 'Remove trigger', :params => [:id])
+        add_sig(:sig => 'triggers activate (\d+)', :method => :activate, :group => admin, :desc => 'Activate the trigger', :params => [:id])
+        add_sig(:sig => 'triggers deactivate (\d+)', :method => :deactivate, :group => admin, :desc => 'Deactivate the trigger', :params => [:id])
     end
 
     def active(message, params)

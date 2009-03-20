@@ -8,24 +8,15 @@ class DCC < ModSpox::Plugin
         super
         group = Group.find_or_create(:name => 'dcc')
         admin = Group.find_or_create(:name => 'admin')
-        Signature.find_or_create(:signature => 'file list(\s(.+))?', :plugin => name, :method => 'file_list',
-            :description => 'List available DCC files', :group_id => group.pk).params = [:pattern]
-        Signature.find_or_create(:signature => 'file get (.+)', :plugin => name, :method => 'file_get',
-            :description => 'Download file', :group_id => group.pk).params = [:filename]
-        Signature.find_or_create(:signature => 'file ports (\d+)-(\d+)', :plugin => name, :method => 'set_ports',
-            :description => 'Set allowed DCC ports', :group_id => admin.pk).params = [:start, :end]
-        Signature.find_or_create(:signature => 'file adddir (.+)', :plugin => name, :method => 'add_dir',
-            :description => 'Add directory to file list', :group_id => admin.pk).params = [:dir]
-        Signature.find_or_create(:signature => 'file rmdir (\d+)', :plugin => name, :method => 'rm_dir',
-            :description => 'Remove directory from file list', :group_id => admin.pk).params = [:dir]
-        Signature.find_or_create(:signature => 'file show dir', :plugin => name, :method => 'show_dirs',
-            :description => 'Show directories available to file list', :group_id => admin.pk)
-        Signature.find_or_create(:signature => 'file show ports', :plugin => name, :method => 'show_ports',
-            :description => 'Show allowed ports', :group_id => admin.pk)
-        Signature.find_or_create(:signature => 'file max wait(\s(\d+))?', :plugin => name, :method => 'max_wait',
-            :description => 'Show/set timeout for accepting files', :group_id => admin.pk).params = [:wait]
-        Signature.find_or_create(:signature => 'dcc chat', :plugin => name, :method => 'dcc_chat',
-            :description => 'Start a DCC chat with the bot (useful if behind firewall', :group_id => group.pk)
+        add_sig(:sig => 'file list(\s(.+))?', :method => :file_list, :desc => 'List available DCC files', :group => group, :params => [:pattern])
+        add_sig(:sig => 'file get (.+)', :method => :file_get, :desc => 'Download file', :group => group, :params => [:filename])
+        add_sig(:sig => 'file ports (\d+)-(\d+)', :method => :set_ports, :desc => 'Set allowed DCC ports', :group => admin, :params => [:start, :end])
+        add_sig(:sig => 'file adddir (.+)', :method => :add_dir, :desc => 'Add directory to file list', :group => admin, :params => [:dir])
+        add_sig(:sig => 'file rmdir (\d+)', :method => :rm_dir, :desc => 'Remove directory from file list', :group => admin, :params => [:dir])
+        add_sig(:sig => 'file show dir', :method => :show_dirs, :desc => 'Show directories available to file list', :group => admin)
+        add_sig(:sig => 'file show ports', :method => :show_ports, :desc => 'Show allowed ports', :group => admin)
+        add_sig(:sig => 'file max wait(\s(\d+))?', :method => :max_wait, :desc => 'Show/set timeout for accepting files', :group => admin, :params => [:wait])
+        add_sig(:sig => 'dcc chat', :method => :dcc_chat, :desc => 'Start a DCC chat with the bot (useful if behind firewall', :group => group)
         @servers = {}
         @ports = Setting[:dcc_ports]
         @ports = {:start => 49152, :end => 65535} if @ports.nil?
