@@ -10,6 +10,7 @@ class Ponger < ModSpox::Plugin
         @pipeline.hook(self, :get_lag_pong, :Incoming_Pong)
         @lock = Mutex.new
         @pipeline.hook(self, :start_ponger, :Incoming_Motd)
+        @pipeline.hook(self, :check_start_ponger, :Internal_SignaturesUpdate)
     end
     
     # message:: ModSpox::Messages::Incoming::Ping
@@ -53,6 +54,10 @@ class Ponger < ModSpox::Plugin
     def start_ponger(m)
         send_lag_ping
         @pipeline << Messages::Internal::TimerAdd.new(self, 60){ send_lag_ping }
+    end
+
+    def check_start_ponger(m)
+        @pipeline << Messages::Internal::TimerAdd.new(self, 30, nil, true){ start_ponger(nil) if @lag.nil? }
     end
 
 end
