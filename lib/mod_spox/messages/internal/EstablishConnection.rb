@@ -11,7 +11,7 @@ module ModSpox
                 # server:: Server to connect to
                 # port:: Port to connect to
                 # password:: password to connect
-                def initialize(server, port, password=nil)
+                def initialize(server=nil, port=nil, password=nil)
                     @server = server
                     @port = port
                     @password = password

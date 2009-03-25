@@ -31,7 +31,7 @@ module ModSpox
         # Destroys and reinitializes plugins
         def reload_plugins(message=nil)
             @plugin_lock.synchronize do
-                if(message.fresh && message.stale)
+                if(!message.nil? && (message.fresh && message.stale))
                     do_unload(message.stale)
                     FileUtils.remove_file(message.stale)
                     FileUtils.copy(message.fresh, BotConfig[:userpluginpath])

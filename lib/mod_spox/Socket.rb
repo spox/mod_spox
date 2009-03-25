@@ -28,12 +28,12 @@ module ModSpox
         # burst_in:: Number of seconds allowed to burst
         # burst:: Number of lines allowed to be sent within the burst_in time limit
         # Create a new Socket
-        def initialize(bot, server, port, delay=2, burst_in=2, burst=4)
+        def initialize(bot, server=nil, port=nil, delay=2, burst_in=2, burst=4)
             @factory = bot.factory
             @pipeline = bot.pipeline
             @dcc = bot.dcc_sockets
             @server = server
-            @port = port.to_i
+            @port = port
             @sent = 0
             @received = 0
             @delay = delay.to_f > 0 ? delay.to_f : 2.0
@@ -47,16 +47,30 @@ module ModSpox
             @lock = Mutex.new
             @ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
             @connected_at = nil
+            @empty_lines = 0
+            @max_empty = 5
+            @servers = Array.new
+            @connect_locker = Mutex.new
         end
 
         # Connects to the IRC server
         def connect
-            Logger.info("Establishing connection to #{@server}:#{@port}")
-            @socket = TCPSocket.new(@server, @port)
-            server = Models::Server.find_or_create(:host => @server, :port => @port)
-            server.connected = true
-            server.save
-            @connected_at = Time.now
+            return unless @connect_locker.try_lock
+            begin
+                populate_servers if @servers.empty?
+                s = @servers.pop
+                @server = s.host
+                @port = s.port.to_i
+                Logger.info("Establishing connection to #{@server}:#{@port}")
+                @socket = TCPSocket.new(@server, @port)
+                @empty_lines = 0
+                s.connected = true
+                s.save
+                @connected_at = Time.now
+                @pipeline << Messages::Internal::Connected.new(@server, @port)
+            ensure
+                @connect_locker.unlock
+            end
         end
 
         # new_delay:: Seconds to delay between bursts
@@ -90,36 +104,52 @@ module ModSpox
         # Sends a string to the IRC server
         def write(message)
             return if message.nil?
-            @socket.puts(message + "\n")
-            @socket.flush
-            Logger.info("<< #{message}")
-            @last_send = Time.new
-            @sent += 1
-            @check_burst += 1
-            @time_check = Time.now.to_i if @time_check.nil?
+            begin
+                @socket.puts(message + "\n")
+                @socket.flush
+                Logger.info("<< #{message}")
+                @last_send = Time.new
+                @sent += 1
+                @check_burst += 1
+                @time_check = Time.now.to_i if @time_check.nil?
+            rescue Object => boom
+                Logger.warn("Failed to write message to server. #{boom}")
+                @pipeline << Messages::Internal::Disconnected.new
+                raise Exceptions::Disconnected.new
+            end
         end
 
         # Retrieves a string from the server
         def read
-            tainted_message = @socket.gets
-            if(tainted_message.nil? || @socket.closed?) # || message =~ /^ERROR/)
-                @pipeline << Messages::Internal::Disconnected.new
-                server = Models::Server.find_or_create(:host => @server, :port => @port)
-                server.connected = false
-                server.save
-                shutdown(true)
-            elsif(tainted_message.length > 0)
-                message = @ic.iconv(tainted_message + ' ')[0..-2]
-                message.strip!
-                Logger.info(">> #{message}")
-                @received += 1
-                begin
+            return if @empty_lines > @max_empty
+            begin
+                tainted_message = @socket.gets
+                if(@socket.closed? || tainted_message =~ /^ERROR/)
+                    @pipeline << Messages::Internal::Disconnected.new
+                elsif(tainted_message.nil?)
+                    Logger.warn('Received empty message from IRC socket on read')
+                    @empty_lines += 1
+                    if(@empty_lines > 5)
+                        @pipeline << Messages::Internal::Disconnected.new
+                    end
+                elsif(tainted_message.length > 0)
+                    @emtpy_lines = 0
+                    message = @ic.iconv(tainted_message + ' ')[0..-2]
                     message.strip!
-                rescue Object => boom
-                    #do nothing#
-                ensure
-                    @factory << message
+                    Logger.info(">> #{message}")
+                    @received += 1
+                    begin
+                        message.strip!
+                    rescue Object => boom
+                        #do nothing#
+                    ensure
+                        @factory << message
+                    end
                 end
+            rescue Object => boom
+                Logger.warn("Failed to read message from server: #{boom}")
+                @pipeline << Messages::Internal::Disconnected.new
+                raise Exceptions::Disconnected.new
             end
         end
 
@@ -176,6 +206,14 @@ module ModSpox
             server.save
             sleep(0.1)
             connect if restart
+        end
+
+        private
+
+        def populate_servers
+            Models::Server.reverse_order(:priority).each{|s|
+                @servers << s
+            }
         end
 
     end

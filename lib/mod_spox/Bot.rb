@@ -33,6 +33,7 @@ module ModSpox
             Logger.initialize($LOGTO, $LOGLEVEL)
             Pool.instance
             clean_models
+            @servers = Array.new
             @start_time = Time.now
             @pipeline = Pipeline.new
             @timer = Timer.new(@pipeline)
@@ -106,10 +107,28 @@ module ModSpox
             begin
                 @socket = Sockets.new(self) if @socket.nil?
                 @socket.irc_connect(message.server, message.port)
-                @pipeline << Messages::Internal::Connected.new(message.server, message.port)
             rescue Object => boom
                 Logger.warn("Failed connection to server: #{boom}")
-                @pipeline << Messages::Internal::ConnectionFailed.new(message.server, message.port)
+                @pipeline << Messages::Internal::ConnectionFailed.new(@socket.irc_socket.server, @socket.irc_socket.port)
+            end
+        end
+
+        # message:: Messages::Internal::Reconnect
+        # instructs bot to reconnect to IRC server
+        def reconnect(message=nil)
+            begin
+                @plugin_manager.reload_plugins
+                @socket.irc_reconnect
+            rescue Object => boom
+                Logger.warn("Initial reconnect failed. (#{boom}) Starting timed reconnect process.")
+                begin
+                    @socket.irc_reconnect
+                rescue Object => boom
+                    Logger.warn("Failed to connect to server. Reason: #{boom}")
+                    Logger.warn("Will retry in 20 seconds")
+                    sleep(20)
+                    retry
+                end
             end
         end
 
@@ -155,7 +174,7 @@ module ModSpox
              :Internal_StatusRequest => :status, :Internal_ChangeNick => :set_nick,
              :Internal_NickRequest => :get_nick, :Internal_HaltBot => :halt,
              :Internal_Disconnected => :disconnected, :Internal_TimerClear => :clear_timer,
-             :Outgoing_Raw => :raw
+             :Outgoing_Raw => :raw, :Internal_Reconnect => :reconnect
              }.each_pair{ |type,method| @pipeline.hook(self, method, type) }
         end
 

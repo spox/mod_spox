@@ -27,6 +27,7 @@ module ModSpox
             @pipeline.hook(self, :check_dcc, :Incoming_Privmsg)
             @pipeline.hook(self, :return_socket, :Internal_DCCRequest)
             @pipeline.hook(self, :dcc_listener, :Internal_DCCListener)
+            @pipeline.hook(self, :disconnect_irc, :Internal_Disconnected)
             @kill = false
             @ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
         end
@@ -34,18 +35,26 @@ module ModSpox
         # server:: IRC server string
         # port:: IRC port
         # Connect to the given IRC server
-        def irc_connect(server, port)
-            irc_reconnect(server, port) unless @irc_socket.nil?
-            @irc_socket = Socket.new(@bot, server, port)
-            @irc_socket.connect
-            @read_sockets << @irc_socket.socket
-            restart_reader
+        def irc_connect(server=nil, port=nil)
+            if(@irc_socket.nil?)
+                @irc_socket = Socket.new(@bot, server, port)
+                @irc_socket.connect
+                @read_sockets << @irc_socket.socket
+                restart_reader
+            else
+                irc_reconnect
+            end
         end
         
-        def irc_reconnect(server, port)
-            @read_sockets.delete(@irc_socket.socket)
-            @irc_socket.shutdown
-            irc_connect(server, port)
+        def irc_reconnect
+            unless(@irc_socket.nil?)
+                disconnect_irc
+                @irc_socket.shutdown(true)
+                @read_sockets << @irc_socket.socket
+                restart_reader
+            else
+                irc_connect
+            end
         end
 
         def <<(message)
@@ -141,6 +150,13 @@ module ModSpox
             end
         end
 
+        def disconnect_irc(m=nil)
+            if(@read_sockets.include?(@irc_socket.socket))
+                @read_sockets.delete(@irc_socket.socket)
+                restart_reader
+            end
+        end
+
         private
 
         # ip:: IP address to connect to
@@ -205,7 +221,12 @@ module ModSpox
                                         @pipeline << Messages::Incoming::Privmsg.new(string, @mapped_sockets[sock.object_id][:nick], "::#{sock.object_id}::", string)
                                     end
                                 else
-                                    @irc_socket.read
+                                    begin
+                                        @irc_socket.read
+                                    rescue Exceptions::Disconnected => boom
+                                        Logger.warn('IRC socket is disconnected. Removing from reader sockets.')
+                                        disconnect_irc
+                                    end
                                 end
                             end
                         rescue Object => boom

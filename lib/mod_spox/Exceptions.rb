@@ -34,5 +34,8 @@ module ModSpox
         class EmptyQueue < BotException
         end
 
+        class Disconnected < BotException
+        end
+
     end
 end

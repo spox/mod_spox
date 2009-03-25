@@ -12,9 +12,7 @@ class Initializer < ModSpox::Plugin
     # message:: ModSpox::Messages::Internal::BotInitialized
     # Instructs bot to connect to server
     def connect(message)
-        populate_servers if @servers.empty?
-        s = @servers.pop
-        @pipeline << Messages::Internal::EstablishConnection.new(s.host, s.port)
+        @pipeline << Messages::Internal::EstablishConnection.new
     end
     
     # message:: ModSpox::Messages::Internal::Connected
@@ -27,15 +25,7 @@ class Initializer < ModSpox::Plugin
     # message:: ModSpox::Messages::Internal::ConnectionFailed or ModSpox::Messages::Internal::Disconnected
     # Reconnect to server on disconnection or connection failure
     def reconnect(message)
-        @pipeline << Messages::Internal::TimerAdd.new(self, Models::Config[:reconnect_wait].to_i, nil, true){ connect(nil) }
-    end
-    
-    private
-    
-    def populate_servers
-        Models::Server.reverse_order(:priority).each{|s|
-            @servers << s
-        }
+        @pipeline << Messages::Internal::Reconnect.new
     end
 
 end
