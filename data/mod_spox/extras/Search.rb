@@ -26,7 +26,7 @@ class Search < ModSpox::Plugin
             end
             output = []
             results.slice(0, limit).each do |title, url|
-                output << "#{title} -> #{Helpers.tinyurl(url)} [#{url.scan(/^http:\/\/.+?\//)[0]}]"
+                output << "#{Helpers.convert_entities(title)} -> #{Helpers.tinyurl(url)} [#{url.scan(/^http:\/\/.+?\//)[0]}]"
             end
             output = output.empty? ? "No results for: \2#{params[:terms]}\2" :  ["Search results for \2#{params[:terms]}:\2"] + output
             reply message.replyto, output

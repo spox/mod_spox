@@ -239,7 +239,7 @@ class PhpFuncLookup < ModSpox::Plugin
         desc = CGI::unescapeHTML(desc.gsub(/<.+?>/, ' ').gsub(/[\s]+/, ' '))
         output = [versions]
         output << "\2#{proto}\2"
-        output << desc
+        output << Helpers.convert_entities(desc)
         output << "http://www.php.net/manual/en/#{filename.gsub(/\.html$/, '.php')}"
         reply m.replyto, output
     end

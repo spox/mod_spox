@@ -11,12 +11,6 @@ class Confess < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)
         begin
-            require 'htmlentities'
-        rescue Object => boom
-            Logger.warn('Error: This plugin requires the HTMLEntities gem. Please install and reload plugin.')
-            raise Exceptions::BotException.new("Missing required HTMLEntities library")
-        end
-        begin
             Confession.db = Sequel.sqlite(BotConfig[:userpath] + '/confessions.db')
         rescue Object => boom
             Logger.warn("Error: Unable to initialize this plugin: #{boom}")
@@ -32,7 +26,6 @@ class Confess < ModSpox::Plugin
         Config[:confess] = 'nofetch' if Config[:confess].nil?
         @last_confession = {}
         @fetch = false
-        @coder = HTMLEntities.new
         @timer = {:action => nil, :id => nil}
         @lock = Mutex.new
         start_fetcher if Config[:confess] == 'fetch'
@@ -159,7 +152,7 @@ class Confess < ModSpox::Plugin
                 Logger.info("Match found: #{match[0]}")
                 conf = CGI::unescapeHTML(match[0])
                 conf = conf.gsub(/<.+?>/, ' ').gsub(/[\r\n]/, '').gsub(/\s+/, ' ')
-                conf = @coder.decode(conf)
+                conf = Helpers.convert_entities(conf)
                 Logger.info("Match turned into: #{conf}")
                 if conf.length < 300
                     begin

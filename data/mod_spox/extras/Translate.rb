@@ -4,12 +4,6 @@ class Translate < ModSpox::Plugin
     
     def initialize(pipeline)
         super(pipeline)
-        begin
-            require 'htmlentities'
-        rescue Object => boom
-            Logger.warn('Error: This plugin requires the HTMLEntities gem. Please install and reload plugin.')
-            raise Exceptions::BotException.new("Missing required HTMLEntities library")
-        end
         add_sig(:sig => 'translate ([a-z]{2}\|[a-z]{2}) (.+)', :method => :translate, :desc => 'Translate text', :params => [:lang, :text])
         add_sig(:sig => 'autotranslate add ([a-z]{2}) (\S+)', :method => :auto_add, :desc => 'Add a nick to the autotranslate service', :params => [:lang, :nick])
         add_sig(:sig => 'autotranslate remove (\S+)', :method => :auto_remove, :desc => 'Remove a nick from the autotranslate service', :params => [:nick])
@@ -17,7 +11,6 @@ class Translate < ModSpox::Plugin
         @pipeline.hook(self, :listener, :Incoming_Privmsg)
         @watchers = {}
         @cache = {}
-        @coder = HTMLEntities.new
         @allowed = {'zh'=>'Chinese-simplified','zt'=>'Chinese-traditional','en'=>'English','nl'=>'Dutch',
                     'fr'=>'French','de'=>'German','el'=>'Greek','it'=>'Italian','ja'=>'Japanese',
                     'ko'=>'Korean','pt'=>'Portuguese','ru'=>'Russian','es'=>'Spanish'}
@@ -119,7 +112,7 @@ class Translate < ModSpox::Plugin
                     @cache[langs] = {} unless @cache.has_key?(langs)
                     @cache[langs][text] = tr
                 end
-                return @coder.decode(tr).strip
+                return Helpers.convert_entities(tr).strip
             else
                 raise 'Failed to locate translation'
             end

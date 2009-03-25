@@ -150,5 +150,15 @@ module ModSpox
             @@nick_cache = Cache.new(20) unless Helpers.class_variable_defined?(:@@nick_cache)
             @@channel_cache = Cache.new(5) unless Helpers.class_variable_defined?(:@@channel_cache)
         end
+
+        def Helpers.convert_entities(string)
+            begin
+                require 'htmlentities'
+                @@coder = HTMLEntities.new unless Helpers.class_variable_defined?(:@@coder)
+                return @@coder.decode(string)
+            rescue Object
+                return string
+            end
+        end
     end
 end

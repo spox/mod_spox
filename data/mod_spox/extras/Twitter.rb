@@ -67,7 +67,6 @@ class Twitter < ModSpox::Plugin
         @pipeline.hook(self, :get_timer, :Internal_TimerResponse)
         @auth_info = Models::Setting.find_or_create(:name => 'twitter').value
         @twitter = ModClient.new
-        @coder = HTMLEntities.new
         @search_url = 'http://search.twitter.com/search.json'
         unless(@auth_info.is_a?(Hash))
             @auth_info = {:username => nil, :password => nil, :interval => 0, :channels => []}
@@ -109,7 +108,7 @@ class Twitter < ModSpox::Plugin
             output = ["Twitter match for: \2#{term}:\2"]
             result['results'].each do |item|
                 t = Time.parse(item['created_at'])
-                output << "[#{t.strftime("%Y/%m/%d-%H:%M:%S")}] <#{item['from_user']}> #{@coder.decode(item['text'])}"
+                output << "[#{t.strftime("%Y/%m/%d-%H:%M:%S")}] <#{item['from_user']}> #{Helpers.convert_entities(item['text'])}"
             end
             if(output.size < 2)
                 output = "\2Error:\2 No results found for term: #{term}"
@@ -124,7 +123,7 @@ class Twitter < ModSpox::Plugin
         msgs = @twitter.messages(:received)
         reply m.replyto, "\2Twitter INBOX\2 Messages in inbox: #{msgs.size} (only last 5 displayed)"
         msgs.slice(0..5).each do | msg |
-            reply m.replyto, "\2#{msg.sender.screen_name}:\2 [#{msg.id}] #{@coder.decode(msg.text)}"
+            reply m.replyto, "\2#{msg.sender.screen_name}:\2 [#{msg.id}] #{Helpers.convert_entities(msg.text)}"
         end
     end
     
@@ -286,7 +285,7 @@ class Twitter < ModSpox::Plugin
         begin
             msg = @twitter.status(:get, params[:m_id])
             if(msg)
-                reply m.replyto, "\2Tweet:\2 [#{msg.created_at.strftime("%Y/%m/%d-%H:%M:%S")}}] <#{msg.user.screen_name}> #{@coder.decode(msg.text)}"
+                reply m.replyto, "\2Tweet:\2 [#{msg.created_at.strftime("%Y/%m/%d-%H:%M:%S")}}] <#{msg.user.screen_name}> #{Helpers.convert_entities(msg.text)}"
             else
                 warning m.replyto, "failed to find message with ID: #{params[:m_id].strip}"
             end
@@ -305,14 +304,14 @@ class Twitter < ModSpox::Plugin
                 things = []
                 @twitter.my(:friends).each do |f|
                     @twitter.timeline_for(:friend, :id => f.screen_name, :since => @last_check) do |status|
-                        if(@coder.decode(status.text) =~ /^@(\S+)/)
+                        if(Helpers.convert_entities(status.text) =~ /^@(\S+)/)
                             next unless @twitter.my(:friends).map{|f|f.screen_name}.include?($1) || $1 == @twitter.login
                         end
-                        things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{status.user.screen_name}> #{@coder.decode(status.text)}"
+                        things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{status.user.screen_name}> #{Helpers.convert_entities(status.text)}"
                     end
                 end
                 @twitter.timeline_for(:me, :since => @last_check) do |status|
-                    things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{status.user.screen_name}> #{@coder.decode(status.text)}"
+                    things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{status.user.screen_name}> #{Helpers.convert_entities(status.text)}"
                 end
                 things.uniq!
                 things.sort!

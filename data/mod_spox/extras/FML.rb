@@ -26,7 +26,7 @@ class FML < ModSpox::Plugin
         doc = REXML::Document.new(data)
         output = []
         doc.elements.each('root/items/item/text') do |t|
-            output << t.text
+            output << Helpers.convert_entities(t.text)
         end
         raise 'Failed to fetch item from FML' if output.empty?
         return output[rand(output.size)]

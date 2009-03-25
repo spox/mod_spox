@@ -7,15 +7,8 @@ class UrbanDictionary < ModSpox::Plugin
 
     def initialize(pipeline)
         super(pipeline)
-        begin
-            require 'htmlentities'
-        rescue Object => boom
-            Logger.warn('Error: This plugin requires the HTMLEntities gem. Please install and reload plugin.')
-            raise Exceptions::BotException.new("Missing required HTMLEntities library")
-        end
         add_sig(:sig => 'udefine (?!key)((\d+ )?(.+))', :method => :define, :desc => 'Find the definition of a word or phrase', :params => [:fullmatch, :number, :term])
         add_sig(:sig => 'udefine key (.+)', :method => :key, :group => Models::Group.filter(:name => 'admin').first, :desc => 'Set API key', :params => [:key])
-        @coder = HTMLEntities.new
     end
 
     def define(message, params)
@@ -33,11 +26,11 @@ class UrbanDictionary < ModSpox::Plugin
                 if defs.size < result + 1
                     @pipeline << Privmsg.new(message.replyto, "Error: Definition number #{result+1} for term: #{params[:term]} not found.")
                 else
-                    defin = defs[result].definition.length > 500 ? defs[result].definition.slice(0..500) + " *[CUT]*" : defs[result].definition
-                    exp = defs[result].example.length > 500 ? defs[result].example.slice(0..500) + " *[CUT]*" : defs[result].example
+                    defin = defs[result].definition.length > 500 ? defs[result].definition.slice(0..400) + " *[CUT]*" : defs[result].definition
+                    exp = defs[result].example.length > 500 ? defs[result].example.slice(0..400) + " *[CUT]*" : defs[result].example
                     output << "Definition for \2#{defs[result].word}:\2"
-                    output << @coder.decode(defin.gsub(/[\r\n\s]+/, ' '))
-                    output << "\2Example usage:\2 #{@coder.decode(exp.gsub(/[\r\n\s]+/, ' '))}" if exp.length > 0
+                    output << Helpers.convert_entities(defin.gsub(/[\r\n\s]+/, ' '))
+                    output << "\2Example usage:\2 #{Helpers.convert_entities(exp.gsub(/[\r\n\s]+/, ' '))}" if exp.length > 0
                     reply message.replyto, output
                 end
             rescue Timeout::Error
