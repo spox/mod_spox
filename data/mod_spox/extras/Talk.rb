@@ -6,7 +6,7 @@ class Talk < ModSpox::Plugin
         super
         group = Group.find_or_create(:name => 'talk')
         add_sig(:sig => 'say (\S+) (.+)', :method => :talk, :group => group, :desc => 'Make bot speak given text to target', :req => 'private', :params => [:target, :text])
-        add_sig(:sig => 'action (\S+) (.+)', :method => :action, :group => group, :desc => 'Make bot perform action for target', :req => 'private', :params = [:target, :text])
+        add_sig(:sig => 'action (\S+) (.+)', :method => :action, :group => group, :desc => 'Make bot perform action for target', :req => 'private', :params => [:target, :text])
     end
     
     def talk(message, params)
