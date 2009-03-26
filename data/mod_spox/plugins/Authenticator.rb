@@ -18,12 +18,12 @@ class Authenticator < ModSpox::Plugin
         add_sig(:sig => 'auth group list', :method => :list_groups, :group => group, :desc => 'List available authentication groups')
         add_sig(:sig => 'auth group info (\S+)', :method => :group_info, :group => group, :desc => 'List members of given group', :params => [:group])
         add_sig(:sig => 'groups', :method => :show_groups, :desc => 'Show user groups they are currently a member of')
-        @whois_cache = []
         @nickserv_nicks = []
         populate_nickserv
         @pipeline.hook(self, :check_join, :Incoming_Join)
         @pipeline.hook(self, :check_nicks, :Incoming_Who)
         @pipeline.hook(self, :check_nicks, :Incoming_Names)
+        @pipeline.hook(self, :check_notice, :Incoming_Notice)
     end
 
     # message:: ModSpox::Messages::Incoming::Privmsg
@@ -248,6 +248,18 @@ class Authenticator < ModSpox::Plugin
         end
     end
 
+    def check_notice(m)
+        if(m.source.nick.downcase == 'nickserv' && m.source.host == 'dal.net' && m.message =~ /^(\S+) ACC (\d+)$/)
+            nick = $1
+            setting = $3.to_i
+            if(setting == 3)
+                user = Helpers.find_model($1)
+                user.auth.services_identified = true
+                Logger.info("User has been authenticated through NickServ services. (#{user.nick})")
+            end
+        end
+    end
+
     # Populates array with nicks that authenticate by nickserv
     def populate_nickserv
         Models::Auth.filter('services = ?', true).each do |auth|
@@ -257,9 +269,8 @@ class Authenticator < ModSpox::Plugin
 
     def check_nickserv(nick)
         if(@nickserv_nicks.include?(nick.nick.downcase))
-            if(!nick.auth.authed && !@whois_cache.include?(nick.nick.downcase))
-                @pipeline << Messages::Outgoing::Whois.new(nick)
-                @whois_cache << nick.nick.downcase
+            if(!nick.auth.authed)
+                reply 'nickserv', "ACC #{nick.nick}"
             end
         end
     end
