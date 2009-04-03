@@ -23,6 +23,7 @@ class Confess < ModSpox::Plugin
         add_sig(:sig => 'confess score (\d+)', :method => :show_score, :desc => 'Show a confession\'s score', :params => [:id])
         add_sig(:sig => 'confess count', :method => :count, :desc => 'Current count of cached confessions')
         add_sig(:sig => 'confess fetcher (start|stop)', :method => :fetcher, :desc => 'Turn confession fetcher on or off', :group => Group.filter(:name => 'admin').first, :params => [:status])
+        add_sig(:sig => 'confess count (.+)', :method => :count_matches, :desc => 'Show number entries matching search', :params => [:query])
         Config[:confess] = 'nofetch' if Config[:confess].nil?
         @last_confession = {}
         @fetch = false
@@ -69,6 +70,16 @@ class Confess < ModSpox::Plugin
             end
         rescue Object => boom
             reply message.replyto, "Failed to locate a match. Error encountered: #{boom}"
+        end
+    end
+    
+    def count_matches(m, params)
+        begin
+            @lock.synchronize do
+                reply m.replyto, "Number of matches for \2#{params[:query]}\2: #{Confession.search(params[:query]).size}"
+            end
+        rescue Object => boom
+            error m.replyto, "Failed to count matches. Reason: #{boom}"
         end
     end
     
