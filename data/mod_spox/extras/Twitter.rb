@@ -64,10 +64,15 @@ class Twitter < ModSpox::Plugin
                 :group => admin, :req => 'public')
         add_sig(:sig => 'autotweets interval( \d+)?', :method => :auto_tweets_interval, :desc => 'Set/show interval for auto tweet checks',
                 :group => admin, :params => [:interval])
+        add_sig(:sig => 'twitter alias (\S+) (\S+)', :method => :alias_user, :desc => 'Set alias for twitter account', :group => twitter, :params => [:twit, :irc])
+        add_sig(:sig => 'twitter aliases (\S+)', :method => :show_aliases, :desc => 'Show alias for twit', :params => [:twit])
+        add_sig(:sig => 'twitter dealias (\S+)', :method => :remove_alias, :desc => 'Remove alias for twit', :params => [:twit], :group => twitter)
         @pipeline.hook(self, :get_timer, :Internal_TimerResponse)
         @auth_info = Models::Setting.find_or_create(:name => 'twitter').value
         @twitter = ModClient.new
         @search_url = 'http://search.twitter.com/search.json'
+        @aliases = Models::Setting.find_or_create(:name => 'twitter_aliases').value
+        @aliases = {} if @aliases.nil?
         unless(@auth_info.is_a?(Hash))
             @auth_info = {:username => nil, :password => nil, :interval => 0, :channels => []}
         else
@@ -77,7 +82,49 @@ class Twitter < ModSpox::Plugin
         @lock = Mutex.new
         @running = false
         @timer = {:action => nil, :id => nil}
+        @friends = []
+        populate_friends
         start_auto
+    end
+    
+    def alias_user(m, params)
+        begin
+            raise "twit #{params[:twit]} is not in my friends list" unless @friends.include?(params[:twit])
+            raise "twit is already aliased to #{Models::Nick[@aliases[params[:twit].to_sym]].nick}" if @aliases.has_key?(params[:twit].to_sym)
+            nick = Helpers.find_model(params[:irc])
+            raise "failed to find nick #{params[:irc]}. is this a new user?" if nick.nil?
+            @aliases[params[:twit].to_sym] = nick.pk
+            save_aliases
+            information m.replyto, "Nick #{params[:irc]} is now aliased to twit #{params[:twit]}"
+        rescue Object => boom
+            error m.replyto, "Failed to alias user: #{boom}"
+        end
+    end
+    
+    def save_aliases
+        t = Models::Setting.find_or_create(:name => 'twitter_aliases')
+        t.value = @aliases
+        t.save
+    end
+    
+    def show_aliases(m, params)
+        begin
+            raise "twit #{params[:twit]} has no alias" unless @aliases.has_key?(params[:twit].to_sym)
+            information m.replyto, "Twit #{params[:twit]} is aliased to: #{Models::Nick[@aliases[params[:twit].to_sym]].nick}"
+        rescue Object => boom
+            error m.replyto, "Failed to find alias. Reason: #{boom}"
+        end
+    end
+    
+    def remove_alias(m, params)
+        begin
+            raise "twit #{params[:twit]} has no alias" unless @aliases.has_key?(params[:twit].to_sym)
+            @aliases.delete(params[:twit].to_sym)
+            save_aliases
+            information m.replyto, "Twit #{params[:twit]} is no longer aliased"
+        rescue Object => boom
+            error m.replyto, "Failed to remove alias: #{boom}"
+        end
     end
     
     def search(m, params)
@@ -241,15 +288,10 @@ class Twitter < ModSpox::Plugin
     end
     
     def friends(m, params)
-        begin
-            fs = @twitter.my(:friends)
-            if(fs.size > 0)
-                reply m.replyto, "\2Friends:\2 #{fs.map{|u| u.screen_name}.join(', ')}"
-            else
-                warning m.replyto, 'no friends found'
-            end
-        rescue Object => boom
-            error m.replyto, "failed to locate friends list. (#{boom})"
+        if(@friends.size > 0)
+            reply m.replyto, "\2Friends:\2 #{@friends.join(', ')}"
+        else
+            warning m.replyto, 'no friends found'
         end
     end
     
@@ -259,6 +301,7 @@ class Twitter < ModSpox::Plugin
             unless(@twitter.my(:friends).include?(user))
                 @twitter.friend(:add, user)
                 information m.replyto, "added new friend: #{params[:twit]}"
+                @friends << params[:twit]
             else
                 warning m.replyto, "#{params[:twit]} is already in friend list"
             end
@@ -273,6 +316,7 @@ class Twitter < ModSpox::Plugin
             if(@twitter.my(:friends).map{|u|u.screen_name}.include?(user.screen_name))
                 @twitter.friend(:remove, user)
                 information m.replyto, "removed user from friend list: #{params[:twit]}"
+                @friends.delete(params[:twit])
             else
                 warning m.replyto, "#{params[:twit]} is not in friend list"
             end
@@ -285,7 +329,7 @@ class Twitter < ModSpox::Plugin
         begin
             msg = @twitter.status(:get, params[:m_id])
             if(msg)
-                reply m.replyto, "\2Tweet:\2 [#{msg.created_at.strftime("%Y/%m/%d-%H:%M:%S")}}] <#{msg.user.screen_name}> #{Helpers.convert_entities(msg.text)}"
+                reply m.replyto, "\2Tweet:\2 [#{msg.created_at.strftime("%Y/%m/%d-%H:%M:%S")}}] <#{screen_name(msg.user.screen_name)}> #{Helpers.convert_entities(msg.text)}"
             else
                 warning m.replyto, "failed to find message with ID: #{params[:m_id].strip}"
             end
@@ -295,6 +339,26 @@ class Twitter < ModSpox::Plugin
     end
     
     private
+    
+    def populate_friends
+        return unless @lock.try_lock
+        begin
+            fs = @twitter.my(:friends)
+            @friends = []
+            if(fs.size > 0)
+                @friends = fs.map{|u| u.screen_name}
+            end
+        rescue Object => boom
+            Logger.info("Failed to populate friends: #{boom}")
+            @pipeline << Messages::Internal::TimerAdd.new(self, 200, nil, true){ populate_friends }
+        ensure
+            @lock.unlock
+        end
+    end
+    
+    def screen_name(n)
+        return @aliases.has_key?(n.to_sym) ? Models::Nick[n.to_sym].nick : n
+    end
     
     def check_timeline
         if(@auth_info[:channels].size < 1 || @auth_info[:interval].to_i < 1)
@@ -307,11 +371,11 @@ class Twitter < ModSpox::Plugin
                         if(Helpers.convert_entities(status.text) =~ /^@(\S+)/)
                             next unless @twitter.my(:friends).map{|f|f.screen_name}.include?($1) || $1 == @twitter.login
                         end
-                        things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{status.user.screen_name}> #{Helpers.convert_entities(status.text)}"
+                        things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(status.text)}"
                     end
                 end
                 @twitter.timeline_for(:me, :since => @last_check) do |status|
-                    things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{status.user.screen_name}> #{Helpers.convert_entities(status.text)}"
+                    things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(status.text)}"
                 end
                 things.uniq!
                 things.sort!
