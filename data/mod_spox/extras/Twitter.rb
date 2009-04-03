@@ -357,7 +357,7 @@ class Twitter < ModSpox::Plugin
     end
     
     def screen_name(n)
-        return @aliases.has_key?(n.to_sym) ? Models::Nick[n.to_sym].nick : n
+        return @aliases.has_key?(n.to_sym) ? Models::Nick[@aliases[n.to_sym]].nick : n
     end
     
     def check_timeline
