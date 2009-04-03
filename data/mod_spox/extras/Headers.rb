@@ -6,7 +6,7 @@ class Headers < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)
         admin = Models::Group.find_or_create(:name => 'headers')
-        add_sig(:sig => 'headers (https?:\/\/\S+)', :method => :fetch_headers, :desc => 'Fetch HTTP headers', :params => [:url])
+        add_sig(:sig => 'headers ((https?:\/\/)?\S+)', :method => :fetch_headers, :desc => 'Fetch HTTP headers', :params => [:url])
         add_sig(:sig => 'headers max (\d+)', :method => :set_max, :group => admin, :desc => 'Set maximum number of headers to return', :params => [:max])
         add_sig(:sig => 'headers max', :method => :show_max, :group => admin, :desc => 'Show maximum number of headers to return ')
         @lock = Mutex.new
@@ -28,11 +28,16 @@ class Headers < ModSpox::Plugin
 
     def fetch_headers(message, params)
         secure = false
-        if(params[:url] =~ /^http:/)
-            port = 80
+        params[:url].downcase!
+        if(params[:url][0,4] == 'http')
+            if(params[:url][4,1] == 's')
+                port = 443
+                secure = true
+            else
+                port = 80
+            end
         else
-            port = 443
-            secure = true
+            port = 80
         end
         params[:url].gsub!(/^https?:\/\//, '')
         if(params[:url] =~ /:(\d+)/)
