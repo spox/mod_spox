@@ -64,6 +64,8 @@ class Twitter < ModSpox::Plugin
                 :group => admin, :req => 'public')
         add_sig(:sig => 'autotweets interval( \d+)?', :method => :auto_tweets_interval, :desc => 'Set/show interval for auto tweet checks',
                 :group => admin, :params => [:interval])
+        add_sig(:sig => 'autotweets burst( \d+)?', :method => :auto_tweets_burst, :desc => 'Set/show maximum number of tweets to display at once',
+                :group => admin, :params => [:burst])
         add_sig(:sig => 'twitter alias (\S+) (\S+)', :method => :alias_user, :desc => 'Set alias for twitter account', :group => twitter, :params => [:twit, :irc])
         add_sig(:sig => 'twitter aliases (\S+)', :method => :show_aliases, :desc => 'Show alias for twit', :params => [:twit])
         add_sig(:sig => 'twitter dealias (\S+)', :method => :remove_alias, :desc => 'Remove alias for twit', :params => [:twit], :group => twitter)
@@ -73,6 +75,8 @@ class Twitter < ModSpox::Plugin
         @search_url = 'http://search.twitter.com/search.json'
         @aliases = Models::Setting.find_or_create(:name => 'twitter_aliases').value
         @aliases = {} if @aliases.nil?
+        @burst = Models::Setting.find_or_create(:name => 'twitter_burst').value
+        @burst = @burst.nil? ? 5 : @burst.to_i
         unless(@auth_info.is_a?(Hash))
             @auth_info = {:username => nil, :password => nil, :interval => 0, :channels => []}
         else
@@ -85,6 +89,20 @@ class Twitter < ModSpox::Plugin
         @friends = []
         populate_friends
         start_auto
+    end
+
+    def auto_tweets_burst(m, params)
+        if(params[:burst])
+            params[:burst] = params[:burst].to_i
+            if(params[:burst] == 0)
+                error m.replyto, 'Invalid value. Must supply a positive integer.'
+            else
+                @burst = params[:burst]
+                information m.replyto, "Updated maximum autotweet burst to: #{@burst}"
+            end
+        else
+            information m.replyto, "Maximum number of tweets to auto report: #{@burst}"
+        end
     end
     
     def alias_user(m, params)
@@ -371,15 +389,17 @@ class Twitter < ModSpox::Plugin
                         if(Helpers.convert_entities(status.text) =~ /^@(\S+)/)
                             next unless @twitter.my(:friends).map{|f|f.screen_name}.include?($1) || $1 == @twitter.login
                         end
-                        things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(status.text)}"
+                        things << "[#{status.created_at.strftime("%Y%m%d:%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(status.text)}"
                     end
                 end
                 @twitter.timeline_for(:me, :since => @last_check) do |status|
-                    things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(status.text)}"
+                    things << "[#{status.created_at.strftime("%Y%m%d:%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(status.text)}"
                 end
                 things.uniq!
                 things.sort!
+                things = thing[-@burst,@burst] if things.size > @burst
                 things.each do |status|
+                    status[0,10] = '['
                     @auth_info[:channels].each{|i| reply Models::Channel[i], "\2AutoTweet:\2 #{status}"}
                 end
                 @last_check = Time.now
