@@ -397,7 +397,7 @@ class Twitter < ModSpox::Plugin
                 end
                 things.uniq!
                 things.sort!
-                things = thing[-@burst,@burst] if things.size > @burst
+                things = things[-@burst,@burst] if things.size > @burst
                 things.each do |status|
                     status[0,10] = '['
                     @auth_info[:channels].each{|i| reply Models::Channel[i], "\2AutoTweet:\2 #{status}"}
