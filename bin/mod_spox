@@ -95,7 +95,7 @@ opts.each do |opt, arg|
                 exit 1
             end
         when '--verbosity'
-            if(arg && arg =~ /^(info|warn|fatal)$/)
+            if(arg && arg =~ /^(info|warn|error|fatal)$/)
                 $LOGLEVEL = arg.to_sym
             end
     end
