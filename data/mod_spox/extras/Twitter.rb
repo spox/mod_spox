@@ -394,7 +394,7 @@ class Twitter < ModSpox::Plugin
                     end
                 end
                 @twitter.timeline_for(:me, :since => @last_check) do |status|
-                    next if status.create_at < @last_check
+                    next if status.created_at < @last_check
                     things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(status.text)}"
                 end
                 things.uniq!
