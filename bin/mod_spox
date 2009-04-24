@@ -87,13 +87,7 @@ opts.each do |opt, arg|
         when '--path'
             $MOD_SPOX_PATH = arg
         when '--daemon'
-            begin
-                $DAEMON_BOT = true
-                require 'daemons'
-            rescue Object => boom
-                puts 'Error: You must install the Daemons gem: (http://daemons.rubyforge.org)'
-                exit 1
-            end
+            $DAEMON_BOT = true
         when '--verbosity'
             if(arg && arg =~ /^(info|warn|error|fatal)$/)
                 $LOGLEVEL = arg.to_sym
@@ -103,10 +97,6 @@ end
 
 initialize_bot
 require 'mod_spox/Bot'
-
-if($DAEMON_BOT)
-    Daemonize.daemonize(nil, 'mod_spox')
-end
-
+Process.daemon if $DAEMON_BOT
 bot = Bot.new
 bot.run
