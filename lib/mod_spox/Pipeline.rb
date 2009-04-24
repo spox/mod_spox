@@ -1,13 +1,13 @@
 ['mod_spox/models/Models.rb',
  'mod_spox/Logger',
- 'mod_spox/Pool',
  'mod_spox/Exceptions'].each{|f|require f}
 module ModSpox
 
     class Pipeline
 
         # Create a new Pipeline
-        def initialize
+        def initialize(pool)
+            @pool = pool
             @hooks = Hash.new
             @plugins = Hash.new
             @admin = Models::Group.filter(:name => 'admin').first
@@ -128,7 +128,7 @@ module ModSpox
                         @hooks[type].each_value do |objects|
                             begin
                                 objects.each do |v|
-                                    Pool << lambda{ v[:object].send(v[:method].to_s, message) }
+                                    @pool.process{ v[:object].send(v[:method].to_s, message) }
                                 end
                             rescue Object => boom
                                 Logger.warn("Plugin threw exception while attempting to process message: #{boom}\n#{boom.backtrace.join("\n")}")
@@ -177,7 +177,7 @@ module ModSpox
                         end
                         if(@plugins.has_key?(sig.plugin.to_sym))
                             begin
-                                Pool << lambda{ @plugins[sig.plugin.to_sym].send(sig.values[:method], message, params) }
+                                @pool.process{ @plugins[sig.plugin.to_sym].send(sig.values[:method], message, params) }
                             rescue Object => boom
                                 Logger.warn("Plugin threw exception while attempting to process message: #{boom}\n#{boom.backtrace.join("\n")}")
                             end

@@ -1,7 +1,6 @@
 ['mod_spox/handlers/Handler',
  'mod_spox/Logger',
- 'mod_spox/Pipeline',
- 'mod_spox/Pool'].each{|f|require f}
+ 'mod_spox/Pipeline'].each{|f|require f}
 
 module ModSpox
 
@@ -9,8 +8,9 @@ module ModSpox
 
         # pipeline:: Message pipeline
         # Create a new MessageFactory
-        def initialize(pipeline)
+        def initialize(pipeline, pool)
             @pipeline = pipeline
+            @pool = pool
             @handlers = Hash.new
             @lock = Mutex.new
             build_handlers
@@ -24,7 +24,7 @@ module ModSpox
         # be processed thus there is now wait for processing to be
         # completed.
         def <<(string)
-            Pool << lambda{ parse_message(string) }
+            @pool.process{ parse_message(string) }
         end
 
         private
@@ -62,14 +62,14 @@ module ModSpox
                         Logger.info("Message of type #{key} is now being handled by #{@handlers[key]}")
                         if(@sync.include?(key))
                             Logger.info("Message of type #{key} requires synchronized processing")
-                            Pool << lambda do
+                            @pool.process do
                                 @lock.synchronize do
                                     message = @handlers[key].process(message)
                                     @pipeline << message unless message.nil?
                                 end
                             end
                         else
-                            Pool << lambda do
+                            @pool.process do
                                 message = @handlers[key].process(message)
                                 @pipeline << message unless message.nil?
                             end

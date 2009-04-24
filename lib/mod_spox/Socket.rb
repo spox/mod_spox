@@ -1,6 +1,5 @@
 ['iconv',
  'mod_spox/Logger',
- 'mod_spox/Pool',
  'mod_spox/Exceptions',
  'mod_spox/messages/Messages',
  'mod_spox/models/Models',
@@ -29,6 +28,7 @@ module ModSpox
         # burst:: Number of lines allowed to be sent within the burst_in time limit
         # Create a new Socket
         def initialize(bot, server=nil, port=nil, delay=2, burst_in=2, burst=4)
+            @pool = bot.pool
             @factory = bot.factory
             @pipeline = bot.pipeline
             @dcc = bot.dcc_sockets
@@ -157,7 +157,7 @@ module ModSpox
         # Queues a message up to be sent to the IRC server
         def <<(message)
             @sendq.direct_queue(message)
-            Pool << lambda{ processor }
+            @pool.process{ processor }
         end
         
         # target:: Target for outgoing message
@@ -167,7 +167,7 @@ module ModSpox
         # than only on target at a time being flooded.
         def prioritize_message(target, message)
             @sendq.priority_queue(target, message)
-            Pool << lambda{ processor }
+            @pool.process{ processor }
         end
 
         # Starts the thread for sending messages to the server
@@ -192,7 +192,7 @@ module ModSpox
                 Logger.info('Socket reached an empty queue.')
             ensure
                 @lock.unlock
-                Pool << lambda{ processor } if did_write
+                @pool.process{ processor } if did_write
             end
         end
 
