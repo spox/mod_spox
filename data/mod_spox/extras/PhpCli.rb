@@ -67,7 +67,7 @@ class PhpCli < ModSpox::Plugin
         return unless @channels.include?(message.target.pk)
         filepath = @path + "/#{rand(99999)}.bot.php"
         file = File.open(filepath, 'w')
-        file.write("<? $_SERVER = $_ENV = array(); #{@customfuncs.join(' ')} #{params[:code]} ?>")
+        file.write("<? $_SERVER = $_ENV = $GLOBALS = array(); #{@customfuncs.join(' ')} #{params[:code]} ?>")
         file.close
         begin
             output = Helpers.safe_exec("php -c #{@path}/bot.ini -d max_execution_time=10 #{filepath} 2>&1 | head -n 4")
