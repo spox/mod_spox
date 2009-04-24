@@ -24,10 +24,11 @@ module ModSpox
         def add_message(message)
             Logger.info("New block is being added to the timer")
             begin
-                action = @timer.add(message.period, message.once, message.data, message.requester, message.block)
-                @pipeline << Messages::Internal::TimerResponse.new(a[:requester], action, true, message.id)
-            rescue Object
-                @pipeline << Messages::Internal::TimerResponse.new(a[:requester], nil, false, message.id)
+                action = @timer.add(message.period, message.once, message.data, message.requester, &message.block)
+                @pipeline << Messages::Internal::TimerResponse.new(message.requester, action, true, message.id)
+            rescue Object => boom
+                Logger.error("Failed to add new block to timer: #{boom}")
+                @pipeline << Messages::Internal::TimerResponse.new(message.requester, nil, false, message.id)
             end
         end
 
@@ -46,6 +47,11 @@ module ModSpox
             else
                 @timer.clear(message.plugin)
             end
+        end
+        
+        # stop the timer
+        def stop
+            @timer.stop
         end
 
     end
