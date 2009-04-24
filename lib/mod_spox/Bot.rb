@@ -6,7 +6,8 @@
  'mod_spox/BaseConfig',
  'mod_spox/messages/Messages',
  'mod_spox/models/Models',
- 'mod_spox/Helpers'].each{|f|require f}
+ 'mod_spox/Helpers',
+ 'mod_spox/Timer'].each{|f|require f}
 require 'actionpool'
 require 'actiontimer'
 
@@ -34,14 +35,14 @@ module ModSpox
 
         # Create a Bot
         def initialize
-            Logger.initialize($LOGTO, $LOGLEVEL)
-            Pool.instance
+            logger = ::Logger.new($LOGTO, $LOGLEVEL)
+            Logger.initialize(logger)
             clean_models
             @servers = Array.new
             @start_time = Time.now
-            @pipeline = Pipeline.new
-            @pool = ActionPool::Pool.new
-            @timer = Timer.new(ActionTimer::Timer.new(@pool), @pipeline)
+            @pool = ActionPool::Pool.new(10, 100, 60, nil, logger)
+            @pipeline = Pipeline.new(@pool)
+            @timer = Timer.new(ActionTimer::Timer.new(@pool, logger), @pipeline)
             @config = BaseConfig.new(BotConfig[:userconfigpath])
             @factory = MessageFactory.new(@pipeline, @pool)
             @socket = nil
