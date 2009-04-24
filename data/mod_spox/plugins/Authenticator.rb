@@ -270,14 +270,14 @@ class Authenticator < ModSpox::Plugin
     def check_nickserv(nick)
         if(@nickserv_nicks.include?(nick.nick.downcase))
             if(!nick.auth.authed)
-                reply 'nickserv', "ACC #{nick.nick}"
+                @pipeline << Messages::Outgoing::Raw.new("nickserv ACC #{nick.nick}")
             end
         end
     end
 
     def check_join(message)
         if(@nickserv_nicks.include?(message.nick.nick.downcase))
-            @pipeline << Messages::Outgoing::Whois.new(message.nick) unless message.nick == me
+            check_nickserv(message.nick) unless message.nick == me
         end
     end
 
