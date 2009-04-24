@@ -386,20 +386,21 @@ class Twitter < ModSpox::Plugin
                 things = []
                 @twitter.my(:friends).each do |f|
                     @twitter.timeline_for(:friend, :id => f.screen_name, :since => @last_check) do |status|
+                        next if status.created_at < @last_check
                         if(Helpers.convert_entities(status.text) =~ /^@(\S+)/)
                             next unless @twitter.my(:friends).map{|f|f.screen_name}.include?($1) || $1 == @twitter.login
                         end
-                        things << "[#{status.created_at.strftime("%Y%m%d:%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(status.text)}"
+                        things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(status.text)}"
                     end
                 end
                 @twitter.timeline_for(:me, :since => @last_check) do |status|
-                    things << "[#{status.created_at.strftime("%Y%m%d:%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(status.text)}"
+                    next if status.create_at < @last_check
+                    things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(status.text)}"
                 end
                 things.uniq!
                 things.sort!
                 things = things[-@burst,@burst] if things.size > @burst
                 things.each do |status|
-                    status[0,10] = '['
                     @auth_info[:channels].each{|i| reply Models::Channel[i], "\2AutoTweet:\2 #{status}"}
                 end
                 @last_check = Time.now
