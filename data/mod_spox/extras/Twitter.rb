@@ -347,7 +347,7 @@ class Twitter < ModSpox::Plugin
         begin
             msg = @twitter.status(:get, params[:m_id])
             if(msg)
-                reply m.replyto, "\2Tweet:\2 [#{msg.created_at.strftime("%Y/%m/%d-%H:%M:%S")}}] <#{screen_name(msg.user.screen_name)}> #{Helpers.convert_entities(msg.text)}"
+                reply m.replyto, "\2Tweet:\2 [#{msg.created_at.strftime("%Y/%m/%d-%H:%M:%S")}] <#{screen_name(msg.user.screen_name)}> #{Helpers.convert_entities(msg.text)}"
             else
                 warning m.replyto, "failed to find message with ID: #{params[:m_id].strip}"
             end
@@ -397,11 +397,13 @@ class Twitter < ModSpox::Plugin
                     next if status.created_at < @last_check
                     things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(status.text)}"
                 end
-                things.uniq!
-                things.sort!
-                things = things[-@burst,@burst] if things.size > @burst
-                things.each do |status|
-                    @auth_info[:channels].each{|i| reply Models::Channel[i], "\2AutoTweet:\2 #{status}"}
+                unless(things.empty?)
+                    things.uniq!
+                    things.sort!
+                    things = things[-@burst,@burst] if things.size > @burst
+                    things.each do |status|
+                        @auth_info[:channels].each{|i| reply Models::Channel[i], "\2AutoTweet:\2 #{status}"}
+                    end
                 end
                 @last_check = Time.now
             rescue Object => boom
