@@ -4,17 +4,21 @@
  'mod_spox/PluginManager',
  'mod_spox/MessageFactory',
  'mod_spox/BaseConfig',
- 'mod_spox/Timer',
  'mod_spox/messages/Messages',
  'mod_spox/models/Models',
- 'mod_spox/Helpers',
- 'mod_spox/Pool'].each{|f|require f}
+ 'mod_spox/Helpers'].each{|f|require f}
+require 'actionpool'
+require 'actiontimer'
+
 module ModSpox
 
     class Bot
 
         # bot timer
         attr_reader :timer
+        
+        # thread pool
+        attr_reader :pool
 
         # message pipeline
         attr_reader :pipeline
@@ -36,10 +40,10 @@ module ModSpox
             @servers = Array.new
             @start_time = Time.now
             @pipeline = Pipeline.new
-            @timer = Timer.new(@pipeline)
-            @timer.start
+            @pool = ActionPool::Pool.new
+            @timer = Timer.new(ActionTimer::Timer.new(@pool), @pipeline)
             @config = BaseConfig.new(BotConfig[:userconfigpath])
-            @factory = MessageFactory.new(@pipeline)
+            @factory = MessageFactory.new(@pipeline, @pool)
             @socket = nil
             @plugin_manager = PluginManager.new(@pipeline)
             if(@config[:plugin_upgrade] == 'yes')
