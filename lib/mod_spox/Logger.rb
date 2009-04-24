@@ -3,32 +3,24 @@ module ModSpox
 
     class Logger
         
-        def Logger.initialize(output=nil, level=:fatal)
-            if(output.nil?)
-                @@log = nil
-            else
-                levels = {:info => Object::Logger::INFO, :warn => Object::Logger::WARN, :fatal => Object::Logger::FATAL}
-                @@log = Object::Logger.new(output)
-                @@log.level = levels.has_key?(level) ? levels[level] : Object::Logger::WARN
-            end
+        def Logger.initialize(logger)
+            @@log = logger.is_a?(::Logger) ? logger : nil
         end
         
         def Logger.warn(s)
-            unless @@log.nil?
-                Pool << lambda{@@log.warn(s)}
-            end
+            @@log.warn(s) unless @@log.nil?
         end
         
         def Logger.info(s)
-            unless @@log.nil?
-                Pool << lambda{@@log.info(s)}
-            end
+            @@log.info(s) unless @@log.nil?
         end
         
         def Logger.fatal(s)
-            unless @@log.nil?
-                Pool << lambda{@@log.fatal(s)}
-            end
+            @@log.fatal(s) unless @@log.nil?
+        end
+        
+        def Logger.error(s)
+            @@log.error(s) unless @@log.nil?
         end
         
     end
