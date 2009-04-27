@@ -6,6 +6,8 @@
  'mod_spox/Socket'
 ].each{|f| require f}
 
+require 'spockets'
+
 module ModSpox
 
     class Sockets
@@ -17,19 +19,16 @@ module ModSpox
             @irc_socket = nil
             @dcc_sockets = []
             @mapped_sockets = {}
-            @read_sockets = []
+            @spockets = Spockets::Spockets.new(:pool => bot.pool, :clean => true)
             @listening_dcc = []
             @dcc_ports = {:start => 49152, :end => 65535}
             @dcc_wait = 30
-            @read_thread = nil
             @pipeline = bot.pipeline
             @factory = bot.factory
             @pipeline.hook(self, :check_dcc, :Incoming_Privmsg)
             @pipeline.hook(self, :return_socket, :Internal_DCCRequest)
             @pipeline.hook(self, :dcc_listener, :Internal_DCCListener)
             @pipeline.hook(self, :disconnect_irc, :Internal_Disconnected)
-            @kill = false
-            @ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
         end
 
         # server:: IRC server string
@@ -39,8 +38,8 @@ module ModSpox
             if(@irc_socket.nil?)
                 @irc_socket = Socket.new(@bot, server, port)
                 @irc_socket.connect
-                @read_sockets << @irc_socket.socket
-                restart_reader
+                @spockets.add(@irc_socket.socket){|string| process_irc_string(string)}
+                @spockets.on_close(@irc_socket.socket){ irc_reconnect }
             else
                 irc_reconnect
             end
@@ -49,9 +48,9 @@ module ModSpox
         def irc_reconnect
             unless(@irc_socket.nil?)
                 disconnect_irc
+                @spockets.remove(@irc_socket.socket) if @spockets.include?(@irc_socket)
                 @irc_socket.shutdown(true)
-                @read_sockets << @irc_socket.socket
-                restart_reader
+                @spockets.add(@irc_socket.socket){|string| process_irc_string(string)}
             else
                 irc_connect
             end
@@ -124,11 +123,9 @@ module ModSpox
                         cport, cip = Object::Socket.unpack_sockaddr_in(addrinfo)
                     end
                     Logger.info("New DCC socket created for #{message.nick.nick} has connected from: #{cip}:#{cport}")
-                    stop_reader
                     @dcc_sockets << client
                     @mapped_sockets[client.object_id] = {:socket => client, :nick => message.nick}
-                    @read_sockets << client
-                    start_reader
+                    @spockets.add(socket){|string| process_dcc_string(string, socket)}
                 rescue Timeout::Error => boom
                     Logger.warn("Timeout reached waiting for #{message.nick.nick} to connect to DCC socket. Closing.")
                     client.close
@@ -143,7 +140,7 @@ module ModSpox
 
         # Shuts down all active sockets
         def shutdown
-            stop_reader
+            @spockets.clear
             @irc_socket.shutdown
             @dcc_sockets.each do |sock|
                 close_dcc(sock)
@@ -151,10 +148,7 @@ module ModSpox
         end
 
         def disconnect_irc(m=nil)
-            if(@read_sockets.include?(@irc_socket.socket))
-                @read_sockets.delete(@irc_socket.socket)
-                restart_reader
-            end
+            @spockets.remove(@irc_socket.socket) if @spockets.include?(@irc_socket.socket)
         end
 
         private
@@ -166,11 +160,9 @@ module ModSpox
         def build_connection(ip, port, nick)
             begin
                 socket = TCPSocket.new(ip, port)
-                stop_reader
-                @read_sockets << socket
+                @spockets.add(socket){|string| process_dcc_string(string, socket)}
                 @mapped_sockets[socket.object_id] = {:socket => socket, :nick => nick}
                 @dcc_sockets << socket
-                start_reader
                 Logger.info("New DCC connection established to #{nick.nick} on #{ip}:#{port}")
             rescue Object => boom
                 Logger.warn("DCC connection to #{nick.nick} on #{ip}:#{port} failed. #{boom}")
@@ -178,63 +170,22 @@ module ModSpox
         end
 
         def close_dcc(sock)
-            @read_sockets.delete(sock)
+            @spockets.remove(sock)
             @dcc_sockets.delete(sock)
             @mapped_sockets.delete(sock.object_id)
         end
 
-        def stop_reader
-            Logger.info('Stopping reader thread for sockets')
-            if(!@thread_read.nil? && @thread_read.alive?)
-                @kill = true
-                @thread_read.join(0.2)
-                @thread_read.kill if @thread_read.alive?
-                @kill = false
-            end
-            Logger.info('Reader thread for sockets has been stopped')
+        def process_irc_string(string)
+            @irc_socket.process(string)
         end
-
-        def restart_reader
-            stop_reader
-            start_reader
-        end
-
-
-        def start_reader
-            Logger.info('Starting reader thread for sockets')
-            if(!@thread_read.nil? && @thread_read.alive?)
-                Logger.warn('ERROR: Cannot start reader. Already running.')
+        
+        def process_dcc_string(string, socket)
+            Logger.info("DCC >> #{string}")
+            if(socket.closed? || string.nil?)
+                socket.close
+                close_dcc(socket)
             else
-                @thread_read = Thread.new do
-                    until @kill do
-                        begin
-                            result = Kernel.select(@read_sockets, nil, nil, nil)
-                            for sock in result[0] do
-                                unless(sock == @irc_socket.socket)
-                                    tainted_string = sock.gets
-                                    string = @ic.iconv(tainted_string + ' ')[0..-2]
-                                    Logger.info("DCC >> #{string}", false)
-                                    if(sock.closed? || string.nil?)
-                                        sock.close
-                                        close_dcc(sock)
-                                    else
-                                        @pipeline << Messages::Incoming::Privmsg.new(string, @mapped_sockets[sock.object_id][:nick], "::#{sock.object_id}::", string)
-                                    end
-                                else
-                                    begin
-                                        @irc_socket.read
-                                    rescue Exceptions::Disconnected => boom
-                                        Logger.warn('IRC socket is disconnected. Removing from reader sockets.')
-                                        disconnect_irc
-                                    end
-                                end
-                            end
-                        rescue Object => boom
-                            Logger.warn("Socket error detected: #{boom}\n#{boom.backtrace}", false)
-                        end
-                    end
-                end
-                Logger.info('Reader thread for sockets has been started')
+                @pipeline << Messages::Incoming::Privmsg.new(string, @mapped_sockets[socket.object_id][:nick], "::#{sock.object_id}::", string)
             end
         end
 

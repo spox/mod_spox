@@ -118,39 +118,18 @@ module ModSpox
                 raise Exceptions::Disconnected.new
             end
         end
-
-        # Retrieves a string from the server
-        def read
-            return if @empty_lines > @max_empty
-            begin
-                tainted_message = @socket.gets
-                if(@socket.closed? || tainted_message =~ /^ERROR/)
-                    @pipeline << Messages::Internal::Disconnected.new
-                elsif(tainted_message.nil?)
-                    Logger.warn('Received empty message from IRC socket on read')
-                    @empty_lines += 1
-                    if(@empty_lines > 5)
-                        @pipeline << Messages::Internal::Disconnected.new
-                    end
-                elsif(tainted_message.length > 0)
-                    @emtpy_lines = 0
-                    message = @ic.iconv(tainted_message + ' ')[0..-2]
-                    message.strip!
-                    Logger.info(">> #{message}")
-                    @received += 1
-                    begin
-                        message.strip!
-                    rescue Object => boom
-                        #do nothing#
-                    ensure
-                        @factory << message
-                    end
-                end
-            rescue Object => boom
-                Logger.warn("Failed to read message from server: #{boom}")
+        
+        # string:: string to be processed
+        # Process a string
+        def process(string)
+            string.strip!
+            Logger.info(">> #{string}")
+            if(string[0,5] == 'ERROR')
                 @pipeline << Messages::Internal::Disconnected.new
                 raise Exceptions::Disconnected.new
             end
+            @received += 1
+            @factory << string
         end
 
         # message:: String to be sent to server
