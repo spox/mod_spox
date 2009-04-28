@@ -23,7 +23,7 @@ $BOTCODENAME='avocado'
 $VERBOSITY = 0
 $MOD_SPOX_PATH = nil
 $DAEMON_BOT = false
-$LOGTO = $stdout
+$LOGTO = nil
 $LOGLEVEL = :fatal
 $JDBC = false
 
@@ -74,7 +74,7 @@ opts.each do |opt, arg|
                 exit 1
             end
         when '--debug'
-            if(arg && File.writable?(arg))
+            if(arg)
                 $LOGTO = arg
             else
                 $LOGTO = $stdout
