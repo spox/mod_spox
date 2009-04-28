@@ -35,6 +35,10 @@ class Bash < ModSpox::Plugin
             # parse individual entries, they have a "qt" section within "quote"
             m = data.scan(/<p class="qt">(.*?)<\/p>/m)
             raise 'No quotes found' unless m.length > 0
+            if m.length > 1
+                m = m.delete_if{|x| x.length > 500 }
+                raise 'Only overly long quotes found' unless m.length > 0
+            end
             i = rand(m.length)              # select random index
                                             # NOTE: this works fine for individuals, since rand(1) is always 0
             q = m[i][0].gsub(/<[^<]+>/, '') # select a random quote
