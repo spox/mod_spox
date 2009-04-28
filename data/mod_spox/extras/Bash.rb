@@ -39,14 +39,13 @@ class Bash < ModSpox::Plugin
                 m = m.delete_if{|x| x.length > 500 }
                 raise 'Only overly long quotes found' unless m.length > 0
             end
-            i = rand(m.length)              # select random index
-                                            # NOTE: this works fine for individuals, since rand(1) is always 0
-            q = m[i][0].gsub(/<[^<]+>/, '') # select a random quote
-            q.gsub!("\r\n", " ")            # replace newlines with spaces
-            s = Helpers.convert_entities(q) # unescape html entities
-            s.strip!
-            s.gsub!(/(<([^>]+)>(?:[^<]+))<\2>/){ $1 }  # replace duplicated name tags; condense lines
-            return s.gsub(/\s{2,}/, ' ')
+            i = rand(m.length)                  # NOTE: this works fine for individuals, since rand(1) is always 0
+            n = m[i][0].gsub(/<[^<]+>/, '')     # select a random quote
+            o = Helpers.convert_entities(n)     # unescape html entities
+            p = o.gsub("\r\n", " ").strip       # replace newlines with spaces and trim
+            q = p.gsub(/(<([^>]+)>(?:[^<]+))<\2>/){ $1 }    # replace duplicated name tags; condense lines
+            r = q.gsub(/\s{2,}/, ' ')           # condense spaces
+            return r
         rescue Object => boom
             Logger.error(boom)
             raise boom
