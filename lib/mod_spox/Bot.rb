@@ -35,8 +35,10 @@ module ModSpox
 
         # Create a Bot
         def initialize
-            logger = ::Logger.new($LOGTO, $LOGLEVEL)
-            Logger.initialize(logger)
+            unless($LOGTO.nil?)
+                logger = ::Logger.new($LOGTO, 'daily')
+                Logger.initialize(logger, $LOGLEVEL)
+            end
             clean_models
             @servers = Array.new
             @start_time = Time.now
@@ -66,10 +68,10 @@ module ModSpox
 
         # Run the bot
         def run
-            trap('SIGTERM'){ Logger.warn("Caught SIGTERM"); start_shutdown }
-            trap('SIGKILL'){ Logger.warn("Caught SIGKILL"); start_shutdown }
-            trap('SIGINT'){ Logger.warn("Caught SIGINT"); start_shutdown }
-            trap('SIGQUIT'){ Logger.warn("Caught SIGQUIT"); start_shutdown }
+            trap('SIGTERM'){ Logger.warn("Caught SIGTERM"); halt }
+            trap('SIGKILL'){ Logger.warn("Caught SIGKILL"); halt }
+            trap('SIGINT'){ Logger.warn("Caught SIGINT"); halt }
+            trap('SIGQUIT'){ Logger.warn("Caught SIGQUIT"); halt }
             until @shutdown do
                 @pipeline << Messages::Internal::BotInitialized.new
                 begin
@@ -197,7 +199,7 @@ module ModSpox
         end
 
         # Stop the bot
-        def halt(message)
+        def halt(message=nil)
             @shutdown = true
             reload
         end
@@ -528,13 +530,6 @@ module ModSpox
         end
 
         private
-
-        def start_shutdown
-            @shutdown = true
-            @lock.synchronize do
-                @waiter.signal
-            end
-        end
 
         # Cleans information from models to avoid
         # stale values
