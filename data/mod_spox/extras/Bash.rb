@@ -42,7 +42,7 @@ class Bash < ModSpox::Plugin
             s = Helpers.convert_entities(q) # unescape html entities
             s.strip!
             s.gsub!(/(<([^>]+)>(?:[^<]+))<\2>/){ $1 }  # replace duplicated name tags; condense lines
-            return s
+            return s.gsub(/\s{2,}/, ' ')
         rescue Object => boom
             Logger.error(boom)
             raise boom
