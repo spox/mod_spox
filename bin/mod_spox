@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+# coding: utf-8
+
 ## include our needed libraries ##
 
 ['rubygems', 'sequel', 'thread', 'etc', 'getoptlong', 'logger'].each do |file|
