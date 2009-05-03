@@ -120,7 +120,7 @@ module ModSpox
             begin
                 Logger.info("Pipeline is processing a message: #{message}")
                 parse(message)
-                type = message.class.to_s.gsub(/^(ModSpox::Messages::|#<.+?>::)/, '').gsub(/::/, '_').to_sym
+                type = message.class.to_s.gsub(/^(ModSpox::Messages::|#<.+?>::)/, '').gsub('::', '_').to_sym
                 mod = type.to_s.gsub(/_.+$/, '').to_sym
                 Logger.info("Pipeline determines that #{message} is of type: #{type}")
                 [type, mod, :all].each do |type|
@@ -167,7 +167,7 @@ module ModSpox
                     esc_trig = trigger.nil? ? '' : Regexp.escape(trigger)
                     res = message.message.scan(/^#{esc_trig}#{sig.signature}$/)
                     if(res.size > 0)
-                        next unless message.source.auth_groups.include?(sig.group) || message.source.auth_groups.include?(@admin) || sig.group.nil?
+                        next unless message.source.in_group?(sig.group) || message.source.in_group?(@admin) || sig.group.nil?
                         next if sig.requirement == 'private' && message.is_public?
                         next if sig.requirement == 'public' && message.is_private?
                         params = Hash.new

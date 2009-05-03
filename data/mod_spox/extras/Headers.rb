@@ -1,5 +1,6 @@
 require 'net/http'
 require 'net/https'
+require 'uri'
 
 class Headers < ModSpox::Plugin
 
@@ -10,14 +11,12 @@ class Headers < ModSpox::Plugin
         add_sig(:sig => 'headers max (\d+)', :method => :set_max, :group => admin, :desc => 'Set maximum number of headers to return', :params => [:max])
         add_sig(:sig => 'headers max', :method => :show_max, :group => admin, :desc => 'Show maximum number of headers to return ')
         @lock = Mutex.new
-        @max = Models::Config[:headers_max]
+        @max = Models::Config.val(:headers_max)
         @max = @max.nil? ? 0 : @max.to_i
     end
     
     def set_max(message, params)
-        record = Models::Config.find_or_create(:name => 'headers_max')
-        record.value = params[:max].to_i
-        record.save
+        record = Models::Config.set(:headers_max, params[:max].to_i)
         @max = params[:max].to_i
         reply message.replyto, "Max headers returned set to: #{params[:max].to_i}"
     end
@@ -27,37 +26,14 @@ class Headers < ModSpox::Plugin
     end
 
     def fetch_headers(message, params)
-        secure = false
-        params[:url].downcase!
-        if(params[:url][0,4] == 'http')
-            if(params[:url][4,1] == 's')
-                port = 443
-                secure = true
-            else
-                port = 80
-            end
-        else
-            port = 80
-        end
-        params[:url].gsub!(/^https?:\/\//, '')
-        if(params[:url] =~ /:(\d+)/)
-            port = $1.to_i
-            params[:url].gsub!(/:(\d+)/, '')
-        end
-        if(params[:url] =~ /(.+?[a-zA-Z]{2,4})(\/.+)$/)
-            location = $1
-            page = $2
-        else
-            location = params[:url].gsub(/\/$/, '')
-            page = '/'
-        end
+        uri = URI.parse(params[:url])
         begin
-            reply message.replyto, "Connecting to: #{location} on port: #{port} retrieving: #{page}"
-            con = Net::HTTP.new(location, port)
-            con.use_ssl = secure
+            reply message.replyto, "Connecting to: #{uri.host} on port: #{uri.port} retrieving: #{uri.path}"
+            con = Net::HTTP.new(uri.host, uri.port)
+            con.secure = uri.scheme == 'https'
             con.open_timeout = 5
             con.read_timeout = 5
-            response = con.head(page)
+            response = con.head(uri.path)
             output = ["Response code: #{response.code}"]
             count = 0
             response.each_capitalized{|key,val|

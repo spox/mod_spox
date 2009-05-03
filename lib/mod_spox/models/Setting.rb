@@ -6,38 +6,34 @@ module ModSpox
         #
         # This model can be used to store complex objects. These objects are dumped
         # and stored for later retrieval
+        # TODO: remove [] from any usage
         class Setting < Sequel::Model
 
             #serialize(:value, :format => :marshal)
 
             def name=(setting_name)
-                update_values :name => setting_name.downcase
+                setting_name.downcase!
+                super(setting_name)
             end
 
             def value=(val)
-                update_values(:value => [Marshal.dump(val.dup)].pack('m'))
+                val = [Marshal.dump(val.dup)].pack('m')
+                super(val)
             end
 
             def value
                 return values[:value] ? Marshal.load(values[:value].unpack('m')[0]) : nil
             end
 
-            # key:: name of the setting
-            # Returns the setting with the given name
-            def self.[](key)
-                key = key.to_s if key.is_a?(Symbol)
-                setting = Setting.filter(:name => key).first
-                return setting ? setting.value : nil
+            def self.set(sym, value)
+                s = self.find_or_create(:name => sym.to_s)
+                s.value = value
+                s.save
             end
 
-            # key:: name of the setting
-            # val:: value of the setting
-            # Stores the val in setting named by the given key
-            # Note: Will fail if attempting to save hashes. Must set value explicitly
-            def self.[]=(key, val)
-                key = key.to_s if key.is_a?(Symbol)
-                model = Setting.find_or_create(:name => key)
-                model.update_with_params(:value => [Marshal.dump(val.dup)].pack('m'))
+            def self.val(sym)
+                s = self.filter(:name => sym.to_s)
+                return s ? nil : s.first.value
             end
         end
     end

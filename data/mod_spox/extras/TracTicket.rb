@@ -10,14 +10,12 @@ class TracTicket < ModSpox::Plugin
         add_sig(:sig => 'ticket trac( (\S+))?', :method => :trac_location, :group => admin,
                 :desc => 'Show/set trac site', :params => [:trash, :site])
         add_sig(:sig => 'ticket site', :method => :trac_location, :desc => 'Show trac site')
-        @site = Config[:trac]
+        @site = Config.val(:trac)
     end
     
     def trac_location(message, params)
         if(params[:site])
-            site = Config.find_or_create(:name => 'trac')
-            site.value = params[:site]
-            site.save
+            site = Config.set(:trac, params[:site])
             @site = params[:site]
             reply message.replyto, "\2Trac Update:\2 Location of trac system has been updated: #{params[:site]}"
         else

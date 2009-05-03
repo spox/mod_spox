@@ -88,69 +88,41 @@ module ModSpox
         # pattern for a channel or nick, the string is returned.
         def Helpers.find_model(string, create=true)
             Helpers.initialize_caches
+            result = nil
             if(string =~ /^[A-Za-z\|\\\{\}\[\]\^\`~\_\-]+[A-Za-z0-9\|\\\{\}\[\]\^\`~\_\-]*$/)
-                nick = nil
-                if(@@nick_cache.has_key?(string.downcase.to_sym))
-                    begin
-                        nick = Models::Nick[@@nick_cache[string.downcase.to_sym]]
-                        if(nick.nick.downcase != string.downcase)
-                            Logger.warn("Nick returned from cache invalid. Expecting #{string} but got #{nick.nick}")
-                            nick = nil
-                        end
-                    rescue Object => boom
-                        Logger.info("Failed to grab cached nick: #{boom}")
-                    end
+                if(@@nick_cache.has_key?(string.downcase))
+                    result = @@nick_cache[string.downcase]
+                    result = nil unless result.nick.downcase == string.downcase
                 end
-                unless(nick)
-                    begin
-                        nick = Models::Nick.locate(string, create)
-                        if(nick.nil?)
-                            Database.reconnect
-                            return string
-                        end
-                    rescue Object => boom
-                        Logger.warn("Caught an error. Assuming the database barfed: #{boom}")
-                        Database.reconnect
-                    end
-                    @@nick_cache[string.downcase.to_sym] = nick.pk if nick.is_a?(Models::Nick)
-                    Logger.info('Nick was retrieved from database')
+                unless(result)
+                    result = Models::Nick.find_or_create(:nick => string.downcase)
+                    @@nick_cache[string.downcase] = result
                 end
-                return nick
             elsif(string =~ /^[&#+!]/)
-                if(@@channel_cache.has_key?(string.downcase.to_sym))
-                    begin
-                        channel = Models::Channel[@@channel_cache[string.downcase.to_sym]]
-                        if(string.downcase != channel.name.downcase)
-                            Logger.warn("Channel returned from cache invalid. Expecting #{string} but got #{channel.name}")
-                            channel = nil
-                        end
-                    rescue Object => boom
-                        Logger.info("Failed to grab cached channel: #{boom}")
-                    end
+                if(@@channel_cache.has_key?(string.downcase))
+                    result = @@channel_cache[string.downcase]
+                    result = nil unless result.name.downcase == string.downcase
                 end
-                unless(channel)
-                    channel = Models::Channel.locate(string, create)
-                    if(channel.nil?)
-                        Database.reconnect
-                        return string
-                    end
-                    @@channel_cache[string.downcase.to_sym] = channel.pk if channel.is_a?(Models::Channel)
-                    Logger.info('Channel was retrieved from database')
+                unless(result)
+                    result = Models::Channel.find_or_create(:name => string.downcase)
+                    @@channel_cache[string.downcase] = result
                 end
-                return channel
-            elsif(model = Models::Server.filter(:host => string, :connected => true).first)
-                return model
+            elsif(Models::Server.filter(:host => string, :connected => true).count > 0)
+                result = Models::Server.filter(:host => string, :connected => true).first
             else
                 Logger.warn("Failed to match string to model: #{string} -> No match")
-                return string
             end
+            return result
         end
 
+        # Builds caches to hold commonly accessed models
         def Helpers.initialize_caches
             @@nick_cache = Cache.new(20) unless Helpers.class_variable_defined?(:@@nick_cache)
             @@channel_cache = Cache.new(5) unless Helpers.class_variable_defined?(:@@channel_cache)
         end
 
+        # string:: string to convert
+        # Converts HTML entities found in a string
         def Helpers.convert_entities(string)
             begin
                 require 'htmlentities'

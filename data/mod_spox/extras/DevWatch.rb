@@ -12,7 +12,7 @@ class DevWatch < ModSpox::Plugin
         add_sig(:sig => 'devwatch list', :method => :watch_list, :group => admin, :desc => 'List all channels on the development watch list')
         add_sig(:sig => 'devwatch url ?(\S+)?', :method => :set_url, :group => admin, :desc => 'Set URL for development RSS feed', :params => [:url])
         add_sig(:sig => 'devwatch interval ?(\d+)?', :method => :set_interval, :group => admin, :desc => 'Set time interval for notifications', :params => [:time])
-        if(Setting[:devwatch].nil?)
+        if(Setting.val(:devwatch).nil?)
             Setting.find_or_create(:name => 'devwatch').value = {:channels => [], :interval => 300}
         end
         @original = nil
@@ -25,7 +25,7 @@ class DevWatch < ModSpox::Plugin
     def enable_watch(message, params)
         channel = Channel.filter(:name => params[:channel]).first
         if(channel)
-            vals = Setting[:devwatch]
+            vals = Setting.val(:devwatch)
             if(params[:status] == 'on')
                 vals[:channels] << channel.pk unless vals[:channels].include?(channel.pk)
                 reply(message.replyto, "#{channel.name} is now on the development watch list")
@@ -41,25 +41,25 @@ class DevWatch < ModSpox::Plugin
     end
     
     def watch_list(message, params)
-        if(Setting[:devwatch][:channels].empty?)
+        if(Setting.val(:devwatch)[:channels].empty?)
             reply(message.replyto, "No channels currently on the development watch list")
         else
             chans = []
-            Setting[:devwatch][:channels].each{|id| chans << Channel[id].name}
+            Setting.val(:devwatch)[:channels].each{|id| chans << Channel[id].name}
             reply(message.replyto, "Channels on development watch list: #{chans.join(', ')}")
         end
     end
     
     def set_url(message, params)
         if(params[:url])
-            vals = Setting[:devwatch]
+            vals = Setting.val(:devwatch)
             vals[:url] = params[:url]
             reply(message.replyto, "OK")
             Setting.filter(:name => 'devwatch').first.value = vals
             update_auto
         else
-            if(Setting[:devwatch].has_key?(:url))
-                reply(message.replyto, "\2Devwatch URL:\2 #{Setting[:devwatch][:url]}")
+            if(Setting.val(:devwatch).has_key?(:url))
+                reply(message.replyto, "\2Devwatch URL:\2 #{Setting.val(:devwatch)[:url]}")
             else
                 reply(message.replyto, "\2Error:\2 No URL set for devwatch")
             end
@@ -68,7 +68,7 @@ class DevWatch < ModSpox::Plugin
     
     def set_interval(message, params)
         if(params[:time])
-            vals = Setting[:devwatch]
+            vals = Setting.val(:devwatch)
             vals[:interval] = params[:time].to_i
             Setting.filter(:name => 'devwatch').first.value = vals
             if(@timer[:action].nil?)
@@ -78,13 +78,13 @@ class DevWatch < ModSpox::Plugin
             end
             reply(message.replyto, "Devwatch announcement interval reset to: #{Helpers.format_seconds(params[:time].to_i)}")
         else
-            reply(message.replyto, "Devwatch announcement interval set to: #{Helpers.format_seconds(Setting[:devwatch][:interval].to_i)}")
+            reply(message.replyto, "Devwatch announcement interval set to: #{Helpers.format_seconds(Setting.val(:devwatch)[:interval].to_i)}")
         end
     end
     
     def check_updates
-        if(Setting[:devwatch].has_key?(:url) && Setting[:devwatch][:channels].size > 0)
-            src = open(Setting[:devwatch][:url])
+        if(Setting.val(:devwatch).has_key?(:url) && Setting.val(:devwatch)[:channels].size > 0)
+            src = open(Setting.val(:devwatch)[:url])
             doc = REXML::Document.new(src.read)
             if @original.nil?
                 doc.elements.each('rss/channel/item') do |item|
@@ -117,7 +117,7 @@ class DevWatch < ModSpox::Plugin
         @original = new_orig.nil? ? @original : new_orig
         if new_items.size > 0
             new_items.reverse!
-            Setting[:devwatch][:channels].each do |id|
+            Setting.val(:devwatch)[:channels].each do |id|
                 channel = Channel[id]
                 new_items.each do |item|
                     reply(channel, item)
@@ -141,8 +141,8 @@ class DevWatch < ModSpox::Plugin
     end
     
     def start_auto
-        if(@timer[:action].nil? && Setting[:devwatch].has_key?(:url) && Setting[:devwatch][:channels].size > 0)
-            m = Messages::Internal::TimerAdd.new(self, Setting[:devwatch][:interval].to_i){ check_updates }
+        if(@timer[:action].nil? && Setting.val(:devwatch).has_key?(:url) && Setting.val(:devwatch)[:channels].size > 0)
+            m = Messages::Internal::TimerAdd.new(self, Setting.val(:devwatch)[:interval].to_i){ check_updates }
             @timer[:id] = m.id
             @pipeline << m
         end

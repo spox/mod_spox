@@ -1,3 +1,5 @@
+require 'mod_spox/models/Group'
+
 module ModSpox
     module Models
         # Attributes provided by model:
@@ -8,25 +10,21 @@ module ModSpox
         # description:: description of trigger
         class Signature < Sequel::Model
 
+            many_to_one :group, :class => 'Models::Group'
+
             def params=(prms)
                 raise Exceptions::InvalidType.new('Parameter names must be provided in an array') unless prms.nil? || prms.kind_of?(Array)
-                update_values(:params => prms.join('|')) unless prms.nil?
+                prms = prms.join('|') unless prms.nil?
+                super(prms)
             end
 
             def params
                 return values[:params].nil? ? [] : values[:params].split('|')
             end
 
-            def group
-                Group[group_id]
-            end
-
-            def group=(group)
-                update_values :group_id => group.pk
-            end
-
             def signature=(v)
-                update_values :signature => [Marshal.dump(v)].pack('m')
+                v = [Marshal.dump(v)].pack('m')
+                super(v)
             end
             
             def signature

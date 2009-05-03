@@ -1,7 +1,8 @@
 require 'digest/sha1'
+require 'mod_spox/models/Group'
+require 'mod_spox/models/Nick'
 module ModSpox
     module Models
-
             # Attributes provided by model:
             # password:: Password to autenticate against
             # services:: Authentication by nickserv
@@ -9,16 +10,12 @@ module ModSpox
             # authed:: Nick has authenticated
         class Auth < Sequel::Model
 
-            before_destroy :clear_auth_groups
-
+            many_to_many :groups, :join_table => :auth_groups, :class => 'Models::Group'
+            many_to_one :nicks, :class => 'Models::Nick'
+            
             # Clear relations before destroying
-            def clear_auth_groups
-                AuthGroup.filter(:auth_id => pk).destroy
-            end
-
-            # Nick associated with this Auth
-            def nick
-                Nick[nick_id]
+            def before_destroy
+                remove_all_groups
             end
 
             # Is nick identified with services
@@ -31,42 +28,16 @@ module ModSpox
                 end
             end
 
-            def authenticated(bool=true)
-                update_values :authed => bool
-            end
-
-            # Groups this auth is a member of
-            def groups
-                # we grab IDs, then the object. Otherwise we get sync problems
-                group_id = []
-                AuthGroup.filter(:auth_id => pk).each do |ag|
-                    group_id << ag.group_id
-                end
-                group = []
-                group_id.each{|id| group << Group[id]}
-                return group
-            end
-
-            # Add group to this auth's list
-            def group=(group)
-                AuthGroup.find_or_create(:auth_id => pk, :group_id => group.pk)
-            end
-
-            # Remove given group from auth
-            def remove_group(group)
-                AuthGroup.filter(:auth_id => pk, :group_id => group.pk).each{|g|g.destroy}
-            end
-
             # Set services (nickserv) identification
             def services_identified=(val)
-                update_with_params :authed => true if val && services
+                authed = true if val && services
             end
 
             # pass:: password to compare
             # Check and authenticate against password
             def check_password(pass)
                 if(Digest::SHA1.hexdigest(pass) == password)
-                    update_with_params :authed => true
+                    update(:authed => true)
                     return true
                 else
                     return false
@@ -74,19 +45,14 @@ module ModSpox
             end
 
             def password=(pass)
-                unless(pass.nil?)
-                    update_values :password => Digest::SHA1.hexdigest(pass)
-                else
-                    update_values :password => nil
-                end
+                pass = pass.nil? ? nil : Digest::SHA1.hexdigest(pass)
+                super(pass)
             end
 
             # source:: source to apply mask to
             # Check and authenticate by mask against source
             def check_mask(source)
-                if(source =~ /^#{mask}$/)
-                    update_with_params :authed => true
-                end
+                authed = true if source =~ /^#{mask}$/
             end
 
         end

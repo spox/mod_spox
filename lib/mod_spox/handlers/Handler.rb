@@ -3,10 +3,16 @@ module ModSpox
     module Handlers
     
         class Handler
-        
+
+            # handlers:: array of handlers
+            # initialize handler and add self to available
+            # handlers
             def initialize(handlers)
+                raise Exceptions::NotImplemented.new('Method has not been implemented')
             end
-        
+
+            # data:: string of data
+            # Process the string and create the proper object
             def process(data)
                 raise Exceptions::NotImplemented.new('Method has not been implemented')
             end
@@ -18,7 +24,9 @@ module ModSpox
             end
             
             protected
-            
+
+            # deprecated. here basically so old handlers
+            # don't break
             def find_model(string)
                 Helpers.find_model(string)
             end

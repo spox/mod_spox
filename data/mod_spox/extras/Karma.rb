@@ -161,7 +161,7 @@ class Karma < ModSpox::Plugin
                 reply message.replyto, "#{thing.thing} is currently aliased to: #{things.sort.join(', ')}"
             end
         else
-            reply message.replyto, "\2Error:\2 #{thing.thing} has never been used and has no aliases"
+            reply message.replyto, "\2Error:\2 #{params[:thing]} has never been used and has no aliases"
         end
     end
     

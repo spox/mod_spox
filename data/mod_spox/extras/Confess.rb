@@ -24,12 +24,12 @@ class Confess < ModSpox::Plugin
         add_sig(:sig => 'confess count', :method => :count, :desc => 'Current count of cached confessions')
         add_sig(:sig => 'confess fetcher (start|stop)', :method => :fetcher, :desc => 'Turn confession fetcher on or off', :group => Group.filter(:name => 'admin').first, :params => [:status])
         add_sig(:sig => 'confess count (.+)', :method => :count_matches, :desc => 'Show number entries matching search', :params => [:query])
-        Config[:confess] = 'nofetch' if Config[:confess].nil?
+        Config.set(:confess, 'nofetch') if Config.val(:confess).nil?
         @last_confession = {}
         @fetch = false
         @timer = {:action => nil, :id => nil}
         @lock = Mutex.new
-        start_fetcher if Config[:confess] == 'fetch'
+        start_fetcher if Config.val(:confess) == 'fetch'
     end
     
     def destroy
@@ -134,16 +134,16 @@ class Confess < ModSpox::Plugin
     
     def fetcher(message, params)
         if(params[:status] == 'start')
-            if(Config[:confess] == 'fetch')
+            if(Config.val(:confess) == 'fetch')
                 reply message.replyto, 'Confession fetcher is already running'
             else
-                Config[:confess] = 'fetch'
+                Config.set(:confess, 'fetch')
                 reply message.replyto, 'Confession fetcher is now running'
                 start_fetcher
             end
         else
-            if(Config[:confess] == 'fetch')
-                Config[:confess] = 'nofetch'
+            if(Config.val(:confess) == 'fetch')
+                Config.set(:confess, 'nofetch')
                 stop_fetcher
                 reply message.replyto, 'Confession fetcher has been stopped'
             else

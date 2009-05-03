@@ -11,7 +11,7 @@ class AutoKick < ModSpox::Plugin
         add_sig(:sig => 'autokick remove (\d+)', :method => :remove, :group => group, :desc => 'Remove an autokick rule', :params => [:id])
         add_sig(:sig => 'autokick colors ?(on|off)?', :method => :colors, :group => group, :desc => 'Kick user for using colors', :req => 'public', :params => [:action])
         @map = nil
-        @colors = Setting[:colorkick]
+        @colors = Setting.val(:colorkick)
         @colors = Array.new unless @colors.is_a?(Array)
         AutoKickRecord.create_table unless AutoKickRecord.table_exists?
         do_listen

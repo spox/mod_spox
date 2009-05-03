@@ -12,8 +12,8 @@ class PhpFuncLookup < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)
         setup_setting
-        @path = Setting[:phpfunc][:directory]
-        @trigger = Setting[:phpfunc][:trigger]
+        @path = Setting.val(:phpfunc)[:directory]
+        @trigger = Setting.val(:phpfunc)[:trigger]
         @manual = "#{@path}/html"
         @classlist = []
         fetch_manual unless File.exists?("#{@path}/manual.tar.gz")
@@ -97,7 +97,7 @@ class PhpFuncLookup < ModSpox::Plugin
     end
     
     def listen(m)
-        if(m.target.is_a?(Channel) && Setting[:phpfunc][:channels].include?(m.target.pk))
+        if(m.target.is_a?(Channel) && Setting.val(:phpfunc)[:channels].include?(m.target.pk))
             if m.message =~ /^#{Regexp.escape(@trigger)}(\S+)$/
                 phpfunc(m, {:name => $1})
             end
@@ -105,7 +105,7 @@ class PhpFuncLookup < ModSpox::Plugin
     end
     
     def set_trigger(message, params)
-        vals = Setting[:phpfunc]
+        vals = Setting.val(:phpfunc)
         vals[:trigger] = params[:trigger]
         Setting.filter(:name => 'phpfunc').first.value = vals
         @trigger = params[:trigger]
@@ -115,12 +115,12 @@ class PhpFuncLookup < ModSpox::Plugin
     def set_channels(message, params)
         channel = Channel.filter(:name => params[:channel]).first
         if(channel)
-            vals = Setting[:phpfunc]
+            vals = Setting.val(:phpfunc)
             if(params[:action] == 'add')
-                vals[:channels] << channel.pk unless Setting[:phpfunc][:channels].include?(channel.pk)
+                vals[:channels] << channel.pk unless Setting.val(:phpfunc)[:channels].include?(channel.pk)
                 reply message.replyto, "Channel \2#{params[:channel]}\2 added to PHP auto lookup"
             else
-                vals[:channels].delete(channel.pk) if Setting[:phpfunc][:channels].include?(channel.pk)
+                vals[:channels].delete(channel.pk) if Setting.val(:phpfunc)[:channels].include?(channel.pk)
                 reply message.replyto, "Channel \2#{params[:channel]}\2 has been removed from PHP auto lookup"
             end
             Setting.filter(:name => 'phpfunc').first.value = vals
@@ -130,9 +130,9 @@ class PhpFuncLookup < ModSpox::Plugin
     end
     
     def list_channels(message, params)
-        if(Setting[:phpfunc][:channels].size > 0)
+        if(Setting.val(:phpfunc)[:channels].size > 0)
             chans = []
-            Setting[:phpfunc][:channels].each do |id|
+            Setting.val(:phpfunc)[:channels].each do |id|
                 chans << Channel[id].name
             end
             reply message.replyto, "PHP auto lookup enabled channels: #{chans.join(', ')}"
@@ -142,7 +142,7 @@ class PhpFuncLookup < ModSpox::Plugin
     end
     
     def show_trigger(message, p)
-        reply message.replyto, "PHP auto lookup trigger: \2#{Setting[:phpfunc][:trigger]}\2"
+        reply message.replyto, "PHP auto lookup trigger: \2#{Setting.val(:phpfunc)[:trigger]}\2"
     end
     
     private
@@ -176,10 +176,10 @@ class PhpFuncLookup < ModSpox::Plugin
         s = Setting.filter(:name => 'phpfunc').first
         unless(s)
             s = Setting.find_or_create(:name => 'phpfunc')
-            s.value = {:directory => Config[:plugin_directory] + '/php', :trigger => '@', :channels => []}
+            s.value = {:directory => Config.val(:plugin_directory) + '/php', :trigger => '@', :channels => []}
         end
-        unless(File.directory?(Setting[:phpfunc][:directory]))
-            FileUtils.mkdir_p(Setting[:phpfunc][:directory]) 
+        unless(File.directory?(Setting.val(:phpfunc)[:directory]))
+            FileUtils.mkdir_p(Setting.val(:phpfunc)[:directory])
         end
     end
     

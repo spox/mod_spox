@@ -18,11 +18,11 @@ class DCC < ModSpox::Plugin
         add_sig(:sig => 'file max wait(\s(\d+))?', :method => :max_wait, :desc => 'Show/set timeout for accepting files', :group => admin, :params => [:wait])
         add_sig(:sig => 'dcc chat', :method => :dcc_chat, :desc => 'Start a DCC chat with the bot (useful if behind firewall', :group => group)
         @servers = {}
-        @ports = Setting[:dcc_ports]
+        @ports = Setting.val(:dcc_ports)
         @ports = {:start => 49152, :end => 65535} if @ports.nil?
         @dirs = Setting.find_or_create(:name => 'dcc_dirs').value
         @dirs = [] unless @dirs.is_a?(Array)
-        @max_wait = Setting[:dcc_max_wait]
+        @max_wait = Setting.val(:dcc_max_wait)
         @max_wait = @max_wait.nil? ? 60 : @max_wait.to_i
     end
 

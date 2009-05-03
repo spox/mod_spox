@@ -1,18 +1,11 @@
+require 'mod_spox/models/Nick'
+require 'mod_spox/models/Channel'
 module ModSpox
     module Models
-        # Attributes provided by model:
-        # mode:: Mode that is set
+
         class NickMode < Sequel::Model
-
-            # Nick mode is associated with
-            def nick
-                return Nick[nick_id]
-            end
-
-            # Channel mode is associated with
-            def channel
-                return Channel[channel_id]
-            end
+            many_to_one :nick, :class => 'Models::Nick'
+            many_to_one :channel, :class => 'Models::Channel'
         end
     end
 end

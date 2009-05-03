@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
 
-# coding: utf-8
-
 ## include our needed libraries ##
 
 ['rubygems', 'sequel', 'thread', 'etc', 'getoptlong', 'logger'].each do |file|
@@ -29,7 +27,12 @@ $LOGTO = nil
 $LOGLEVEL = :fatal
 $JDBC = false
 
+# lets get sequel setup like we want it #
+require 'sequel/extensions/migration'
+Sequel::Model.plugin :validation_helpers
+Sequel::Model.plugin :schema
 Sequel::Model.unrestrict_primary_key
+# okay, lets go #
 
 begin
     require 'mod_spox/Loader'

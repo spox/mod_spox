@@ -31,13 +31,14 @@ module ModSpox
                     @cache[$1].raw_push(string)
                     $2.split(/\s/).each{|chan|
                         channel = find_model(chan.gsub(/^[@\+]/, ''))
+                        channel.add_nick(nick)
                         @cache[nick].channels_push(channel)
                         if(chan[0].chr == '@')
                             Models::NickMode.find_or_create(:nick_id => @cache[nick].nick.pk, :mode => 'o', :channel_id => channel.pk)
                         elsif(chan[0].chr == '+')
                             Models::NickMode.find_or_create(:nick_id => @cache[nick].nick.pk, :mode => 'v', :channel_id => channel.pk)
                         else
-                            Models::NickMode.filter(:nick_id => @cache[nick].nick.pk, :channel_id => channel.pk).each{|m| m.destroy}
+                            Models::NickMode.filter(:nick_id => @cache[nick].nick.pk, :channel_id => channel.pk).destroy
                         end
                     }
                     return nil

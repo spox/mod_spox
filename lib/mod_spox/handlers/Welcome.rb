@@ -12,11 +12,11 @@ module ModSpox
                     message = $2
                     userstring = $3
                     if(userstring =~ /^(.+?)!(.+?)@(.+?)$/)
-                        Models::Nick.filter(:botnick => true).each{|n| n.botnick = false; n.save}
+                        Models::Nick.update(:botnick => false)
                         nick = $1
                         username = $2
                         hostname = $3
-                        nick = Models::Nick.locate(nick)
+                        nick = Models::Nick.find_or_create(nick.downcase)
                         nick.botnick = true
                         nick.username = username
                         nick.address = hostname

@@ -1,4 +1,10 @@
 require 'socket'
+require 'mod_spox/models/Auth'
+require 'mod_spox/models/Channel'
+require 'mod_spox/models/NickMode'
+require 'mod_spox/models/AuthMask'
+
+
 
 module ModSpox
     module Models
@@ -15,13 +21,29 @@ module ModSpox
         # visible:: can the bot see the user (is in a channel the bot is parked)
         # away:: is nick away
         # botnick:: is the nick of the bot
-
+        
         class Nick < Sequel::Model
 
-            set_cache Database.cache, :ttl => 3600 unless Database.cache.nil?
+            one_to_many :auths, :one_to_one => true, :class => 'Models::Auth'
+            many_to_many :channels, :join_table => :nick_channels, :class => 'Models::Channel'
+            one_to_many :modes, :class => 'Models::NickMode'
+            many_to_many :auth_masks, :join_table => :auth_masks_nicks, :class => 'Models::AuthMask'
 
+            # nick_name:: nick of user
+            # override to downcase nick
             def nick=(nick_name)
-                values[:nick] = nick_name.downcase
+                nick_name.downcase!
+                super(nick_name)
+            end
+
+            def Nick.find_or_create(args)
+                args[:nick].downcase! if args[:nick]
+                super(args)
+            end
+
+            def Nick.filter(args)
+                args[:nick].downcase! if args[:nick]
+                super(args)
             end
 
             def Nick.locate(string, create = true)
@@ -33,17 +55,22 @@ module ModSpox
                 end
                 return nick
             end
-            
-            def address=(address)
-                return if (!values[:address].nil? && !values[:host].nil?) && (values[:address] == address || values[:host] == address)
+
+            # addr: users address
+            # make sure everything is set properly
+            # when the address is set
+            def address=(addr)
+                return if (!values[:address].nil? && !values[:host].nil?) && (values[:address] == addr || values[:host] == addr)
                 oldaddress = values[:address]
                 begin
                     info =  Object::Socket.getaddrinfo(address, nil)
-                    update_values :address => info[0][3]
+                    addr = info[0][3]
                     update_values :host => info[0][2]
+                    super(addr)
                 rescue Object => boom
-                    update_values :address => address
+                    addr = address
                     update_values :host => address
+                    super(addr)
                 ensure
                     if values[:address] != oldaddress
                         clear_auth 
@@ -51,6 +78,9 @@ module ModSpox
                 end
             end
 
+            # val:: bool
+            # sets if nick is currently visible. if
+            # not all relating information is cleared
             def visible=(val)
                 unless(val)
                     update_with_params :username => nil
@@ -61,57 +91,21 @@ module ModSpox
                     update_with_params :connected_to => nil
                     update_with_params :seconds_idle => nil
                     update_with_params :away => false
+                    remove_all_channels
                 end
-                update_values :visible => val
-            end
-
-            def source=(mask)
-                super
-            end
-
-            # Auth model associated with nick
-            def auth
-                Auth.find_or_create(:nick_id => pk)
+                super(val)
             end
 
             # AuthGroups nick is authed to
             def auth_groups
-                nickgroups = NickGroup.filter(:nick_id => pk)
-                if(nickgroups.size < 1)
-                    populate_groups
-                    nickgroups = NickGroup.filter(:nick_id => pk)
-                end
-                groups = []
-                NickGroup.filter(:nick_id => pk).each do | nickgroup |
-                    groups << nickgroup.group
-                end
-                return groups
-            end
-
-            def populate_groups
-                auth_ids = []
-                group_ids = []
-                auth = Auth.filter('nick_id = ?', pk).filter('authed = ?', true).first
-                if(auth)
-                    auth.groups.each do |group|
-                        NickGroup.find_or_create(:nick_id => pk, :group_id => group.pk)
-                    end
-                end
-                Auth.where('mask is not null').each do |a|
-                    [source, "#{nick}!#{username}@#{host}", "#{nick}!#{username}@#{address}"].each do |chk_src|
-                        Logger.info("Matching AUTH - #{chk_src} against #{a.mask}")
-                        if(chk_src =~ /#{a.mask}/)
-                            auth_ids << a.pk unless auth_ids.include?(a.pk)
-                        end
-                    end
-                end
-                auth_ids.each{|id| AuthGroup.filter(:auth_id => id).each{|ag| group_ids << ag.group_id}}
-                group_ids.uniq.each{|id| NickGroup.find_or_create(:nick_id => pk, :group_id => id)}
+                g = auths[0].groups.nil? ? [] : auths[0].groups
+                g += auth_masks[0].groups unless auth_masks.empty?
+                return g
             end
 
             # Set nick as member of given group
             def group=(group)
-                auth.group = group
+                auth.add_group(group)
             end
 
             def in_group?(group)
@@ -132,70 +126,30 @@ module ModSpox
 
             # Modes associated with this nick
             def nick_modes
-                NickMode.filter(:nick_id => pk)
-            end
-
-            # Add channel nick is found in
-            def channel_add(channel)
-                NickChannel.find_or_create(:nick_id => pk, :channel_id => channel.pk)
-            end
-
-            # Remove channel nick is no longer found in
-            def channel_remove(channel)
-                NickChannel.filter(:nick_id => pk, :channel_id => channel.pk).first.destroy
-                if(NickChannel.filter(:nick_id => pk).count < 1)
-                    clear_auth
-                    visible = false
-                end
+                modes
             end
 
             # Remove all channels
             def clear_channels
-                NickChannel.filter(:nick_id => pk).destroy
+                remove_all_channels
                 visible = false
-                clear_auth
-            end
-
-            # Channels nick is currently in
-            def channels
-                chans = []
-                NickChannel.filter(:nick_id => pk).each do |nc|
-                    chans << nc.channel
-                end
-                return chans
             end
 
             # channel:: Models::Channel
             # Return if nick is operator in given channel
             def is_op?(channel)
-                NickMode.filter(:channel_id => channel.pk, :nick_id => pk).each do |mode|
-                    return true if mode.mode == 'o'
-                end
-                return false
+                return !modes.filter(:channel => channel).first.mode.index('o').nil?
             end
 
             # channel:: Models::Channel
             # Return if nick is voiced in given channel
             def is_voice?(channel)
-                NickMode.filter(:channel_id => channel.pk, :nick_id => pk).each do |mode|
-                    return true if mode.mode == 'v'
-                end
-                return false
+                return !modes.filter(:channel => channel).first.mode.index('v').nil?
             end
 
+            # TODO: rewrite this to work
             def Nick.transfer_groups(old_nick, new_nick)
                 NickGroup.filter(:nick_id => old_nick.pk).update(:nick_id => new_nick.pk)
-            end
-
-            # Purge all nick information
-            def self.clean
-                Nick.set(:username => nil, :real_name => nil, :address => nil,
-                                   :source => nil, :connected_at => nil, :connected_to => nil,
-                                   :seconds_idle => nil, :away => false, :visible => false, :botnick => false)
-                NickMode.destroy_all
-                NickChannel.destroy_all
-                NickGroup.destroy_all
-                Auth.set(:authed => false)
             end
 
         end

@@ -1,3 +1,7 @@
+require 'mod_spox/models/Nick'
+require 'mod_spox/models/ChannelMode'
+require 'mod_spox/models/NickMode'
+
 module ModSpox
     module Models
 
@@ -10,10 +14,25 @@ module ModSpox
         # parked:: Bot is currently in this channel
         class Channel < Sequel::Model
 
-            set_cache Database.cache, :ttl => 3600 unless Database.cache.nil?
+            many_to_many :nicks, :join_table => :nick_channels, :class => 'Models::Nick'
+            many_to_one :mode, :one_to_one => true, :class => 'Models::ChannelMode'
+            one_to_many :nick_modes, :class => 'Models::NickMode'
 
+            # chan_name:: string
+            # set channel name after downcase
             def name=(chan_name)
-                update_values :name => chan_name.downcase
+                chan_name.downcase!
+                super(chan_name)
+            end
+
+            def Channel.find_or_create(args)
+                args[:name].downcase! if args[:name]
+                super(args)
+            end
+
+            def Channel.filter(args)
+                args[:name].downcase! if args[:name]
+                super(args)
             end
 
             def Channel.locate(string, create = true)
@@ -25,43 +44,17 @@ module ModSpox
                 return chan
             end
 
-            # Modes for this channel
-            def channel_modes
-                ChannelMode.filter(:channel_id => pk)
+            def set_mode(m)
+                mode.set(m)
             end
 
-            # Nicks residing within this channel
-            def nicks
-                all_nicks = []
-                NickChannel.filter(:channel_id => pk).each do |nc|
-                    all_nicks << nc.nick
-                end
-                return all_nicks
-            end
-
-            # Adds a nick to this channel
-            def nick_add(nick)
-                NickChannel.find_or_create(:channel_id => pk, :nick_id => nick.pk)
-            end
-
-            # Removes a nick from this channel
-            def nick_remove(nick)
-                NickChannel.filter(:channel_id => pk, :nick_id => nick.pk).first.destroy
-                if(NickChannel.filter(:channel_id => pk).count < 1)
-                    update_values :parked => false
-                end
+            def unset_mode(m)
+                mode.unset(m)
             end
 
             # Removes all nicks from this channel
             def clear_nicks
-                NickChannel.filter(:channel_id => pk, :nick_id => nick.pk).each{|o| o.destroy}
-                update_values :parked => false
-            end
-
-            # Purges all channel information
-            def self.clean
-                Channel.set(:topic => nil, :parked => false)
-                ChannelMode.destroy_all
+                remove_all_nicks
             end
 
         end

@@ -25,7 +25,7 @@ module ModSpox
                     new_nick.save_changes
                     Models::Nick.transfer_groups(old_nick, new_nick)
                     old_nick.visible = false
-                    old_nick.clear_channels
+                    old_nick.remove_all_channels
                     if(old_nick.botnick == true)
                         old_nick.botnick = false
                         new_nick.botnick = true

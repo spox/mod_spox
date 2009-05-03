@@ -8,7 +8,8 @@ module ModSpox
         class Server < Sequel::Model
 
             def host=(host_name)
-                update_values :host => host_name.downcase
+                host_name.downcase!
+                super(host_name)
             end
 
         end

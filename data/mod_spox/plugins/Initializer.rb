@@ -18,8 +18,8 @@ class Initializer < ModSpox::Plugin
     # message:: ModSpox::Messages::Internal::Connected
     # Send bot information to server when connection is established
     def send_info(message)
-        @pipeline << Messages::Outgoing::Nick.new(Models::Config[:bot_nick])
-        @pipeline << Messages::Outgoing::User.new(Models::Config[:bot_username], Models::Config[:bot_realname], 8)    
+        @pipeline << Messages::Outgoing::Nick.new(Models::Config.val(:bot_nick))
+        @pipeline << Messages::Outgoing::User.new(Models::Config.val(:bot_username), Models::Config.val(:bot_realname), 8)
     end
     
     # message:: ModSpox::Messages::Internal::ConnectionFailed or ModSpox::Messages::Internal::Disconnected

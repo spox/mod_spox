@@ -12,7 +12,7 @@ class UrbanDictionary < ModSpox::Plugin
     end
 
     def define(message, params)
-        key = Config[:urban_key]
+        key = Config.val(:urban_key)
         if(key)
             site = 'http://api.urbandictionary.com/soap?wsdl'
             result = params[:number] ? params[:number].to_i - 1 : 0
@@ -47,7 +47,7 @@ class UrbanDictionary < ModSpox::Plugin
         if(message.is_public?)
             @pipeline << Privmsg.new(message.replyto, 'I don\'t set keys in public')
         else
-            Config[:urban_key] = params[:key]
+            Config.set(:urban_key, params[:key])
             @pipeline << Privmsg.new(message.replyto, 'Urban Dictionary API key has been set.')
         end
     end

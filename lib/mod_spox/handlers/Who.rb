@@ -38,13 +38,14 @@ module ModSpox
                     @raw_cache[key] << string
                     unless(location.nil?)
                         channel = find_model(location)
+                        channel.add_nick(nick)
                         Models::NickChannel.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
                         if(info.include?('+'))
                             Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk, :mode => 'v')
                         elsif(info.include?('@'))
                             Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk, :mode => 'o')
                         else
-                            Models::NickMode.filter(:channel_id => channel.pk, :nick_id => nick.pk).each{|m| m.destroy}
+                            Models::NickMode.filter(:channel_id => channel.pk, :nick_id => nick.pk).destroy
                         end
                     end
                     return nil

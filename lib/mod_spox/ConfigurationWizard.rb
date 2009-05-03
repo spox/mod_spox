@@ -44,7 +44,7 @@ module ModSpox
             config[:memcache] = get_input('Use memcache (EXPERIMENTAL): ', '(yes|no)', 'no')
             valid_connection = false
             until valid_connection do
-                config[:db_adapter] = get_input('Database type (pgsql): ', '(pgsql)', 'pgsql')
+                config[:db_adapter] = get_input('Database type (pgsql|sqlite): ', '(pgsql|sqlite)', 'pgsql')
                 unless(config[:db_adapter] == 'sqlite')
                     config[:db_username] = get_input('Database username: ', '.+', 'mod_spox')
                     config[:db_password] = get_input('Database password: ', '.*', nil)
@@ -121,11 +121,12 @@ module ModSpox
             s = Models::Server.find_or_create(:host => uconfig[:irc_server], :port => uconfig[:irc_port])
             n = Models::Nick.find_or_create(:nick => uconfig[:admin_nick])
             a = Models::Auth.find_or_create(:nick_id => n.pk)
-            a.group = Models::Group.find_or_create(:name => 'admin')
+            g = Models::Group.find_or_create(:name => 'admin')
+            a.add_group(g)
             a.password = uconfig[:admin_password]
             a.save
             t = Models::Trigger.find_or_create(:trigger => uconfig[:trigger])
-            t.update_with_params(:active => true)
+            t.active = true
             t.save
         end
         

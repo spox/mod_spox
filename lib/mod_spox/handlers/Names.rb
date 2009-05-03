@@ -30,8 +30,9 @@ module ModSpox
                     ops = Array.new
                     voice = Array.new
                     raw = @raw[chan]
-                    @names[chan].each{|n|
-                        nick = Models::Nick.locate(n.gsub(/^[@+]/, ''))
+                    @names[chan].each do |n|
+                        nick = Models::Nick.find_or_create(n.gsub(/^[@+]/, '').downcase)
+                        nick.visible = true
                         nicks << nick
                         if(n[0].chr == '@')
                             ops << nick
@@ -40,17 +41,26 @@ module ModSpox
                             voice << nick
                             Models::NickMode.find_or_create(:nick_id => nick.pk, :channel_id => channel.pk, :mode => 'v')
                         else
-                            Models::NickMode.filter(:nick_id => nick.pk, :channel_id => channel.pk).each{|m|
-                                m.destroy
-                            }
+                            nick.remove_all_modes
                         end
-                        channel.nick_add(nick)
-                    }
+                        channel.add_nick(nick)
+                    end
+                    check_visibility(nicks, channel)
                     @names.delete(chan)
                     @raw.delete(chan)
                     return Messages::Incoming::Names.new(raw, channel, nicks, ops, voice)
                 else
                     return nil
+                end
+            end
+
+            # nicks:: list of nicks in channel
+            # channel:: channel nicks are in
+            # Remove visibility from any nicks that aren't really
+            # in the channel
+            def check_visibility(nicks, channel)
+                Models::Nick.filter(:channel => channel, :visible => true).each do |n|
+                    n.visible = false unless nicks.include?(n)
                 end
             end
         end

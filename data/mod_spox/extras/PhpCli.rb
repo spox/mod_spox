@@ -6,7 +6,7 @@ class PhpCli < ModSpox::Plugin
 
     def initialize(pipeline)
         super(pipeline)
-        @path = Config[:plugin_directory] + '/phpcli'
+        @path = Config.val(:plugin_directory) + '/phpcli'
         @botini = @path + '/bot.ini'
         unless(File.directory?(@path))
             FileUtils.mkdir_p(@path)
