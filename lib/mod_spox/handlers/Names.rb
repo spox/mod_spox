@@ -30,6 +30,7 @@ module ModSpox
                     ops = Array.new
                     voice = Array.new
                     raw = @raw[chan]
+                    @names[chan] = [] unless @names[chan].is_a?(Array)
                     @names[chan].each do |n|
                         nick = Models::Nick.find_or_create(n.gsub(/^[@+]/, '').downcase)
                         nick.visible = true
