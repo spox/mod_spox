@@ -9,7 +9,7 @@ module ModSpox
                 if(string =~ /^:(\S+)\sQUIT\s:(.+)$/)
                     reason = $2
                     nick = find_model($1.gsub(/!.+$/, ''))
-                    nick.clear_channels
+                    nick.remove_all_channels
                     nick.visible = false
                     nick.save
                     return Messages::Incoming::Quit.new(string, nick, reason)

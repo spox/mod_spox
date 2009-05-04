@@ -18,6 +18,8 @@ module ModSpox
                         nick.save_changes
                         channel = find_model(chan)
                         channel.add_nick(nick)
+                        channel.parked = true if nick.botnick == true
+                        channel.save
                         return Messages::Incoming::Join.new(string, channel, nick)
                     else
                         Logger.warn('Failed to parse source on JOIN message')
