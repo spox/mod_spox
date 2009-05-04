@@ -12,6 +12,11 @@ module ModSpox
 
             many_to_many :groups, :join_table => :auth_groups, :class => 'Models::Group'
             many_to_one :nicks, :class => 'Models::Nick'
+
+            # helper to return associated nick
+            def nick
+                return nicks.empty? ? nil : nicks[0]
+            end
             
             # Clear relations before destroying
             def before_destroy

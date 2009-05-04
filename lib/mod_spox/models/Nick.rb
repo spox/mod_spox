@@ -96,9 +96,16 @@ module ModSpox
                 super(val)
             end
 
+            def auth
+                if(auths.emtpy?)
+                    Auth.find_or_create(:nick_id => pk)
+                end
+                return auths[0]
+            end
+
             # AuthGroups nick is authed to
             def auth_groups
-                g = auths[0].groups.nil? ? [] : auths[0].groups
+                g = auths.empty? || auths[0].groups.nil? ? [] : auths[0].groups
                 g += auth_masks[0].groups unless auth_masks.empty?
                 return g
             end

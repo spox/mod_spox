@@ -6,6 +6,7 @@ module ModSpox
 
         class Group < Sequel::Model
 
+            many_to_many :auth_masks, :join_table => :auth_masks_groups, :class => 'Models::AuthMask'
             many_to_many :auths, :join_table => :auth_groups, :class => 'Models::Auth'
             one_to_many :signature, :class => 'Models::Signature'
 
