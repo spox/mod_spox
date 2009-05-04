@@ -194,8 +194,7 @@ module ModSpox
         # message:: Messages::Internal::Disconnected
         # Disconnect the bot from the IRC server
         def disconnected(message)
-#             @socket.shutdown
-#             @socket = nil
+            reload
         end
 
         # Stop the bot
@@ -272,6 +271,7 @@ module ModSpox
         # Sends PART message to server
         def part(message)
             channel = message.channel.is_a?(Models::Channel) ? message.channel.name : message.channel
+            okay_to_send(message.channel)
             @socket << "PART #{channel} :#{message.reason}"
         end
 
@@ -309,6 +309,7 @@ module ModSpox
         # message:: Messages::Outgoing::Invite message
         # Sends INVITE message to server
         def invite(message)
+            okay_to_send(message.channel)
             nick = message.nick.is_a?(Models::Nick) ? message.nick.nick : message.nick
             channel = message.channel.is_a?(Models::Channel) ? message.channel.name : message.channel
             @socket << "INVITE #{nick} #{channel}"
@@ -317,6 +318,7 @@ module ModSpox
         # message:: Messages::Outgoing::Kick message
         # Sends KICK message to server
         def kick(message)
+            okay_to_send(message.channel)
             nick = message.nick.is_a?(Models::Nick) ? message.nick.nick : message.nick
             channel = message.channel.is_a?(Models::Channel) ? message.channel.name : message.channel
             @socket << "KICK #{channel} #{nick} :#{message.reason}"
@@ -325,6 +327,7 @@ module ModSpox
         # message:: Messages::Outgoing::Privmsg message
         # Sends PRIVMSG message to server
         def privmsg(message)
+            okay_to_send(message.target)
             target = message.target.name if message.target.is_a?(Models::Channel)
             target = message.target.nick if message.target.is_a?(Models::Nick)
             target = message.target unless target
@@ -344,6 +347,7 @@ module ModSpox
         # message:: Messages::Outgoing::Notice message
         # Sends NOTICE message to server
         def notice(message)
+            okay_to_send(message.target)
             target = message.target.name if message.target.is_a?(Models::Channel)
             target = message.target.nick if message.target.is_a?(Models::Nick)
             @socket << "NOTICE #{target} :#{message}"
@@ -530,6 +534,18 @@ module ModSpox
         end
 
         private
+
+        # channel:: channel to check
+        # checks if the bot is parked in the given channel
+        # and raises an exception (and logs) if the bot
+        # is not in the given channel
+        def okay_to_send(channel)
+            return unless channel.is_a?(Models::Channel)
+            unless(channel.parked)
+                Logger.error("Attempted to send to channel where bot is not parked: #{channel.name}.")
+                raise Exceptions::NotInChannel.new(channel)
+            end
+        end
 
         # Cleans information from models to avoid
         # stale values
