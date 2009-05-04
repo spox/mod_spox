@@ -32,9 +32,9 @@ class Authenticator < ModSpox::Plugin
     def authenticate(message, params)
         return unless message.is_private?
         if(message.is_private? && message.source.auth.check_password(params[:password]))
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, 'Authentication was successful')
+            information message.replyto, 'Authentication was successful'
         else
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, 'Authentication failed')
+            error message.replyto, 'Authentication failed'
         end
     end
 
@@ -45,12 +45,13 @@ class Authenticator < ModSpox::Plugin
         begin
             group = Models::Group.filter(:name => params[:group]).first
             raise Exception.new("Failed to find group") unless group
-            a = Models::Auth.find_or_create(:mask => Regexp.new(params[:mask]).source)
+            a = Models::AuthMask.find_or_create(:mask => Regexp.new(params[:mask]).source)
+            a.add_group(group)
             a.group = group
             a.save
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, 'Mask has been successfully added to authentication table')
+            information message.replyto, 'Mask has been successfully added to authentication table'
         rescue Object => boom
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Authentication failed to add mask. Reason: #{boom}")
+            error message.replyto, "Authentication failed to add mask. Reason: #{boom}"
         end
     end
 
@@ -58,15 +59,15 @@ class Authenticator < ModSpox::Plugin
     # params:: Signature parameters
     # Add an authentication group to a given mask
     def set_mask_groups(message, params)
-        auth = Models::Auth[params[:id]]
+        auth = Models::AuthMask[params[:id].to_i]
         if(auth)
             params[:groups].split(/\s/).each do |g|
                 group = Models::Group.filter(:name => g).first
-                auth.group = group if group
+                auth.add_group(group) if group
             end
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Mask groups have been updated")
+            information message.replyto, "Mask groups have been updated"
         else
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find mask with ID: #{params[:id]}")
+            error message.replyto, "Failed to find mask with ID: #{params[:id]}"
         end
     end
 
@@ -74,15 +75,15 @@ class Authenticator < ModSpox::Plugin
     # params:: Signature parameters
     # Remove an authentication group from a given mask
     def del_mask_groups(message, params)
-        auth = Models::Auth[params[:id]]
+        auth = Models::AuthMask[params[:id].to_i]
         if(auth)
             params[:groups].split(/\s/).each do |g|
                 group = Models::Group.filter(:name => g).first
                 auth.remove_group(group) if group
             end
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Mask groups have been updated")
+            information message.replyto, "Mask groups have been updated"
         else
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find mask with ID: #{params[:id]}")
+            error message.replyto, "Failed to find mask with ID: #{params[:id]}"
         end
     end
 
@@ -90,26 +91,25 @@ class Authenticator < ModSpox::Plugin
     # params:: Signature parameters
     # List all authentication masks
     def list_mask(message, params)
-        @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, 'Authentication Mask Listing:')
-        auths = []
-        Models::Auth.where('mask is not null').each{|a| auths << a}
-        auths.each do |a|
+        output << ["\2Authentication Mask Listing:\2"]
+        Models::AuthMask.all.each do |a|
             groups = []
             a.groups.each{|g| groups << g.name}
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "\2ID:\2 #{a.pk}: \2mask:\2 #{a.mask} \2groups:\2 #{groups.join(', ')}")
+            output << "\2ID:\2 #{a.pk}: \2mask:\2 #{a.mask} \2groups:\2 #{groups.join(', ')}"
         end
+        reply message.replyto, output
     end
 
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Remove given authentication mask
     def remove_mask(message, params)
-        auth = Models::Auth[params[:id].to_i]
+        auth = Models::AuthMask[params[:id].to_i]
         if(auth)
             auth.destroy
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Authentication mask with ID #{params[:id]} was deleted")
+            information message.replyto, "Authentication mask with ID #{params[:id]} was deleted"
         else
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "\2Failed\2: Could not find an authentication mask with ID: #{params[:id]}")
+            error message.replyto, "\2Failed\2: Could not find an authentication mask with ID: #{params[:id]}"
         end
     end
 
@@ -119,11 +119,11 @@ class Authenticator < ModSpox::Plugin
     def nick_ident(message, params)
         nick = Models::Nick.locate(params[:nick])
         if(params[:ident] == 'true')
-            nick.auth.update_with_params(:services => true)
+            nick.auth.update(:services => true)
         else
-            nick.auth.update_with_params(:services => false)
+            nick.auth.update(:services => false)
         end
-        @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Nick #{params[:nick]} has been updated. Services for authentication has been set to #{params[:ident]}")
+        information message.replyto, "Nick #{params[:nick]} has been updated. Services for authentication has been set to #{params[:ident]}"
     end
 
 
@@ -133,7 +133,7 @@ class Authenticator < ModSpox::Plugin
     def nick_pass(message, params)
         nick = Models::Nick.locate(params[:nick])
         nick.auth.password = params[:password]
-        @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Nick #{params[:nick]} has been updated. Password has been set.")
+        information message.replyto, "Nick #{params[:nick]} has been updated. Password has been set."
     end
 
     # message:: ModSpox::Messages::Incoming::Privmsg
@@ -142,7 +142,7 @@ class Authenticator < ModSpox::Plugin
     def clear_pass(message, params)
         nick = Models::Nick.locate(params[:nick])
         nick.auth.password = nil
-        @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Nick #{params[:nick]} has been updated. Password has been unset.")
+        information message.replyto, "Nick #{params[:nick]} has been updated. Password has been unset."
     end
 
     # message:: ModSpox::Messages::Incoming::Privmsg
@@ -154,25 +154,24 @@ class Authenticator < ModSpox::Plugin
             info = []
             info << "\2INFO [#{nick.nick}]:\2"
             groups = []
-            Models::AuthGroup.filter(:auth_id => nick.auth.pk).each do |ag|
-                groups << ag.group.name
+            nick.auth.groups.each do |ag|
+                groups << ag.name
             end
             info << "Groups: #{groups.uniq.sort.join(', ')}."
             nick.auth.password.nil? ? info << 'Password has not been set.' : info << 'Password has been set.'
             nick.auth.services ? info << 'Nickserv ident is enabled.' : info << 'Nickserv ident is disabled.'
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "#{info.join(' ')}")
+            information message.replyto, "#{info.join(' ')}"
         else
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "I have no record of nick: #{params[:nick]}")
+            error message.replyto, "I have no record of nick: #{params[:nick]}"
         end
     end
 
     def show_groups(message, params)
-        groups = []
-        message.source.auth_groups.each{|g| groups << g.name}
-        if(groups.empty?)
+        groups = message.source.auth.groups.map{|g| g.name}
+        if(groups.nil? || groups.empty?)
             reply message.replyto, "You are not currently a member of any groups"
         else
-            reply message.replyto, "\2Groups (#{message.source.nick}):\2 #{groups.join(', ')}"
+            reply message.replyto, "\2Groups (#{message.source.nick}):\2 #{groups.sort.join(', ')}"
         end
     end
 
@@ -183,10 +182,10 @@ class Authenticator < ModSpox::Plugin
         group = Models::Group.filter(:name => params[:group]).first
         nick = Models::Nick.locate(params[:nick])
         if(group)
-            nick.auth.group = group
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Nick #{params[:nick]} has been added to the group: #{params[:group]}")
+            nick.auth.add_group(group)
+            information message.replyto, "Nick #{params[:nick]} has been added to the group: #{params[:group]}"
         else
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find authentication group: #{params[:group]}")
+            error message.replyto, "Failed to find authentication group: #{params[:group]}"
 
         end
     end
@@ -198,11 +197,11 @@ class Authenticator < ModSpox::Plugin
         group = Models::Group.filter(:name => params[:group]).first
         nick = Helpers.find_model(params[:nick], false)
         if(group && nick)
-            nick.remove_group(group)
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Removed #{params[:nick]} from the #{params[:group]} authentication group.")
+            nick.auth.remove_group(group)
+            information message.replyto, "Removed #{params[:nick]} from the #{params[:group]} authentication group."
         else
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find nick: #{params[:nick]}") unless nick
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find group: #{params[:group]}") unless group
+            error message.replyto, "Failed to find nick: #{params[:nick]}" unless nick
+            error message.replyto, "Failed to find group: #{params[:group]}" unless group
         end
     end
 
@@ -218,9 +217,8 @@ class Authenticator < ModSpox::Plugin
     # params:: Signature parameters
     # Display all available authentication groups
     def list_groups(message, params)
-        groups = []
-        Models::Group.all.each{|g| groups << g.name}
-        @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "\2Groups:\2 #{groups.join(', ')}")
+        groups = Models::Group.all.map{|g| g.name}
+        information message.replyto, "\2Groups:\2 #{groups.sort.join(', ')}"
     end
 
     # message:: ModSpox::Messages::Incoming::Privmsg
@@ -229,22 +227,14 @@ class Authenticator < ModSpox::Plugin
     def group_info(message, params)
         group = Models::Group.filter(:name => params[:group]).first
         if(group)
-            nicks = []
-            masks = []
-            Models::AuthGroup.filter(:group => group.pk).each do |ag|
-                if(ag.auth.nick)
-                    nicks << ag.auth.nick.nick
-                end
-                if(ag.auth.mask)
-                    masks << ag.auth.mask
-                end
-            end
+            nicks = groups.auths.map{|a| a.nick.nick}
+            masks = groups.auth_masks.map{|a| a.map}
             output = []
             output << "\2Nicks:\2 #{nicks.join(', ')}" if nicks.size > 0
             output << "\2Masks:\2 #{masks.join(' | ')}" if masks.size > 0
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "\2Group #{params[:group]}:\2 #{output.join('. ')}")
+            information message.replyto, "\2Group #{params[:group]}:\2 #{output.join('. ')}"
         else
-            @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "Failed to find group named: #{params[:group]}")
+            error message.replyto, "Failed to find group named: #{params[:group]}"
         end
     end
 
