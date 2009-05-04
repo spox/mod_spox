@@ -32,17 +32,17 @@ module ModSpox
                     raw = @raw[chan]
                     @names[chan] = [] unless @names[chan].is_a?(Array)
                     @names[chan].each do |n|
-                        nick = Models::Nick.find_or_create(n.gsub(/^[@+]/, '').downcase)
+                        nick = Models::Nick.find_or_create(:nick => n.gsub(/^[@+]/, '').downcase)
                         nick.visible = true
                         nicks << nick
                         if(n[0].chr == '@')
                             ops << nick
-                            Models::NickMode.find_or_create(:nick_id => nick.pk, :channel_id => channel.pk, :mode => 'o')
+                            Models::NickMode.find_or_create(:nick_id => nick.pk, :channel_id => channel.pk).add_mode('o')
                         elsif(n[0].chr == '+')
                             voice << nick
-                            Models::NickMode.find_or_create(:nick_id => nick.pk, :channel_id => channel.pk, :mode => 'v')
+                            Models::NickMode.find_or_create(:nick_id => nick.pk, :channel_id => channel.pk).add_mode('v')
                         else
-                            nick.remove_all_modes
+                            Models::NickMode.find_or_create(:nick_id => nick.pk, :channel_id => channel.pk).clear_modes
                         end
                         channel.add_nick(nick)
                     end

@@ -41,11 +41,11 @@ module ModSpox
                         channel.add_nick(nick)
                         Models::NickChannel.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
                         if(info.include?('+'))
-                            Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk, :mode => 'v')
+                            Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk).add_mode('v')
                         elsif(info.include?('@'))
-                            Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk, :mode => 'o')
+                            Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk).add_mode('o')
                         else
-                            Models::NickMode.filter(:channel_id => channel.pk, :nick_id => nick.pk).destroy
+                            Models::NickMode.filter(:channel_id => channel.pk, :nick_id => nick.pk).clear_modes
                         end
                     end
                     return nil
