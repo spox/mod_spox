@@ -97,7 +97,7 @@ module ModSpox
             end
 
             def auth
-                if(auths.emtpy?)
+                if(auths.empty?)
                     Auth.find_or_create(:nick_id => pk)
                 end
                 return auths[0]

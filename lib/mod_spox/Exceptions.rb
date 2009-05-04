@@ -40,7 +40,7 @@ module ModSpox
         class NotInChannel < BotException
             attr_reader :channel
             def initialize(channel)
-                @channel = channel)
+                @channel = channel
             end
             def to_s
                 "Bot is not currently in channel: #{@channel}"
