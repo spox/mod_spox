@@ -11,8 +11,8 @@ module ModSpox
         def initialize(pipeline, pool)
             @pipeline = pipeline
             @pool = pool
+            @sync_pool = ActionPool::Pool.new(1, 1, nil, Logger.raw)
             @handlers = Hash.new
-            @lock = Mutex.new
             build_handlers
             @sync = [RPL_MOTDSTART, RPL_MOTD, RPL_ENDOFMOTD, RPL_WHOREPLY, RPL_ENDOFWHO,
                      RPL_NAMREPLY, RPL_ENDOFNAMES, RPL_WHOISUSER, RPL_WHOISSERVER, RPL_WHOISOPERATOR,
@@ -62,11 +62,9 @@ module ModSpox
                         Logger.info("Message of type #{key} is now being handled by #{@handlers[key]}")
                         if(@sync.include?(key))
                             Logger.info("Message of type #{key} requires synchronized processing")
-                            @pool.process do
-                                @lock.synchronize do
-                                    message = @handlers[key].process(message)
-                                    @pipeline << message unless message.nil?
-                                end
+                            @sync_pool.process do
+                                message = @handlers[key].process(message)
+                                @pipeline << message unless message.nil?
                             end
                         else
                             @pool.process do
