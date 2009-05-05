@@ -31,6 +31,7 @@ $JDBC = false
 require 'sequel/extensions/migration'
 Sequel::Model.plugin :validation_helpers
 Sequel::Model.plugin :schema
+Sequel::Model.plugin :serialization
 Sequel::Model.unrestrict_primary_key
 # okay, lets go #
 
@@ -79,7 +80,7 @@ opts.each do |opt, arg|
                 exit 1
             end
         when '--debug'
-            if(arg)
+            if(arg && arg.gsub(' ', '').size > 0)
                 $LOGTO = arg
             else
                 $LOGTO = $stdout
