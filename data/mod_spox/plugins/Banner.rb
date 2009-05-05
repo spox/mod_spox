@@ -464,7 +464,7 @@ class Banner < ModSpox::Plugin
         end
 
         before_create do
-            update_values(:stamp => Object::Time.now)
+            update(:stamp => Object::Time.now)
         end
 
         def channel
@@ -533,7 +533,7 @@ class Banner < ModSpox::Plugin
         end
 
         def mask=(val)
-            update_values(:source => [Marshal.dump(val)].pack('m'))
+            update(:source => [Marshal.dump(val)].pack('m'))
         end
 
     end

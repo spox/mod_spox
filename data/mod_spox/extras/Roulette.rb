@@ -236,7 +236,7 @@ class Roulette < ModSpox::Plugin
             foreign_key :channel_id, :null => false, :table => :channels
         end
 
-        before_create do
+        def before_create
             self.stamp = Time.now
         end
 
