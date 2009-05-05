@@ -28,6 +28,10 @@ module ModSpox
         def Logger.log?
             Logger.class_variable_defined?(:@@log)
         end
+
+        def Logger.raw
+            Logger.log? ? @@log : nil
+        end
         
     end
 end
