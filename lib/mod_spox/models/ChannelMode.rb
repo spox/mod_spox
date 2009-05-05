@@ -16,13 +16,13 @@ module ModSpox
             # m:: single character mode
             # set a mode for the channel
             # TODO: add some type checks
-            def set(m)
-                mode = mode + m
+            def set_mode(m)
+                mode = mode + m if mode.nil? || !mode.index(m).nil?
             end
 
             # m:: single character mode
             # unset a mode for the channel
-            def unset(m)
+            def unset_mode(m)
                 mode = mode.gsub(m, '')
             end
         end

@@ -39,13 +39,15 @@ module ModSpox
                     unless(location.nil?)
                         channel = find_model(location)
                         channel.add_nick(nick)
-                        Models::NickChannel.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
                         if(info.include?('+'))
-                            Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk).add_mode('v')
+                            m = Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
+                            m.set_mode('v')
                         elsif(info.include?('@'))
-                            Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk).add_mode('o')
+                            m = Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
+                            m.set_mode('o')
                         else
-                            Models::NickMode.filter(:channel_id => channel.pk, :nick_id => nick.pk).clear_modes
+                            m = Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
+                            m.clear_modes
                         end
                     end
                     return nil

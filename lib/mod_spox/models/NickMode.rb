@@ -9,19 +9,23 @@ module ModSpox
             
             # m:: mode character
             # add a mode for a nick channel combo
-            def add_mode(m)
-                mode = "#{mode}+#{m}"
+            def set_mode(m)
+                update(:mode => "#{values[:mode]}#{m}") if values[:mode].nil? || values[:mode].index(m).nil?
             end
             
             # m:: mode character
             # remove a mode for a nick channel combo
-            def remove_mode(m)
-                mode = mode.gsub(m, '')
+            def unset_mode(m)
+                update(:mode => values[:mode].gsub(m, ''))
+            end
+
+            def set?(m)
+                return mode.nil? ? false : !mode.index(m).nil?
             end
             
             # clear all modes for a nick channel combo
             def clear_modes
-                mode = ''
+                update(:mode => '')
             end
         end
     end

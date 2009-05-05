@@ -65,15 +65,15 @@ module ModSpox
                 begin
                     info =  Object::Socket.getaddrinfo(address, nil)
                     addr = info[0][3]
-                    update_values :host => info[0][2]
+                    update :host => info[0][2]
                     super(addr)
                 rescue Object => boom
                     addr = address
-                    update_values :host => address
+                    update :host => address
                     super(addr)
                 ensure
                     if values[:address] != oldaddress
-                        clear_auth 
+                        auth.update(:authed => false)
                     end
                 end
             end
@@ -83,15 +83,16 @@ module ModSpox
             # not all relating information is cleared
             def visible=(val)
                 unless(val)
-                    update_with_params :username => nil
-                    update_with_params :real_name => nil
-                    update_with_params :address => nil
-                    update_with_params :source => nil
-                    update_with_params :connected_at => nil
-                    update_with_params :connected_to => nil
-                    update_with_params :seconds_idle => nil
-                    update_with_params :away => false
+                    update :username => nil
+                    update :real_name => nil
+                    update :address => nil
+                    update :source => nil
+                    update :connected_at => nil
+                    update :connected_to => nil
+                    update :seconds_idle => nil
+                    update :away => false
                     remove_all_channels
+                    auth.update(:authed => false)
                 end
                 super(val)
             end
@@ -105,9 +106,15 @@ module ModSpox
 
             # AuthGroups nick is authed to
             def auth_groups
-                g = auths.empty? || auths[0].groups.nil? ? [] : auths[0].groups
+                g = auths.empty? || !auths[0].authed || auths[0].groups.empty? ? [] : auths[0].groups
                 g += auth_masks[0].groups unless auth_masks.empty?
                 return g
+            end
+
+            def check_masks
+                AuthMask.all.each do |am|
+                    add_auth_mask(am) if source =~ /#{am.mask}/ && !auth_masks.include?(am)
+                end
             end
 
             # Set nick as member of given group
@@ -125,12 +132,6 @@ module ModSpox
                 auth.remove_group(group)
             end
 
-            # Clear this nick's auth status
-            def clear_auth
-                auth.authenticated(false)
-                NickGroup.filter(:nick_id => pk).destroy
-            end
-
             # Modes associated with this nick
             def nick_modes
                 modes
@@ -145,13 +146,31 @@ module ModSpox
             # channel:: Models::Channel
             # Return if nick is operator in given channel
             def is_op?(channel)
-                return !modes.filter(:channel => channel).first.mode.index('o').nil?
+                modes.each do |m|
+                    return true if m.channel == channel && m.set?('o')
+                end
+                return false
             end
 
             # channel:: Models::Channel
             # Return if nick is voiced in given channel
             def is_voice?(channel)
-                return !modes.filter(:channel => channel).first.mode.index('v').nil?
+                modes.each do |m|
+                    return true if m.channel == channel && m.set?('v')
+                end
+                return false
+            end
+
+            def add_channel(c)
+                if(channels.map{|channel| true if c.name == channel.name}.empty?)
+                    super(c)
+                end
+            end
+
+            def remove_channel(c)
+                unless(channels.map{|channel| true if c.name == channel.name}.empty?)
+                    super(c)
+                end
             end
 
             # TODO: rewrite this to work

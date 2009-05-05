@@ -14,9 +14,11 @@ module ModSpox
                         full_mode = $3
                         action = full_mode[0].chr
                         full_mode.slice(0).each_char{|c|
-                            Models::ChannelMode.find_or_create(:channel_id => channel.pk, :mode => c) if action == '+'
-                            if(action == '-' && model = Models::ChannelMode.filter(:channel_id => channel.pk, :mode => c).first)
-                                model.destroy
+                            m = Models::ChannelMode.find_or_create(:channel_id => channel.pk)
+                            if(action == '+')
+                                m.set_mode(c)
+                            else
+                                m.unset_mode(c)
                             end
                         }
                         return Messages::Incoming::Mode.new(string, full_mode, source, nil, channel)
@@ -34,9 +36,11 @@ module ModSpox
                             nicks << nick
                             if(nick.is_a?(Models::Nick))
                                 mode = full_modes[i + 1].chr
-                                Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk, :mode => mode) if action == '+'
-                                if(action == '-' && model = Models::NickMode.filter(:channel_id => channel.pk, :nick_id => nick.pk, :mode => mode).first)
-                                    model.destroy
+                                m = Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
+                                if(action == '+')
+                                    m.set_mode(mode)
+                                else
+                                    m.unset_mode(mode)
                                 end
                             end
                         end

@@ -37,12 +37,15 @@ module ModSpox
                         nicks << nick
                         if(n[0].chr == '@')
                             ops << nick
-                            Models::NickMode.find_or_create(:nick_id => nick.pk, :channel_id => channel.pk).add_mode('o')
+                            m = Models::NickMode.find_or_create(:nick_id => nick.pk, :channel_id => channel.pk)
+                            m.set_mode('o')
                         elsif(n[0].chr == '+')
                             voice << nick
-                            Models::NickMode.find_or_create(:nick_id => nick.pk, :channel_id => channel.pk).add_mode('v')
+                            m = Models::NickMode.find_or_create(:nick_id => nick.pk, :channel_id => channel.pk)
+                            m.set_mode('v')
                         else
-                            Models::NickMode.find_or_create(:nick_id => nick.pk, :channel_id => channel.pk).clear_modes
+                            m = Models::NickMode.find_or_create(:nick_id => nick.pk, :channel_id => channel.pk)
+                            m.clear_modes
                         end
                         channel.add_nick(nick)
                     end
@@ -60,8 +63,13 @@ module ModSpox
             # Remove visibility from any nicks that aren't really
             # in the channel
             def check_visibility(nicks, channel)
-                Models::Nick.filter(:channel => channel, :visible => true).each do |n|
-                    n.visible = false unless nicks.include?(n)
+                channel.nicks.each do |nick|
+                    unless(nicks.include?(nick))
+                        channel.remove_nick(nick)
+                        unless(nick.botnick)
+                            nick.update(:visible => false) if (Models::Nick.filter(:botnick => true).first.channels & nick.channels).empty?
+                        end
+                    end
                 end
             end
         end

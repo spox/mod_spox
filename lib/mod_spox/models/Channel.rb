@@ -57,6 +57,18 @@ module ModSpox
                 remove_all_nicks
             end
 
+            def add_nick(n)
+                if(nicks.map{|nick| true if n.nick == nick.nick}.empty?)
+                    super(n)
+                end
+            end
+
+            def remove_nick(n)
+                unless(nicks.map{|nick| true if n.nick == nick.nick}.empty?)
+                    super(n)
+                end
+            end
+
         end
 
     end

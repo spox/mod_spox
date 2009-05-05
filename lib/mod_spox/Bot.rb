@@ -550,13 +550,14 @@ module ModSpox
         # Cleans information from models to avoid
         # stale values
         def clean_models
-            Models::NickMode.destroy_all
-            Models::ChannelMode.destroy_all
+            Models::NickMode.destroy
+            Models::ChannelMode.destroy
             Models::Channel.update(:parked => false, :topic => nil)
             Models::Nick.update(:username => nil, :real_name => nil, :address => nil,
                 :source => nil, :connected_at => nil, :connected_to => nil,
                 :seconds_idle => nil, :away => false, :visible => false, :botnick => false)
             Models::Auth.update(:authed => false)
+            Database.db[:auth_masks_nicks].delete
         end
     end
 

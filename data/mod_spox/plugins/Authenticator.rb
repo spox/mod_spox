@@ -3,7 +3,7 @@ class Authenticator < ModSpox::Plugin
         super(pipeline)
         group = Models::Group.filter(:name => 'admin').first
         add_sig(:sig => 'auth (\S+)', :method => :authenticate, :desc => 'Authenticate with bot using a password', :params => [:password])
-        add_sig(:sig => 'ident', :method => :send_whois, :desc => 'Instructs the bot to check your NickServ status')
+        add_sig(:sig => 'ident', :method => :do_ident, :desc => 'Instructs the bot to check your NickServ status')
         add_sig(:sig => 'auth mask add (\S+) (\S+)', :method => :add_mask, :group => group, :desc => 'Add authentication mask and set initial group', :params => [:mask, :group])
         add_sig(:sig => 'auth mask set (\d+) (.+)', :method => :set_mask_groups, :group => group, :desc => 'Set groups for the given mask', :params => [:id, :groups])
         add_sig(:sig => 'auth mask unset (\d+) (.+)', :method => :del_mask_groups, :group => group, :desc => 'Remove groups for the given mask', :params => [:id, :groups])
@@ -47,7 +47,6 @@ class Authenticator < ModSpox::Plugin
             raise Exception.new("Failed to find group") unless group
             a = Models::AuthMask.find_or_create(:mask => Regexp.new(params[:mask]).source)
             a.add_group(group)
-            a.group = group
             a.save
             information message.replyto, 'Mask has been successfully added to authentication table'
         rescue Object => boom
@@ -91,7 +90,7 @@ class Authenticator < ModSpox::Plugin
     # params:: Signature parameters
     # List all authentication masks
     def list_mask(message, params)
-        output << ["\2Authentication Mask Listing:\2"]
+        output = ["\2Authentication Mask Listing:\2"]
         Models::AuthMask.all.each do |a|
             groups = []
             a.groups.each{|g| groups << g.name}
@@ -167,7 +166,7 @@ class Authenticator < ModSpox::Plugin
     end
 
     def show_groups(message, params)
-        groups = message.source.auth.groups.map{|g| g.name}
+        groups = message.source.auth_groups.map{|g| g.name}
         if(groups.nil? || groups.empty?)
             reply message.replyto, "You are not currently a member of any groups"
         else
@@ -186,7 +185,6 @@ class Authenticator < ModSpox::Plugin
             information message.replyto, "Nick #{params[:nick]} has been added to the group: #{params[:group]}"
         else
             error message.replyto, "Failed to find authentication group: #{params[:group]}"
-
         end
     end
 
@@ -208,9 +206,10 @@ class Authenticator < ModSpox::Plugin
     # message:: ModSpox::Messages::Incoming::Privmsg
     # params:: Signature parameters
     # Send WHOIS for nick
-    def send_whois(message, params)
-        message.source.clear_auth
-        @pipeline << Messages::Outgoing::Whois.new(message.source.nick)
+    def do_ident(message, params)
+        message.source.check_masks
+        check_nickserv(message.source)
+        #@pipeline << Messages::Outgoing::Whois.new(message.source.nick)
     end
 
     # message:: ModSpox::Messages::Incoming::Privmsg
@@ -227,8 +226,8 @@ class Authenticator < ModSpox::Plugin
     def group_info(message, params)
         group = Models::Group.filter(:name => params[:group]).first
         if(group)
-            nicks = groups.auths.map{|a| a.nick.nick}
-            masks = groups.auth_masks.map{|a| a.map}
+            nicks = group.auths.map{|a| a.nick.nick}
+            masks = group.auth_masks.map{|a| a.map}
             output = []
             output << "\2Nicks:\2 #{nicks.join(', ')}" if nicks.size > 0
             output << "\2Masks:\2 #{masks.join(' | ')}" if masks.size > 0
@@ -239,12 +238,12 @@ class Authenticator < ModSpox::Plugin
     end
 
     def check_notice(m)
-        if(m.source.nick.downcase == 'nickserv' && m.source.host == 'dal.net' && m.message =~ /^(\S+) ACC (\d+)$/)
+        if(m.source.is_a?(Models::Nick) && m.source.nick.downcase == 'nickserv' && m.source.host == 'dal.net' && m.message =~ /^(\S+) ACC (\d+)$/)
             nick = $1
             setting = $3.to_i
             if(setting == 3)
-                user = Helpers.find_model($1)
-                user.auth.services_identified = true
+                user = Helpers.find_model(nick)
+                user.auth.update(:authed => true)
                 Logger.info("User has been authenticated through NickServ services. (#{user.nick})")
             end
         end
