@@ -44,7 +44,7 @@ module ModSpox
             config[:memcache] = get_input('Use memcache (EXPERIMENTAL): ', '(yes|no)', 'no')
             valid_connection = false
             until valid_connection do
-                config[:db_adapter] = get_input('Database type (pgsql|sqlite): ', '(pgsql|sqlite)', 'pgsql')
+                config[:db_adapter] = get_input('Database type (pgsql|sqlite): ', '(pgsql|sqlite)', 'sqlite')
                 unless(config[:db_adapter] == 'sqlite')
                     config[:db_username] = get_input('Database username: ', '.+', 'mod_spox')
                     config[:db_password] = get_input('Database password: ', '.*', nil)
@@ -63,8 +63,7 @@ module ModSpox
                 rescue Object => boom
                     puts 'Failed'
                     puts 'Error: Unexpected error encountered.'
-                    puts "Info: #{boom.class} #{boom}\n#{boom.backtrace.join("\n")}"
-                    exit 1
+                    puts "Info: #{boom}"
                 ensure
                     $stdout.flush
                 end
@@ -76,7 +75,7 @@ module ModSpox
                 puts 'mod_spox is now configured and ready for use'
             rescue Object => boom
                 puts 'Failed'
-                puts "Error: #{boom}\n#{boom.backtrace.join("\n")}"
+                puts "Error: #{boom}"
                 puts 'Please try running the configuration again'
             end
         end
