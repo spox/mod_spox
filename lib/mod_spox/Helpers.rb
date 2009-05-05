@@ -87,38 +87,17 @@ module ModSpox
         # or channel name. If the string given does not match the required
         # pattern for a channel or nick, the string is returned.
         def Helpers.find_model(string, create=true)
-            Helpers.initialize_caches
             result = nil
             if(string =~ /^[A-Za-z\|\\\{\}\[\]\^\`~\_\-]+[A-Za-z0-9\|\\\{\}\[\]\^\`~\_\-]*$/)
-                if(@@nick_cache.has_key?(string.downcase))
-                    result = @@nick_cache[string.downcase]
-                    result = nil unless result.nick.downcase == string.downcase
-                end
-                unless(result)
-                    result = Models::Nick.find_or_create(:nick => string.downcase)
-                    @@nick_cache[string.downcase] = result
-                end
+                result = Models::Nick.find_or_create(:nick => string.downcase)
             elsif(string =~ /^[&#+!]/)
-                if(@@channel_cache.has_key?(string.downcase))
-                    result = @@channel_cache[string.downcase]
-                    result = nil unless result.name.downcase == string.downcase
-                end
-                unless(result)
-                    result = Models::Channel.find_or_create(:name => string.downcase)
-                    @@channel_cache[string.downcase] = result
-                end
+                result = Models::Channel.find_or_create(:name => string.downcase)
             elsif(Models::Server.filter(:host => string, :connected => true).count > 0)
                 result = Models::Server.filter(:host => string, :connected => true).first
             else
                 Logger.warn("Failed to match string to model: #{string} -> No match")
             end
             return result
-        end
-
-        # Builds caches to hold commonly accessed models
-        def Helpers.initialize_caches
-            @@nick_cache = Cache.new(20) unless Helpers.class_variable_defined?(:@@nick_cache)
-            @@channel_cache = Cache.new(5) unless Helpers.class_variable_defined?(:@@channel_cache)
         end
 
         # string:: string to convert
