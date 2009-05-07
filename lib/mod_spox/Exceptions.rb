@@ -47,5 +47,15 @@ module ModSpox
             end
         end
 
+        class QuietChannel < BotException
+            attr_reader :channel
+            def initialize(channel)
+                @channel = channel
+            end
+            def to_s
+                "Bot is not allowed to speak in channel: #{@channel}"
+            end
+        end
+
     end
 end

@@ -271,7 +271,6 @@ module ModSpox
         # Sends PART message to server
         def part(message)
             channel = message.channel.is_a?(Models::Channel) ? message.channel.name : message.channel
-            okay_to_send(message.channel)
             @socket << "PART #{channel} :#{message.reason}"
         end
 
@@ -540,10 +539,17 @@ module ModSpox
         # and raises an exception (and logs) if the bot
         # is not in the given channel
         def okay_to_send(channel)
+            if(channel.is_a?(String) && ['&', '#', '+', '!'].include?(channel[0]))
+                channel = Helpers.find_model(channel)
+            end
             return unless channel.is_a?(Models::Channel)
-            unless(channel.parked)
+            unless(Models::Nick.filter(:botnick => true).first.channels.include?(channel))
                 Logger.error("Attempted to send to channel where bot is not parked: #{channel.name}.")
                 raise Exceptions::NotInChannel.new(channel)
+            end
+            if(channel.quiet)
+                Logger.error("Attempted to send to channel where bot is not allowed to speak: #{channel.name}")
+                raise Exceptions::QuietChannel.new(channel)
             end
         end
 
@@ -551,13 +557,13 @@ module ModSpox
         # stale values
         def clean_models
             Models::NickMode.destroy
-            Models::ChannelMode.destroy
-            Models::Channel.update(:parked => false, :topic => nil)
+            Models::Channel.update(:topic => nil)
             Models::Nick.update(:username => nil, :real_name => nil, :address => nil,
                 :source => nil, :connected_at => nil, :connected_to => nil,
                 :seconds_idle => nil, :away => false, :visible => false, :botnick => false)
             Models::Auth.update(:authed => false)
             Database.db[:auth_masks_nicks].delete
+            Database.db[:nick_channels].delete
         end
     end
 
