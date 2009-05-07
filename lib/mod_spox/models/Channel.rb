@@ -15,7 +15,6 @@ module ModSpox
         class Channel < Sequel::Model
 
             many_to_many :nicks, :join_table => :nick_channels, :class => 'Models::Nick'
-            many_to_one :mode, :one_to_one => true, :class => 'Models::ChannelMode'
             one_to_many :nick_modes, :class => 'Models::NickMode'
 
             # chan_name:: string
@@ -44,12 +43,28 @@ module ModSpox
                 return chan
             end
 
-            def set_mode(m)
-                mode.set(m)
+            # m:: single character mode
+            # returns if mode is currently set for
+            # channel
+            def set?(m)
+                return mode.nil? ? false : !mode.index(m).nil?
             end
 
+            # m:: single character mode
+            # set a mode for the channel
+            # TODO: add some type checks
+            def set_mode(m)
+                update(:mode => "#{values[:mode]}#{m}") if values[:mode].nil? || values[:mode].index(m).nil?
+            end
+
+            # m:: single character mode
+            # unset a mode for the channel
             def unset_mode(m)
-                mode.unset(m)
+                update(:mode => values[:mode].gsub(m, ''))
+            end
+
+            def clear_modes
+                update(:mode => '')
             end
 
             # Removes all nicks from this channel
