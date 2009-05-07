@@ -5,18 +5,16 @@ module ModSpox
             def initialize(handlers)
                 handlers[:QUIT] = self
             end
+
+            #:spox!~spox@host QUIT :Ping timeout
             def process(string)
-                if(string =~ /^:(\S+)\sQUIT\s:(.+)$/)
-                    reason = $2
-                    nick = find_model($1.gsub(/!.+$/, ''))
-                    nick.remove_all_channels
-                    nick.visible = false
-                    nick.save
-                    return Messages::Incoming::Quit.new(string, nick, reason)
-                else
-                    Logger.warn('Failed to parse KICK message')
-                    return nil
-                end
+                orig = string.dup
+                nick = find_model(string.slice!(0..string.index('!')-1))
+                string.slice!(0..string.index(':'))
+                nick.remove_all_channels
+                nick.visible = false
+                nick.save
+                return Messages::Incoming::Quit.new(orig, nick, string)
             end
         end
     end

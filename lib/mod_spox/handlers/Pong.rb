@@ -6,12 +6,10 @@ module ModSpox
                 handlers[:PONG] = self
             end
             def process(string)
-                if(string =~ /^:\S+\sPONG\s(\S+)\s:(.+)$/)
-                    return Messages::Incoming::Pong.new(string, $1, $2)
-                else
-                    Logger.warn('Failed to parse PONG message')
-                    return nil
-                end
+                orig = string.dup
+                a = string.slice!(string.rindex(':')+1, string.size)
+                string.slice!(-2..string.size)
+                return Messages::Incoming::Pong.new(orig, string.slice(string.rindex(' ')..string.size), a)
             end
         end
     end

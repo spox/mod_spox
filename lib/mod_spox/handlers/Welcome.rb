@@ -17,8 +17,8 @@ module ModSpox
                         username = $2
                         hostname = $3
                         nick = Models::Nick.find_or_create(:nick => nick.downcase)
-                        nick.visible = true
-                        nick.botnick = true
+                        nick.update(:visible => true)
+                        nick.update(:botnick => true)
                         nick.username = username
                         nick.address = hostname
                         nick.source = userstring

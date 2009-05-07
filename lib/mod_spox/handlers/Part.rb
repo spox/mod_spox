@@ -5,21 +5,22 @@ module ModSpox
             def initialize(handlers)
                 handlers[:PART] = self
             end
+
+            # :mod_spox!~mod_spox@host PART #m :
+            
             def process(string)
-                if(string =~ /^:(\S+) PART (\S+)( .+)?$/)
-                    channel = find_model($2)
-                    nick = find_model($1.gsub(/!.+$/, ''))
-                    channel.remove_nick(nick)
-                    channel.parked = false if nick.botnick == true
-                    nick.visible = false if nick.channels.empty?
-                    nick.save_changes
-                    channel.save_changes
-                    mess = $3.nil? ? '' : $3
-                    return Messages::Incoming::Part.new(string, channel, nick, mess)
-                else
-                    Logger.warn('Failed to parse PART message')
-                    return nil
-                end
+                orig = string.dup
+                string.slice!(0)
+                nick = find_model(string.slice!(0..string.index('!')-1))
+                2.times{ string.slice!(0..string.index(' ')) }
+                channel = find_model(string.slice!(0..string.index(' ')-1))
+                string.slice!(0..string.index(':'))
+                channel.remove_nick(nick)
+                channel.parked = false if nick.botnick == true
+                nick.visible = false if nick.chanels.empty?
+                nick.save_changes
+                channel.save_changes
+                return Messages::Incoming::Part.new(orig, channel, nick, string)
             end
         end
     end

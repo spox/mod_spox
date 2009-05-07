@@ -148,7 +148,7 @@ module ModSpox
         def parse(message)
             return unless message.kind_of?(Messages::Incoming::Privmsg) || message.kind_of?(Messages::Incoming::Notice)
             trigger = nil
-            @triggers.each{|t| trigger = t if message.message =~ /^#{Regexp.escape(t)}/}
+            @triggers.each{|t| trigger = t if message.message[0..t.size-1] == t}
             if(!trigger.nil? || message.addressed?)
                 return if !trigger.nil? && message.message.length == trigger.length
                 Logger.info("Message has matched against a known trigger")

@@ -6,12 +6,7 @@ module ModSpox
                 handlers[:PING] = self
             end
             def process(string)
-                if(string =~ /^PING\s:(.+)$/)
-                    return Messages::Incoming::Ping.new(string, $1, nil)
-                else
-                    Logger.warn('Failed to match PING message')
-                    return nil
-                end
+                return Messages::Incoming::Ping.new(string, string[string.index(':')..string.size], nil)
             end
         end
     end

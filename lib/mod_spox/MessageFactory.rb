@@ -11,7 +11,7 @@ module ModSpox
         def initialize(pipeline, pool)
             @pipeline = pipeline
             @pool = pool
-            @sync_pool = ActionPool::Pool.new(1, 1, nil, Logger.raw)
+            @sync_pool = ActionPool::Pool.new(1, 1, nil, 2, Logger.raw)
             @handlers = Hash.new
             build_handlers
             @sync = [RPL_MOTDSTART, RPL_MOTD, RPL_ENDOFMOTD, RPL_WHOREPLY, RPL_ENDOFWHO,
@@ -55,24 +55,33 @@ module ModSpox
         def parse_message(message)
             Logger.info("Processing message: #{message}")
             begin
-                if(message =~ /^:\S+ (\S+)/ || message =~ /^([A-Za-z0-9]+)\s/)
-                    key = $1
-                    key = key.to_sym unless key[0].chr =~ /\d/
-                    if(@handlers.has_key?(key))
-                        Logger.info("Message of type #{key} is now being handled by #{@handlers[key]}")
-                        if(@sync.include?(key))
-                            Logger.info("Message of type #{key} requires synchronized processing")
-                            @sync_pool.process do
-                                message = @handlers[key].process(message)
-                                @pipeline << message unless message.nil?
-                            end
-                        else
-                            @pool.process do
-                                message = @handlers[key].process(message)
-                                @pipeline << message unless message.nil?
-                            end
+                key = nil
+                if(message[0] == ':')
+                    m = message.dup
+                    m.slice!(0..m.index(' '))
+                    key = m.slice!(0..m.index(' ')-1)
+                else
+                    key = message.slice(0..message.index(' ')-1)
+                end
+                key.strip!
+                raise "Failed to parse key from message: #{message}" if key.nil?
+                key = key.to_sym unless key.to_i != 0
+                if(@handlers.has_key?(key))
+                    Logger.info("Message of type #{key} is now being handled by #{@handlers[key]}")
+                    if(@sync.include?(key))
+                        Logger.info("Message of type #{key} requires synchronized processing")
+                        @sync_pool.process do
+                            message = @handlers[key].process(message)
+                            @pipeline << message unless message.nil?
+                        end
+                    else
+                        @pool.process do
+                            message = @handlers[key].process(message)
+                            @pipeline << message unless message.nil?
                         end
                     end
+                else
+                    Logger.error("No handler was found to process message of type: #{key} Message: #{message}")
                 end
             rescue Object => boom
                 Logger.warn("Failed to parse message from server: #{boom}\n#{boom.backtrace.join("\n")}")

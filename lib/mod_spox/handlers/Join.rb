@@ -5,30 +5,23 @@ module ModSpox
             def initialize(handlers)
                 handlers[:JOIN] = self
             end
+
+            # :mod_spox!~mod_spox@host JOIN :#m
+            
             def process(string)
-                if(string =~ /^:(\S+)\sJOIN :(\S+)$/)
-                    source = $1
-                    chan = $2
-                    if(source =~ /^(.+?)!(.+?)@(.+)$/)
-                        nick = find_model($1)
-                        nick.username = $2
-                        nick.address = $3
-                        nick.source = source
-                        nick.visible = true
-                        nick.save_changes
-                        channel = find_model(chan)
-                        channel.add_nick(nick)
-                        channel.parked = true if nick.botnick == true
-                        channel.save
-                        return Messages::Incoming::Join.new(string, channel, nick)
-                    else
-                        Logger.warn('Failed to parse source on JOIN message')
-                        return nil
-                    end
-                else
-                    Logger.warn('Failed to parse JOIN message')
-                    return nil
-                end
+                orig = string.dup
+                string.slice!(0)
+                source = string.slice!(0..string.index(' ')-1)
+                string.slice!(0..string.index(':'))
+                channel = find_model(string.strip)
+                nick = find_model(source[0,source.index('!')-1])
+                nick.username = source[(source.index('!')+1)..source.index('@')-1]
+                nick.address = source[(source.index('@')+1)..source.size]
+                nick.visible = true
+                nick.save_changes
+                channel.add_nick(nick)
+                channel.save
+                return Messages::Incoming::Join.new(orig, channel, nick)
             end
         end
     end

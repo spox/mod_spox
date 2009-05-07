@@ -7,11 +7,11 @@ module ModSpox
             end
             
             def process(string)
-                if(string =~ /:Try server (\S+), port (.+)$/)
-                    return Messages::Incoming::Bounce.new(string, $1, $2)
-                else
-                    return nil
-                end
+                orig = string.dup
+                2.times{string.slice!(0..string.index(' '))}
+                server = string.slice!(0..string.index(',')-1)
+                string.slice!(0..string.index(' ',4))
+                return Messages::Incoming::Bounce.new(orig, server, string)
             end
         end
     end

@@ -7,52 +7,30 @@ module ModSpox
             end
             
             def process(string)
-                begin
-                    if(string =~ /^:([^!]+)!.+?MODE\s(\S+)\s(\S+)$/) # this is for modes applied to the channel
-                        source = find_model($1)
-                        channel = find_model($2)
-                        full_mode = $3
-                        action = full_mode[0].chr
-                        full_mode.slice(0).each_char{|c|
-                            m = Models::ChannelMode.find_or_create(:channel_id => channel.pk)
-                            if(action == '+')
-                                m.set_mode(c)
-                            else
-                                m.unset_mode(c)
-                            end
-                        }
-                        return Messages::Incoming::Mode.new(string, full_mode, source, nil, channel)
-                    #elsif(string =~ /^:([^!]+)!.+MODE\s(\S+)\s(.+)$/) # this is for modes applied to nick
-                     #   raise Exceptions::BotException.new("Matched unimplemented mode string")
-                    elsif(string =~ /^:([^!]+)!.+MODE\s(\S+)\s(\S+)\s(.+)$/)
-                        source = find_model($1)
-                        channel = find_model($2)
-                        full_modes = $3
-                        targets = $4
-                        action = full_modes[0].chr
-                        nicks = Array.new
-                        full_modes.sub(/^./, '').length.times do |i|
-                            nick = find_model(targets.scan(/\S+/)[i])
-                            nicks << nick
-                            if(nick.is_a?(Models::Nick))
-                                mode = full_modes[i + 1].chr
-                                m = Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
-                                if(action == '+')
-                                    m.set_mode(mode)
-                                else
-                                    m.unset_mode(mode)
-                                end
-                            end
-                        end
-                        nicks = nicks[0] if nicks.size == 1
-                        return Messages::Incoming::Mode.new(string, full_modes, source, nicks, channel)
-                    else
-                        Logger.warn('Failed to parse MODE message')
+                orig = string.dup
+                string.slice!(0)
+                source = find_model(string.slice!(0..string.index('!')-1))
+                string.slice!(0..string.index('MODE '))
+                channel = find_model(string.slice!(0..string.index(' ')-1))
+                string.slice!(0)
+                modes = string.slice!(0..index(' ')-1)
+                string.slice!(0)
+                action = modes.slice!(0)
+                if(string.size > 0) #nick modes
+                    nicks = []
+                    string.split.each{|n| nicks << find_model(n)}
+                    modes.each_char do |m|
+                        nm = Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
+                        action == '+' ? nm.set_mode(m) : nm.unset_mode(m)
                     end
-                rescue Object => boom
-                    Logger.warn("Failed to process MODE message. Reason: #{boom}")
+                    nicks = nicks[0] if nicks.size == 1
+                    return Messages::Incoming::Mode.new(orig, "#{action}#{modes}", source, nicks, channel)
+                else #channel modes
+                    modes.each_char do |m|
+                        action == '+' ? channel.set_mode(m) : channel.unset_mode(c)
+                    end
+                    return Messages::Incoming::Mode.new(orig, "#{action}#{modes}", source, nil, channel)
                 end
-                return nil
             end
         end
     end

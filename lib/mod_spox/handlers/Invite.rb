@@ -6,15 +6,12 @@ module ModSpox
                 handlers[:INVITE] = self
             end
             def process(string)
-                if(string =~ /^(.+?)!.*?INVITE\s(\S+)\s(.+)$/)
-                    source = find_model($1)
-                    target = find_model($2)
-                    channel = find_model($3)
-                    return Messages::Incoming::Invite.new(string, source, target, channel)
-                else
-                    Logger.warn('Failed to parse INVITE message')
-                    return nil
-                end
+                orig = string.dup
+                source = find_model(string.slice!(0..string.index('!')-1))
+                2.times{ string.slice!(0..string.index(' ')) }
+                target = find_model(string.slice!(0..string.index(' ')-1))
+                channel = find_model(string.strip)
+                return Messages::Incoming::Invite.new(orig, source, target, channel)
             end
         end
     end
