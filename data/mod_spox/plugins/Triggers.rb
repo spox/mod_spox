@@ -40,7 +40,7 @@ include Messages::Outgoing
     end
     
     def add(message, params)
-        Models::Trigger.find_or_create(:trigger => params[:trigger]).update_with_params(:active => true)
+        Models::Trigger.find_or_create(:trigger => params[:trigger]).update(:active => true)
         @pipeline << Privmsg.new(message.replyto, "Trigger #{params[:trigger]} is now active")
         @pipeline << Messages::Internal::TriggersUpdate.new
     end
@@ -60,7 +60,7 @@ include Messages::Outgoing
     def activate(message, params)
         trigger = Models::Trigger[params[:id]]
         if(trigger)
-            trigger.update_with_params(:active => true)
+            trigger.update(:active => true)
             @pipeline << Privmsg.new(message.replyto, "Trigger #{trigger.trigger} has been activated")
             @pipeline << Messages::Internal::TriggersUpdate.new
         else
@@ -71,7 +71,7 @@ include Messages::Outgoing
     def deactivate(message, params)
         trigger = Models::Trigger[params[:id]]
         if(trigger)
-            trigger.update_with_params(:active => false)
+            trigger.update(:active => false)
             @pipeline << Privmsg.new(message.replyto, "Trigger #{trigger.trigger} has been deactivated")
             @pipeline << Messages::Internal::TriggersUpdate.new
         else

@@ -113,11 +113,11 @@ class Confess < ModSpox::Plugin
         if(c)
             @lock.synchronize do
                 if(params[:score] == '++')
-                    c.update_with_params(:positive => c.positive.to_i + 1)
+                    c.update(:positive => c.positive.to_i + 1)
                 else
-                    c.update_with_params(:negative => c.negative.to_i + 1)
+                    c.update(:negative => c.negative.to_i + 1)
                 end
-                c.update_with_params(:score => ((c.positive.to_f) / (c.positive.to_f + c.negative.to_f)) * 100.0)
+                c.update(:score => ((c.positive.to_f) / (c.positive.to_f + c.negative.to_f)) * 100.0)
             end
         else
             reply message.replyto, "\2Error:\2 Failed to find confession to score"

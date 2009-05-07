@@ -84,7 +84,7 @@ class Karma < ModSpox::Plugin
         return unless message.is_public?
         karma = Datatype::Karma.filter(:thing => sthing, :channel_id => message.target.pk).first
         if(karma)
-            karma.update_with_params(:score => 0)
+            karma.update(:score => 0)
             @pipeline << Privmsg.new(message.replyto, "Karma for \2#{karma.thing}\2 has been reset")
         else
             @pipeline << Privmsg.new(message.replyto, "\2Error:\2 #{sthing} has no karma")
