@@ -90,7 +90,7 @@ module ModSpox
             result = nil
             if(string =~ /^[A-Za-z\|\\\{\}\[\]\^\`~\_\-]+[A-Za-z0-9\|\\\{\}\[\]\^\`~\_\-]*$/)
                 result = Models::Nick.find_or_create(:nick => string.downcase)
-            elsif(string =~ /^[&#+!]/)
+            elsif(['&', '#', '+', '!'].include?(string[0]))
                 result = Models::Channel.find_or_create(:name => string.downcase)
             elsif(Models::Server.filter(:host => string, :connected => true).count > 0)
                 result = Models::Server.filter(:host => string, :connected => true).first

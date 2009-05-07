@@ -31,7 +31,6 @@ $JDBC = false
 require 'sequel/extensions/migration'
 Sequel::Model.plugin :validation_helpers
 Sequel::Model.plugin :schema
-Sequel::Model.plugin :serialization
 Sequel::Model.unrestrict_primary_key
 # okay, lets go #
 
