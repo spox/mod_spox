@@ -11,11 +11,12 @@ module ModSpox
                 begin
                     string.slice!(0)
                     source = string.slice!(0..string.index(' ')-1)
-                    string.slice!(0..index(' ',3))
+                    2.times{string.slice!(0..string.index(' '))}
                     channel = string.slice!(0..string.index(' ')-1)
-                    kickee = string.slice!(1..string.index(' ',2)-1)
-                    string.slice!(0..index(':'))
-                    kicker = find_model(source[0..index('!')-1])
+                    string.slice!(0)
+                    kickee = string.slice!(0..string.index(' ')-1)
+                    string.slice!(0..string.index(':'))
+                    kicker = find_model(source[0..source.index('!')-1])
                     channel = find_model(channel)
                     kickee = find_model(kickee)
                     channel.remove_nick(kickee)
