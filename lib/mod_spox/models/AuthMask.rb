@@ -5,8 +5,8 @@ module ModSpox
 
         class AuthMask < Sequel::Model
 
-            many_to_many :nicks, :join_table => :auth_masks_nicks, :class => 'Models::Nick'
-            many_to_many :groups, :join_table => :auth_masks_groups, :class => 'Models::Group'
+            many_to_many :nicks, :join_table => :auth_masks_nicks, :class => 'ModSpox::Models::Nick'
+            many_to_many :groups, :join_table => :auth_masks_groups, :class => 'ModSpox::Models::Group'
             
         end
     end

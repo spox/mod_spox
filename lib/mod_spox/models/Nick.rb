@@ -24,10 +24,10 @@ module ModSpox
         
         class Nick < Sequel::Model
 
-            one_to_many :auths, :one_to_one => true, :class => 'Models::Auth'
-            many_to_many :channels, :join_table => :nick_channels, :class => 'Models::Channel'
-            one_to_many :modes, :class => 'Models::NickMode'
-            many_to_many :auth_masks, :join_table => :auth_masks_nicks, :class => 'Models::AuthMask'
+            one_to_many :auths, :one_to_one => true, :class => 'ModSpox::Models::Auth'
+            many_to_many :channels, :join_table => :nick_channels, :class => 'ModSpox::Models::Channel'
+            one_to_many :modes, :class => 'ModSpox::Models::NickMode'
+            many_to_many :auth_masks, :join_table => :auth_masks_nicks, :class => 'ModSpox::Models::AuthMask'
 
             # nick_name:: nick of user
             # override to downcase nick

@@ -6,9 +6,9 @@ module ModSpox
 
         class Group < Sequel::Model
 
-            many_to_many :auth_masks, :join_table => :auth_masks_groups, :class => 'Models::AuthMask'
-            many_to_many :auths, :join_table => :auth_groups, :class => 'Models::Auth'
-            one_to_many :signature, :class => 'Models::Signature'
+            many_to_many :auth_masks, :join_table => :auth_masks_groups, :class => 'ModSpox::Models::AuthMask'
+            many_to_many :auths, :join_table => :auth_groups, :class => 'ModSpox::Models::Auth'
+            one_to_many :signature, :class => 'ModSpox::Models::Signature'
 
             def name=(group_name)
                 group_name.downcase!

@@ -10,7 +10,7 @@ module ModSpox
         # description:: description of trigger
         class Signature < Sequel::Model
 
-            many_to_one :group, :class => 'Models::Group'
+            many_to_one :group, :class => 'ModSpox::Models::Group'
 
             def params=(prms)
                 raise Exceptions::InvalidType.new('Parameter names must be provided in an array') unless prms.nil? || prms.kind_of?(Array)

@@ -14,8 +14,8 @@ module ModSpox
         # parked:: Bot is currently in this channel
         class Channel < Sequel::Model
 
-            many_to_many :nicks, :join_table => :nick_channels, :class => 'Models::Nick'
-            one_to_many :nick_modes, :class => 'Models::NickMode'
+            many_to_many :nicks, :join_table => :nick_channels, :class => 'ModSpox::Models::Nick'
+            one_to_many :nick_modes, :class => 'ModSpox::Models::NickMode'
 
             # chan_name:: string
             # set channel name after downcase

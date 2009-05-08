@@ -10,8 +10,8 @@ module ModSpox
             # authed:: Nick has authenticated
         class Auth < Sequel::Model
 
-            many_to_many :groups, :join_table => :auth_groups, :class => 'Models::Group'
-            many_to_one :nick, :class => 'Models::Nick'
+            many_to_many :groups, :join_table => :auth_groups, :class => 'ModSpox::Models::Group'
+            many_to_one :nick, :class => 'ModSpox::Models::Nick'
             
             # Clear relations before destroying
             def before_destroy

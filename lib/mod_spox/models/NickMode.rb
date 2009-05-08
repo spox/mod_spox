@@ -4,8 +4,8 @@ module ModSpox
     module Models
 
         class NickMode < Sequel::Model
-            many_to_one :nick, :class => 'Models::Nick'
-            many_to_one :channel, :class => 'Models::Channel'
+            many_to_one :nick, :class => 'ModSpox::Models::Nick'
+            many_to_one :channel, :class => 'ModSpox::Models::Channel'
             
             # m:: mode character
             # add a mode for a nick channel combo
