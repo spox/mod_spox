@@ -4,7 +4,6 @@
  'mod_spox/models/Channel',
  'mod_spox/models/Server',
  'mod_spox/models/Models',
- 'mod_spox/Cache',
  'mod_spox/Logger'].each{|f|require f}
 
 module ModSpox

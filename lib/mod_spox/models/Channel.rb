@@ -1,5 +1,4 @@
 require 'mod_spox/models/Nick'
-require 'mod_spox/models/ChannelMode'
 require 'mod_spox/models/NickMode'
 
 module ModSpox
