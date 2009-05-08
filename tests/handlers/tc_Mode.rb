@@ -1,4 +1,4 @@
-require "#{File.dirname(__FILE__)}/BotHolder.rb"
+require "#{File.dirname(__FILE__)}/../BotHolder.rb"
 
 class TestModeHandler < Test::Unit::TestCase
 

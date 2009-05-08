@@ -1,10 +1,10 @@
-require "#{File.dirname(__FILE__)}/BotHolder.rb"
+require "#{File.dirname(__FILE__)}/../BotHolder.rb"
 
 class TestKickHandler < Test::Unit::TestCase
 
     def setup
         h = BotHolder.instance
-        @bot = h.bot    
+        @bot = h.bot
         @test = {
                  :good => ':spax!~spox@host KICK #m spox :foo',
                  :bad => ':fubared KICK fail whale'

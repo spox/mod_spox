@@ -1,11 +1,9 @@
-require 'mod_spox/Logger'
-require 'mod_spox/handlers/Handler'
-require 'mod_spox/messages/Messages'
-require 'test/unit'
+require "#{File.dirname(__FILE__)}/../BotHolder.rb"
 
 class TestBadNickHandler < Test::Unit::TestCase
     def setup
-        @handler = ModSpox::Handlers::BadNick.new({})
+        h = BotHolder.instance
+        @bot = h.bot
         @test = {:good => 'fail', :bad => 'fail'}
     end
 
