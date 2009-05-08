@@ -161,6 +161,22 @@ module ModSpox
                 end
                 return false
             end
+            
+            def set_mode(m)
+                m.each_char do |c|
+                    update(:mode => "#{mode}#{c}") if mode.index(c).nil?
+                end
+            end
+            
+            def unset_mode(m)
+                m.each_char do |c|
+                    update(:mode => mode.gsub(c,'')) unless mode.index(c).nil?
+                end
+            end
+            
+            def mode_set?(m)
+                return !mode.index(m).nil?
+            end
 
             def add_channel(c)
                 if(channels.map{|channel| true if c.name == channel.name}.empty?)

@@ -6,16 +6,19 @@ class TestModeHandler < Test::Unit::TestCase
         h = BotHolder.instance
         @bot = h.bot    
         @test = {
-                 :good => ':spax!~spox@host MODE #m +o spax',
+                 :set_single => ':spax!~spox@host MODE #m +o spax',
+                 :set_double => ':spax!~spox@host MODE #m +oo spax spex',
+                 :set_channel => ':spax!~spox@host MODE #m +s',
+                 :set_self => ':mod_spox MODE mod_spox :+iw',
                  :bad => ':fubared MODE fail whale'
                 }
     end
 
-    def test_expected
-        assert_equal(:MODE, @bot.factory.find_key(@test[:good].dup))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:good].dup)].process(@test[:good].dup)
+    def test_single
+        assert_equal(:MODE, @bot.factory.find_key(@test[:set_single].dup))
+        result = @bot.factory.handlers[@bot.factory.find_key(@test[:set_single].dup)].process(@test[:set_single].dup)
         assert_kind_of(ModSpox::Messages::Incoming::Mode, result)
-        assert_equal(@test[:good], result.raw_content)
+        assert_equal(@test[:set_single], result.raw_content)
         assert_kind_of(ModSpox::Models::Channel, result.channel)
         assert_equal('#m', result.channel.name)
         assert_kind_of(ModSpox::Models::Nick, result.target)
@@ -24,6 +27,56 @@ class TestModeHandler < Test::Unit::TestCase
         assert_equal('spax', result.source.nick)
         assert_kind_of(String, result.mode)
         assert_equal('+o', result.mode)
+        assert(result.target.is_op?(result.channel))
+    end
+
+    def test_double
+        assert_equal(:MODE, @bot.factory.find_key(@test[:set_double].dup))
+        result = @bot.factory.handlers[@bot.factory.find_key(@test[:set_double].dup)].process(@test[:set_double].dup)
+        assert_kind_of(ModSpox::Messages::Incoming::Mode, result)
+        assert_equal(@test[:set_double], result.raw_content)
+        assert_kind_of(ModSpox::Models::Channel, result.channel)
+        assert_equal('#m', result.channel.name)
+        assert_kind_of(Array, result.target)
+        assert_equal('spax', result.target[0].nick)
+        assert_equal('spex', result.target[1].nick)
+        assert_kind_of(ModSpox::Models::Nick, result.source)
+        assert_equal('spax', result.source.nick)
+        assert_kind_of(String, result.mode)
+        assert_equal('+oo', result.mode)
+        assert(result.target[0].is_op?(result.channel))
+        assert(result.target[1].is_op?(result.channel))
+    end
+
+    def test_channel
+        assert_equal(:MODE, @bot.factory.find_key(@test[:set_channel].dup))
+        result = @bot.factory.handlers[@bot.factory.find_key(@test[:set_channel].dup)].process(@test[:set_channel].dup)
+        assert_kind_of(ModSpox::Messages::Incoming::Mode, result)
+        assert_equal(@test[:set_channel], result.raw_content)
+        assert_kind_of(ModSpox::Models::Channel, result.channel)
+        assert_equal('#m', result.channel.name)
+        assert_nil(result.target)
+        assert_kind_of(ModSpox::Models::Nick, result.source)
+        assert_equal('spax', result.source.nick)
+        assert_kind_of(String, result.mode)
+        assert_equal('+s', result.mode)
+        assert(result.channel.set?('s'))
+    end
+    
+    def test_self
+        assert_equal(:MODE, @bot.factory.find_key(@test[:set_self].dup))
+        result = @bot.factory.handlers[@bot.factory.find_key(@test[:set_self].dup)].process(@test[:set_self].dup)
+        assert_kind_of(ModSpox::Messages::Incoming::Mode, result)
+        assert_equal(@test[:set_self], result.raw_content)
+        assert_nil(result.channel)
+        assert_kind_of(ModSpox::Models::Nick, result.target)
+        assert_equal('mod_spox', result.target.nick)
+        assert_kind_of(ModSpox::Models::Nick, result.source)
+        assert_equal('mod_spox', result.source.nick)
+        assert_kind_of(String, result.mode)
+        assert_equal('+iw', result.mode)
+        assert(result.target.mode_set?('i'))
+        assert(result.target.mode_set?('w'))
     end
 
     def test_unexpected
