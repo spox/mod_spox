@@ -6,6 +6,9 @@ module ModSpox
 
     class MessageFactory
 
+        # access to handlers. (only really needed for testing)
+        attr_reader :handlers
+
         # pipeline:: Message pipeline
         # Create a new MessageFactory
         def initialize(pipeline, pool)
@@ -25,6 +28,26 @@ module ModSpox
         # completed.
         def <<(string)
             @pool.process{ parse_message(string) }
+        end
+
+        # s:: string from server
+        # determine type of message from server
+        def find_key(s)
+            begin
+                key = nil
+                if(s[0] == ':')
+                    s.slice!(0..s.index(' '))
+                    key = s.slice!(0..s.index(' ')-1)
+                else
+                    key = s.slice(0..s.index(' ')-1)
+                end
+                key.strip!
+                key = key.to_sym if key.to_i == 0
+                return key
+            rescue Object
+                Logger.info("Failed to find key for message: #{s}")
+                raise Exceptions::UnknownKey.new
+            end
         end
 
         private
@@ -55,17 +78,7 @@ module ModSpox
         def parse_message(message)
             Logger.info("Processing message: #{message}")
             begin
-                key = nil
-                if(message[0] == ':')
-                    m = message.dup
-                    m.slice!(0..m.index(' '))
-                    key = m.slice!(0..m.index(' ')-1)
-                else
-                    key = message.slice(0..message.index(' ')-1)
-                end
-                key.strip!
-                raise "Failed to parse key from message: #{message}" if key.nil?
-                key = key.to_sym unless key.to_i != 0
+                key = find_key(message.dup)
                 if(@handlers.has_key?(key))
                     Logger.info("Message of type #{key} is now being handled by #{@handlers[key]}")
                     if(@sync.include?(key))

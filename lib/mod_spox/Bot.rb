@@ -35,9 +35,9 @@ module ModSpox
 
         # Create a Bot
         def initialize
-            unless($LOGTO.nil?)
-                logger = ::Logger.new($LOGTO, 'daily')
-                Logger.initialize(logger, $LOGLEVEL)
+            unless(ModSpox.logto.nil?)
+                logger = ::Logger.new(ModSpox.logto, 'daily')
+                Logger.initialize(logger, ModSpox.loglevel)
             end
             clean_models
             @servers = Array.new

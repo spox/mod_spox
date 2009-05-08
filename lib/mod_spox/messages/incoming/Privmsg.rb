@@ -42,7 +42,7 @@ module ModSpox
 
                 # Is this is private message
                 def is_private?
-                    return @target.is_a?(Models::Nick) || @target.is_a?(String)
+                    return !is_public?
                 end
 
                 # Is this a DCC message

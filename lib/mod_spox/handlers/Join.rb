@@ -10,18 +10,23 @@ module ModSpox
             
             def process(string)
                 orig = string.dup
-                string.slice!(0)
-                source = string.slice!(0..string.index(' ')-1)
-                string.slice!(0..string.index(':'))
-                channel = find_model(string.strip)
-                nick = find_model(source[0,source.index('!')-1])
-                nick.username = source[(source.index('!')+1)..source.index('@')-1]
-                nick.address = source[(source.index('@')+1)..source.size]
-                nick.visible = true
-                nick.save_changes
-                channel.add_nick(nick)
-                channel.save
-                return Messages::Incoming::Join.new(orig, channel, nick)
+                begin
+                    string.slice!(0)
+                    source = string.slice!(0..string.index(' ')-1)
+                    string.slice!(0..string.index(':'))
+                    channel = find_model(string.strip)
+                    nick = find_model(source[0,source.index('!')-1])
+                    nick.username = source[(source.index('!')+1)..source.index('@')-1]
+                    nick.address = source[(source.index('@')+1)..source.size]
+                    nick.visible = true
+                    nick.save_changes
+                    channel.add_nick(nick)
+                    channel.save
+                    return Messages::Incoming::Join.new(orig, channel, nick)
+                rescue Object => boom
+                    Logger.warn("Failed to parse JOIN message: #{orig}")
+                    return nil
+                end
             end
         end
     end

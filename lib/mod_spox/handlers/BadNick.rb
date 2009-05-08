@@ -6,7 +6,7 @@ module ModSpox
                 handlers[ERR_ERRONEOUSNICKNAME] = self
             end
             def process(string)
-                if(string =~ /#{RPL_ERRORNEOUSNICK}\s\S+\s(\S+)\s:/)
+                if(string =~ /#{ERR_ERRONEOUSNICKNAME}\s\S+\s(\S+)\s:/)
                     return Messages::Incoming::BadNick.new(string, $1)
                 else
                     Logger.warn('Failed to process RPL_ERRORONEOUSNICK message')
