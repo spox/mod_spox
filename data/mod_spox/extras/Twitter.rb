@@ -34,7 +34,7 @@ class Twitter < ModSpox::Plugin
             ModClient.configure do |conf|
                 conf.user_agent = 'mod_spox twitter for twits'
                 conf.application_name = 'mod_spox IRC bot'
-                conf.application_version = "#{$BOTVERSION} (#{$BOTCODENAME})"
+                conf.application_version = "#{ModSpox.botversion} (#{ModSpox.botcodename})"
                 conf.application_url = 'http://rubyforge.org/projects/mod_spox'
                 conf.source = 'modspoxircbot'
             end

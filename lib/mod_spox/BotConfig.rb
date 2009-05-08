@@ -20,11 +20,11 @@ module ModSpox
         # :userconfigpath => path to the user configuration file        
         def BotConfig.populate(createdir=true)
             gemname, gem = Gem.source_index.find{|name, spec|
-                spec.name == 'mod_spox' && spec.version.version = $BOTVERSION
+                spec.name == 'mod_spox' && spec.version.version = ModSpox.botversion
             }
             if(gem)
                 p = gem.full_gem_path
-                up = $MOD_SPOX_PATH.nil? ? Etc.getpwnam(Etc.getlogin).dir : $MOD_SPOX_PATH
+                up = ModSpox.mod_spox_path.nil? ? Etc.getpwnam(Etc.getlogin).dir : ModSpox.mod_spox.path
                 @@config = {:basepath => p,
                            :libpath => "#{p}/lib/mod_spox",
                            :datapath => "#{p}/data/mod_spox",

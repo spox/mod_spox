@@ -92,7 +92,7 @@ module ModSpox
 #                     c = Sequel.mysql(name, :user => username, :password => password, :host => host)
 #                     c.test_connection
                 when 'pgsql'
-                    c = Sequel.connect("#{$JDBC ? 'jdbc:' : ''}postgres://#{username}:#{password}@#{host}/#{name}")
+                    c = Sequel.connect("#{ModSpox.jdbc ? 'jdbc:' : ''}postgres://#{username}:#{password}@#{host}/#{name}")
                     c.test_connection
                 when 'sqlite'
                     return true

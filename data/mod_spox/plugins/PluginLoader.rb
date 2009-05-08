@@ -88,7 +88,7 @@ class PluginLoader < ModSpox::Plugin
 
     # Upgrades extra plugins to latest version
     def extras_upgrade
-        Logger.info("Starting plugin upgrade to current version: #{$BOTVERSION}")
+        Logger.info("Starting plugin upgrade to current version: #{ModSpox.botversion}")
         extras = plugin_discovery(BotConfig[:pluginextraspath])
         pl = plugin_list
         extras.keys.each{|d| extras.delete(d) unless pl.include?(d)}
@@ -102,7 +102,7 @@ class PluginLoader < ModSpox::Plugin
         extras.each do |name, path|
             @pipeline << Messages::Internal::PluginLoadRequest.new(self, path)
         end
-        Logger.info("Plugin upgrade is now complete. Upgraded to version: #{$BOTVERSION}")
+        Logger.info("Plugin upgrade is now complete. Upgraded to version: #{ModSpox.botversion}")
     end
 
     private

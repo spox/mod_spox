@@ -18,14 +18,7 @@ rescue Object => boom
     # ignore if not found #
 end
 
-$BOTVERSION='0.2.0'
-$BOTCODENAME='avocado'
-$VERBOSITY = 0
-$MOD_SPOX_PATH = nil
-$DAEMON_BOT = false
-$LOGTO = nil
-$LOGLEVEL = :fatal
-$JDBC = false
+require 'mod_spox/Version'
 
 # lets get sequel setup like we want it #
 require 'sequel/extensions/migration'
@@ -71,7 +64,7 @@ opts.each do |opt, arg|
             puts 'http://rubyforge.org/projects/modspox'
             exit
         when '--jdbc'
-            $JDBC = true
+            ModSpox.jdbc = true
             begin
                 require 'jdbc/postgres'
             rescue Object => boom
@@ -80,9 +73,9 @@ opts.each do |opt, arg|
             end
         when '--debug'
             if(arg && arg.gsub(' ', '').size > 0)
-                $LOGTO = arg
+                ModSpox.logto = arg
             else
-                $LOGTO = $stdout
+                ModSpox.logto = $stdout
             end
         when '--config'
             require 'mod_spox/ConfigurationWizard'
@@ -90,18 +83,18 @@ opts.each do |opt, arg|
             BotConfig.configured? ? wizard.update : wizard.run
             exit
         when '--path'
-            $MOD_SPOX_PATH = arg
+            ModSpox.mod_spox_path = arg
         when '--daemon'
-            $DAEMON_BOT = true
+            ModSpox.daemon_bot = true
         when '--verbosity'
             if(arg && arg =~ /^(info|warn|error|fatal)$/)
-                $LOGLEVEL = arg.to_sym
+                ModSpox.loglevel = arg.to_sym
             end
     end
 end
 
-initialize_bot
+ModSpox.initialize_bot
 require 'mod_spox/Bot'
-Process.daemon if $DAEMON_BOT
+Process.daemon if ModSpox.daemon_bot
 bot = Bot.new
 bot.run

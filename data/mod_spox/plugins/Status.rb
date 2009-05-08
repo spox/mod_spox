@@ -14,7 +14,7 @@ class Status < ModSpox::Plugin
     end
     
     def version(message, params)
-        reply message.replyto, "mod_spox IRC bot - Version: \2#{$BOTVERSION}\2 (#{$BOTCODENAME}) [http://modspox.rubyforge.org]"
+        reply message.replyto, "mod_spox IRC bot - Version: \2#{ModSpox.botversion}\2 (#{ModSpox.botcodename}) [http://modspox.rubyforge.org]"
     end
     
     def get_status(m)
