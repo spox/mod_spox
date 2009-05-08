@@ -12,10 +12,10 @@ class TestBadNickHandler < Test::Unit::TestCase
     end
 
     def test_expected
-        assert_kind_of(ModSpox::Messages::Incoming::BadNick, @handler.process(@test[:good]))
+        assert_kind_of(ModSpox::Messages::Incoming::BadNick, @bot.factory.handlers[@bot.factory.find_key(@test[:good].dup)].process(@test[:good].dup))
     end
 
     def test_unexpected
-        assert_nil(@handler.process(@test[:bad]))
+        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:bad].dup)].process(@test[:bad].dup))
     end
 end
