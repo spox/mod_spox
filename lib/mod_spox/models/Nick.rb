@@ -99,7 +99,8 @@ module ModSpox
 
             def auth
                 if(auths.empty?)
-                    Auth.find_or_create(:nick_id => pk)
+                    a = Auth.find_or_create(:nick_id => pk)
+                    add_auth(a)
                 end
                 return auths[0]
             end
