@@ -36,7 +36,7 @@ class Bash < ModSpox::Plugin
             m = data.scan(/<p class="qt">(.*?)<\/p>/m)
             raise 'No quotes found' unless m.length > 0
             if m.length > 1
-                m = m.delete_if{|x| x.length > 300 }
+                m = m.delete_if{|x| x[0].length > 200 }
                 raise 'Only overly long quotes found' unless m.length > 0
             end
             i = rand(m.length)                  # NOTE: this works fine for individuals, since rand(1) is always 0
