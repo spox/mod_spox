@@ -68,9 +68,8 @@ module ModSpox
                     update :host => info[0][2]
                     super(addr)
                 rescue Object => boom
-                    addr = address
-                    update :host => address
                     super(addr)
+                    update :host => address
                 ensure
                     if values[:address] != oldaddress
                         auth.update(:authed => false)

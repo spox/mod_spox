@@ -88,9 +88,9 @@ module ModSpox
         
         def test_connection(type, username=nil, password=nil, host=nil, name=nil)
             case type
-#                 when 'mysql'
-#                     c = Sequel.mysql(name, :user => username, :password => password, :host => host)
-#                     c.test_connection
+                 when 'mysql'
+                     c = Sequel.mysql(name, :user => username, :password => password, :host => host)
+                     c.test_connection
                 when 'pgsql'
                     c = Sequel.connect("#{ModSpox.jdbc ? 'jdbc:' : ''}postgres://#{username}:#{password}@#{host}/#{name}")
                     c.test_connection
@@ -106,7 +106,7 @@ module ModSpox
                 config[key] = value if key.to_s =~ /^(db|memcache)/
             end
             config.write_configuration
-            initialize_bot
+            ModSpox.initialize_bot
             require  'mod_spox/models/Models'
             require 'mod_spox/Helpers'
             Sequel::Migrator.apply(Database.db, BotConfig[:libpath] + '/migrations')

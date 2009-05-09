@@ -18,6 +18,13 @@ class TestJoinHandler < Test::Unit::TestCase
         assert_equal(@test[:good], result.raw_content)
         assert_kind_of(ModSpox::Models::Channel, result.channel)
         assert_kind_of(ModSpox::Models::Nick, result.nick)
+        assert_equal('#m', result.channel.name)
+        assert_equal('mod_spox', result.nick.nick)
+        assert_equal('host', result.nick.host)
+        assert_equal('host', result.nick.address)
+        assert_equal('~mod_spox', result.nick.username)
+        assert_equal('mod_spox!~mod_spox@host', result.nick.source)
+        assert(result.nick.visible)
     end
 
     def test_unexpected

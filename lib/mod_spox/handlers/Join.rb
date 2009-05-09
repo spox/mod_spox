@@ -15,9 +15,12 @@ module ModSpox
                     source = string.slice!(0..string.index(' ')-1)
                     string.slice!(0..string.index(':'))
                     channel = find_model(string.strip)
-                    nick = find_model(source[0,source.index('!')-1])
-                    nick.username = source[(source.index('!')+1)..source.index('@')-1]
-                    nick.address = source[(source.index('@')+1)..source.size]
+                    nick = find_model(source.slice(0..source.index('!')-1))
+                    nick.source = source.dup
+                    source.slice!(0..source.index('!'))
+                    nick.username = source.slice!(0..source.index('@')-1)
+                    source.slice!(0)
+                    nick.address = source.slice!(0..source.size)
                     nick.visible = true
                     nick.save_changes
                     channel.add_nick(nick)
