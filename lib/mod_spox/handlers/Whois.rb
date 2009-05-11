@@ -15,6 +15,19 @@ module ModSpox
             end
             
             def process(string)
+                orig = string.dup
+                until(string.slice(0..string.index(' ')-1) == RPL_WHOISUSER ||
+                        string.slice(0..string.index(' ')-1) == RPL_WHOISSERVER ||
+                        string.slice(0..string.index(' ')-1) == RPL_WHOISOPERATOR ||
+                        string.slice(0..string.index(' ')-1) == RPL_WHOISIDLE ||
+                        string.slice(0..string.index(' ')-1) == RPL_WHOISCHANNELS ||
+                        string.slice(0..string.index(' ')-1) == RPL_WHOISIDENTIFIED ||
+                        string.slice(0..string.index(' ')-1) == RPL_ENDOFWHOIS)
+                    string.slice!(0..string.index(' '))
+                end
+                case string.slice!(0..string.index(' ')-1)
+                when RPL_WHOISUSER
+                
                 if(string =~ /#{RPL_WHOISUSER}\s\S+\s(\S+)\s(\S+)\s(\S+)\s\*\s:(.+)$/)
                     key = $1
                     nick = find_model($1)

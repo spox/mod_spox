@@ -1,4 +1,4 @@
-['mod_spox/handlers/Handler', 'mod_spox/Monitors'].each{|f|require f}
+['mod_spox/handlers/Handler'].each{|f|require f}
 
 module ModSpox
     module Handlers
@@ -11,56 +11,68 @@ module ModSpox
             end
             
             def process(string)
-                if(string =~ /#{RPL_WHOREPLY}\s\S+\s(\S+|\*|\*\s\S+)\s(\S+)\s(\S+)\s(\S+)\s(\S+)\s(\S+)\s:(\d)\s(.+)$/)
-                    # Items matched are as follows:
-                    # 1: location
-                    # 2: username
-                    # 3: host
-                    # 4: server
-                    # 5: nick
-                    # 6: info
-                    # 7: hops
-                    # 8: realname
-                    location = $1 == '*' ? nil : $1
-                    info = $6
-                    nick = find_model($5)
-                    nick.username = $2
-                    nick.address = $3
-                    nick.real_name = $8
-                    nick.connected_to = $4
-                    nick.away = info =~ /G/ ? true : false
-                    nick.visible = true
-                    nick.save_changes
-                    key = location.nil? ? nick.nick : location
-                    @cache[key] = Array.new unless @cache[key]
-                    @cache[key] << nick
-                    @raw_cache[key] = Array.new unless @raw_cache[key]
-                    @raw_cache[key] << string
-                    unless(location.nil?)
-                        channel = find_model(location)
-                        channel.add_nick(nick)
-                        if(info.include?('+'))
-                            m = Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
-                            m.set_mode('v')
-                        elsif(info.include?('@'))
-                            m = Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
-                            m.set_mode('o')
-                        else
-                            m = Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
-                            m.clear_modes
-                        end
+                orig = string.dup
+                begin
+                    until(string.slice(0..RPL_WHOREPLY.size) == RPL_WHOREPLY || string.slice(0..RPL_WHOREPLY.size) == RPL_WHOREPLY)
+                        string.slice!(0..string.index(' '))
                     end
-                    return nil
-                elsif(string =~ /#{RPL_ENDOFWHO}\s\S+\s(\S+)\s/)
-                    location = $1
-                    loc = find_model(location)
-                    @raw_cache[location] << string
-                    message = Messages::Incoming::Who.new(@raw_cache[location].join("\n"), loc, @cache[location])
-                    @raw_cache.delete(location)
-                    @cache.delete(location)
-                    return message
-                else
-                    Logger.warn('Failed to match RPL_WHO type message')
+                    if(string.slice(0..RPL_WHOREPLY.size) == RPL_WHOREPLY)
+                        string.slice!(0..string.index(' '))
+                        2.times{string.slice!(0..string.index(' '))}
+                        location = string.slice!(0..string.index(' '-1))
+                        string.slice!(0)
+                        username = string.slice!(0..string.index(' ')-1)
+                        string.slice!(0)
+                        host = string.slice!(0..string.index(' ')-1)
+                        string.slice!(0)
+                        server = string.slice!(0..string.index(' ')-1)
+                        string.slice!(0)
+                        nick = string.slice!(0..string.index(' ')-1)
+                        string.slice!(0)
+                        info = string.slice!(0..string.index(' ')-1)
+                        string.slice!(0..string.index(':'))
+                        hops = string.slice!(0..string.index(' ')-1)
+                        string.slice!(0)
+                        realname = string
+                        location = nil if location == '*'
+                        nick.username = username
+                        nick.address = location
+                        nick.real_name = realname
+                        nick.connected_to = server
+                        nick.away = !info.index('G').nil?
+                        nick.save_changes
+                        key = location.nil? ? nick.nick : location
+                        @cache[key] = Array.new unless @cache[key]
+                        @cache[key] << nick
+                        @raw_cache[key] = Array.new unless @raw_cache[key]
+                        @raw_cache[key] << orig
+                        unless(location.nil?)
+                            channel = find_model(location)
+                            channel.add_nick(nick)
+                            if(info.include?('+'))
+                                m = Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
+                                m.set_mode('v')
+                            elsif(info.include?('@'))
+                                m = Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
+                                m.set_mode('o')
+                            else
+                                m = Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nick.pk)
+                                m.clear_modes
+                            end
+                        end
+                        return nil
+                    else
+                        2.times{string.slice!(0..string.index(' '))}
+                        location = string.slice!(0..string.index(' ')-1)
+                        loc = find_model(location)
+                        @raw_cache[location] << orig
+                        message = Messages::Incoming::Who.new(@raw_cache[location].join("\n"), loc, @cache[location])
+                        @raw_cache.delete(location)
+                        @cache.delete(location)
+                        return message
+                    end
+                rescue Object
+                    Logger.error("Failed to match WHO type message: #{orig}")
                     return nil
                 end
             end

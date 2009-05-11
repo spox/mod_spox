@@ -6,31 +6,20 @@ class TestPongHandler < Test::Unit::TestCase
         h = BotHolder.instance
         @bot = h.bot
         @test = {
-                 :wo_server => ':swiftco.wa.us.dal.net PONG swiftco.wa.us.dal.net :FOO',
-                 :bad => ':swiftco.wa.us.dal.net PONG swiftco.wa.us.dal.net :FOO'
+                 :good => ':swiftco.wa.us.dal.net PONG swiftco.wa.us.dal.net :FOO',
+                 :bad => ':bad PONG'
                 }
     end
 
-    def test_wo_server
-        assert_equal(:PING, @bot.factory.find_key(@test[:wo_server].dup))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:wo_server].dup)].process(@test[:wo_server].dup)
+    def test_expected
+        assert_equal(:PONG, @bot.factory.find_key(@test[:good].dup))
+        result = @bot.factory.handlers[@bot.factory.find_key(@test[:good].dup)].process(@test[:good].dup)
         assert_kind_of(ModSpox::Messages::Incoming::Ping, result)
-        assert_equal(@test[:wo_server], result.raw_content)
+        assert_equal(@test[:good], result.raw_content)
         assert_kind_of(String, result.string)
         assert_kind_of(String, result.server)
-        assert_equal('not.configured', result.server)
-        assert_equal('not.configured', result.string)
-    end
-
-    def test_w_server
-        assert_equal(:PING, @bot.factory.find_key(@test[:w_server].dup))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:w_server].dup)].process(@test[:w_server].dup)
-        assert_kind_of(ModSpox::Messages::Incoming::Ping, result)
-        assert_equal(@test[:w_server], result.raw_content)
-        assert_kind_of(String, result.string)
-        assert_kind_of(String, result.server)
-        assert_equal('not.configured', result.server)
-        assert_equal('test', result.string)
+        assert_equal('swiftco.wa.us.dal.net', result.server)
+        assert_equal('FOO', result.string)
     end
 
     def test_unexpected
