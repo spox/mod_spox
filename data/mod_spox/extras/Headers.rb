@@ -26,14 +26,16 @@ class Headers < ModSpox::Plugin
     end
 
     def fetch_headers(message, params)
+        params[:url] = "http://#{params[:url]}" unless params[:url].slice(0..3).downcase == 'http'
         uri = URI.parse(params[:url])
         begin
-            reply message.replyto, "Connecting to: #{uri.host} on port: #{uri.port} retrieving: #{uri.path}"
+            path = uri.path.nil? || uri.path.empty? ? '/' : uri.path
+            reply message.replyto, "Connecting to: #{uri.host} on port: #{uri.port} retrieving: #{path}"
             con = Net::HTTP.new(uri.host, uri.port)
-            con.secure = uri.scheme == 'https'
+            #con.secure = uri.scheme == 'https'
             con.open_timeout = 5
             con.read_timeout = 5
-            response = con.head(uri.path)
+            response = con.head(path)
             output = ["Response code: #{response.code}"]
             count = 0
             response.each_capitalized{|key,val|
@@ -48,7 +50,7 @@ class Headers < ModSpox::Plugin
             end
             reply message.replyto, output
         rescue Object => boom
-            reply message.replyto, "Error retrieving headers (#{location}): #{boom}"
+            reply message.replyto, "Error retrieving headers (#{uri.host}): #{boom}"
             Logger.warn("Headers plugin error: #{boom}")
         end
     end
