@@ -27,7 +27,7 @@ module ModSpox
                 end
                 case string.slice!(0..string.index(' ')-1)
                 when RPL_WHOISUSER
-                
+                end
                 if(string =~ /#{RPL_WHOISUSER}\s\S+\s(\S+)\s(\S+)\s(\S+)\s\*\s:(.+)$/)
                     key = $1
                     nick = find_model($1)
