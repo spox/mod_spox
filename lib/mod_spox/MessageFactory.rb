@@ -33,6 +33,7 @@ module ModSpox
         # s:: string from server
         # determine type of message from server
         def find_key(s)
+            s = s.dup
             begin
                 key = nil
                 if(s[0] == ':')
@@ -78,7 +79,7 @@ module ModSpox
         def parse_message(message)
             Logger.info("Processing message: #{message}")
             begin
-                key = find_key(message.dup)
+                key = find_key(message)
                 if(@handlers.has_key?(key))
                     Logger.info("Message of type #{key} is now being handled by #{@handlers[key]}")
                     if(@sync.include?(key))
