@@ -36,7 +36,7 @@ module ModSpox
             s = s.dup
             begin
                 key = nil
-                if(s[0] == ':')
+                if(s[0].chr == ':')
                     s.slice!(0..s.index(' '))
                     key = s.slice!(0..s.index(' ')-1)
                 else
