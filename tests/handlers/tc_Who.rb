@@ -17,6 +17,7 @@ class TestWhoHandler < Test::Unit::TestCase
         @queue = Queue.new
         @bot.pipeline.hook(self, :gather, :Incoming_Who)
         @nicks = ['pizza_', 'pizza__', 'spox', 'mod_spox']
+        @ops = ['pizza_', 'spox', 'mod_spox']
     end
     
     def gather(m)
@@ -39,6 +40,7 @@ class TestWhoHandler < Test::Unit::TestCase
         m.nicks.each do |nick|
             assert(@nicks.include?(nick.nick))
             assert_equal('#mod_spox', nick.channels[0].name)
+            assert_equal(@ops.include?(nick.nick), nick.is_op?(m.location))
         end
     end
 
