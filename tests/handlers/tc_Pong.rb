@@ -7,7 +7,7 @@ class TestPongHandler < Test::Unit::TestCase
         @bot = h.bot
         @test = {
                  :good => ':swiftco.wa.us.dal.net PONG swiftco.wa.us.dal.net :FOO',
-                 :bad => ':bad PONG'
+                 :bad => ':bad PONG fail'
                 }
     end
 
