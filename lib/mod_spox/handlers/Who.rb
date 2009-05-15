@@ -39,8 +39,8 @@ module ModSpox
                         nick.real_name = realname
                         nick.connected_to = server
                         nick.away = !info.index('G').nil?
-                        nick.save_changes
                         nick.add_channel(find_model(location)) unless location.nil?
+                        nick.save_changes
                         key = location.nil? ? nick.nick : location
                         @cache[key] = Array.new unless @cache[key]
                         @cache[key] << nick

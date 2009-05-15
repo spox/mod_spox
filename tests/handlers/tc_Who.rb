@@ -4,7 +4,7 @@ class TestWhoHandler < Test::Unit::TestCase
 
     def setup
         h = BotHolder.instance
-        @bot = h.bot    
+        @bot = h.bot
         @test = {
                     :good => [],
                     :bad => ':host 352 fail whale'
@@ -39,7 +39,7 @@ class TestWhoHandler < Test::Unit::TestCase
         assert_equal(4, m.nicks.size)
         m.nicks.each do |nick|
             assert(@nicks.include?(nick.nick))
-            assert_equal('#mod_spox', nick.channels[0].name)
+            assert(nick.channels.map{|c|c.name}.include?('#mod_spox'))
             assert_equal(@ops.include?(nick.nick), nick.is_op?(m.location))
         end
     end
