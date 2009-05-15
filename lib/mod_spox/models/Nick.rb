@@ -178,7 +178,7 @@ module ModSpox
             end
 
             def add_channel(c)
-                if(channels.map{|channel| true if c.name == channel.name}.empty?)
+                unless(channels.map{|channel| channel.name.downcase}.include?(c.name.downcase))
                     super(c)
                 end
             end
