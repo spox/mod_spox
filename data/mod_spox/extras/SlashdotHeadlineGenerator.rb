@@ -8,12 +8,12 @@ class SlashdotHeadlineGenerator < ModSpox::Plugin
 
     def initialize(pipeline)
         super
-        add_sig(:sig => 'fake/.( (\d))?', :method => :random, :desc => 'Slashdot Headline Generator', :params => [:wspace, :count])
+        add_sig(:sig => 'fake/.(?: (\d))?', :method => :random, :desc => 'Slashdot Headline Generator', :params => [:count])
     end
     
     def random(m, params)
         begin
-            params[:count] = 1 if params[:count].nil?
+            params[:count] = params[:count].to_i
             params[:count] = 1 if params[:count] < 1
             params[:count] = 5 if params[:count] > 5
             say = ""
@@ -55,7 +55,7 @@ class SlashdotHeadlineGenerator < ModSpox::Plugin
     end
 
 def Apple()
-  foo = rand(2+1-0)
+  foo = rand(3)
   if(foo == 0)
     "New " + AppleProduct() + " Release Features " + GoodBrowserFeature()
   elsif(foo == 1)
@@ -79,7 +79,7 @@ def AskSlashdot()
   any([ "Hardware", "Software", "Projects", "Drivers", "Operating Systems", "Frameworks", "Programming Languages", "Coffee Machines", "Missile Guidance Software", "Filesystems", "Media" ]) + "?"
 end
 
-def BookReview() "Book Review:" + TechnoAdjective() + " " + ProgrammingLanguageOrFramework() end
+def BookReview() "Book Review: " + TechnoAdjective() + " " + ProgrammingLanguageOrFramework() end
 
 def BSD()
   os = NerdOS()
@@ -319,7 +319,7 @@ def LongTime() (rand(6)+5).to_s + " " + LongTimeUnit() end
 def RandomBSD() Prefix() + "BSD"; end
 def RandomOS() Prefix() + "OS"; end
 
-def GameVersion() (1+rand(9)).to_s; end
+def GameVersion() (2+rand(8)).to_s; end
 
 def SimpleVersion() rand(10).to_s; end
 
