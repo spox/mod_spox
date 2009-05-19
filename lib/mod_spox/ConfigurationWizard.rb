@@ -60,6 +60,7 @@ module ModSpox
                     puts 'Failed'
                     puts 'Error: Connection to database failed'
                     puts "Info: #{boom}"
+                    retry
                 rescue Object => boom
                     puts 'Failed'
                     puts 'Error: Unexpected error encountered.'
