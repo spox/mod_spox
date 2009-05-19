@@ -106,7 +106,7 @@ end
 
 def Developers() any([ lambda{ MozillaDitchFeature() }, lambda{ IsDead() }, lambda{ BugPatched() }, lambda{ GNU() } ]).call; end
 
-def IsDead() "Are " + NerdTopic() + "s " + DeadWords() + "?"; end
+def IsDead() "Are " + NerdTopic().sub(/y$/, "ie") + "s " + DeadWords() + "?"; end
 def BugPatched() LongTime()[0..-2] +"-Old Bug Discovered in " + NerdOS() + ", Patched in " + ShortTime() + "s"; end
 def GNU() any([ lambda{ Stallman() } ]).call; end
 def Stallman()
@@ -161,7 +161,7 @@ def LinuxVersion() "2.6." + (rand(185)+15).to_s; end
 
 def TorvaldsQuote()
   "Torvalds to " +
-  any([ "Users", "Administrators", "Everyone", "the Media", "Long-time Contributors", "Linux Volunteers", "Hard-working Subsystem Maintainers", "Linux Community" ]) + " " +
+  any([ "Users", "Administrators", "Everyone", "the Media", "Long-time Contributors", "Linux Volunteers", "Hard-working Subsystem Maintainers", "Linux Community" ]) + ": " +
   any([ "Piss Off!", "You're All Stupid", "Bite Me", "You Are Idiots", "Shut Up" ])
 end
 
@@ -342,7 +342,7 @@ end
 
 def ArcaneFeature() TechnoAdjective() + " " + TechnoNoun() + " " + TechnoVerb() end
 def NerdCon() Prefix() + "Con"; end
-def StupidSoftwareName() Consonant().to_s.upcase() + " " + Vowel() + " " + Vowel() + " " + Consonant() + " " + Vowel() end
+def StupidSoftwareName() Consonant().to_s.upcase() + Vowel() + Vowel() + Consonant() + Vowel() end
 
 def any(l); l[rand(l.length)]; end
 
@@ -360,7 +360,7 @@ end
 def Prefix() any([ "Free", "Net", "Open", "Source", "Nerd", "StarTrek", "React", "Hacker", "Wifi", "Shmoo", "Foo" ]); end
 def NerdTopic() any([ "Text Editor", "Regular Expression", "Database Query", "Functional Programming Language", "Hacking Technique", "Stack-Smasher", "Cmdline", "Keyboard Shortcut", "Spam Solution", "Algorithm", "x86 Opcode", "DRM Workaround", "Filesharing Strategy", "Micro-Optimization", "Design Pattern" ]); end
 def VenerableProduct () any([ "Google", "Oracle", "Relational Database", "Windows", "Wifi", "TCP", "HTTP", "Search Engine", "Desktop", "Server" ]); end
-def TechnoAdjective() any([ "Recursive", "Front-end", "Back-end", "Object-Oriented", "Extreme", "Efficient", "Optimized", "Obfuscated", "Flash-based", "Cached", "Content-based", "Effective", "P=NP", "P!=NP", "Linear", "Functional", "O(1)", "O(log n)", "O(n)", "O(n^2)" ]); end
+def TechnoAdjective() any([ "Recursive", "Front-end", "Back-end", "Object-Oriented", "Extreme", "Efficient", "Optimized", "Obfuscated", "Flash-based", "Cached", "Content-based", "Effective", "P=NP", "P!=NP", "Linear", "Functional", "O(log n)", "O(n)", "O(n^2)" ]); end
 def TechnoNoun() any([ "Filesystem", "Kernel", "Module", "Dependency", "Touchscreen", "Pen Input", "USB", "Serial Port", "SCSI", "Storage", "TCP", "CPU", "Network" ]); end
 def TechnoVerb() any([ "Unloading", "Loading", "Injection", "Healing", "Filtering", "Balancing" ]); end
 def WindowsVersion() any([ "3.11", "95", "98", "ME", "XP", "Server 2003", "Vista", "7" ]); end
