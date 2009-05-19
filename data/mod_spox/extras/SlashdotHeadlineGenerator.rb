@@ -1,6 +1,4 @@
 # ex: set ts=4 et:
-require "net/http"
-require "cgi"
 
 # Slashdot Headline Generator
 # keep nerds happy on those long network outages
@@ -160,6 +158,7 @@ def Linux() any([ lambda{ LinuxOS() }, lambda{ TorvaldsQuote() } ]).call; end
 def LinuxOS() "Linux " + LinuxVersion() + " " + NerdOSSuffix() end
 def LinuxVersion() "2.6." + (rand(185)+15).to_s; end
 
+
 def TorvaldsQuote()
   "Torvalds to " +
   any([ "Users", "Administrators", "Everyone", "the Media", "Long-time Contributors", "Linux Volunteers", "Hard-working Subsystem Maintainers", "Linux Community" ]) + " " +
@@ -290,6 +289,7 @@ def ParticleAccelerator()
   end
 end
 
+
 def Math()
   [
     any([ "New", "Existing", "Surprising", "Optimized", "Powerful", "Exponential" ]),
@@ -312,6 +312,7 @@ end
 
 def BigNumber() (rand(990)+10).to_s + " " + any([ "Million", "Billion", "Trillion" ]); end
 
+
 def ProgrammingLanguageOrFramework() any([ lambda{ ProgrammingLanguage() }, lambda{ Framework() } ]).call; end
 def ShortTime() (rand(59)+1).to_s + " " + ShortTimeUnit() end
 def LongTime() (rand(6)+5).to_s + " " + LongTimeUnit() end
@@ -329,6 +330,7 @@ def OSVersion(os)
     Version()
   end
 end
+
 
 def Version()
   ver = SimpleVersion() + "." + SimpleVersion()
@@ -353,6 +355,7 @@ def WindowsPrefix()
     "What Can't You Do In Linux You Can Do In"
   ])
 end
+
 
 def Prefix() any([ "Free", "Net", "Open", "Source", "Nerd", "StarTrek", "React", "Hacker", "Wifi", "Shmoo", "Foo" ]); end
 def NerdTopic() any([ "Text Editor", "Regular Expression", "Database Query", "Functional Programming Language", "Hacking Technique", "Stack-Smasher", "Cmdline", "Keyboard Shortcut", "Spam Solution", "Algorithm", "x86 Opcode", "DRM Workaround", "Filesharing Strategy", "Micro-Optimization", "Design Pattern" ]); end
