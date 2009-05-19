@@ -30,7 +30,11 @@ module ModSpox
 
             # Set services (nickserv) identification
             def services_identified=(val)
-                authed = true if val && services
+                if(val && services)
+                    update(:authed => true)
+                else
+                    update(:authed => false)
+                end
             end
 
             # pass:: password to compare
