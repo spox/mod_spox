@@ -95,6 +95,18 @@ end
 
 ModSpox.initialize_bot
 require 'mod_spox/Bot'
-Process.daemon if ModSpox.daemon_bot
+if(ModSpox.daemon_bot)
+    if(RUBY_VERSION > '1.9.0')
+        Process.daemon if ModSpox.daemon_bot
+    else
+        begin
+            require 'daemons'
+            Daemons.daemonize
+        rescue Object
+            puts "ERROR: Failed to load daemons gem"
+            exit 1
+        end
+    end
+end
 bot = Bot.new
 bot.run
