@@ -267,7 +267,29 @@ def WindowsUpdate()
 end
 
 def MicrosoftRandom() "Microsoft " + EvilVerb() + " " + Victims() end
-def FileSharing() EvilOrg() + " " + EvilVerb() + " " + Victims() end
+def FileSharing()
+    any([
+        lambda{EvilOrg() + " " + EvilVerb() + " " + Victims() },
+        lambda{ RIAA() }
+    ]).call
+end
+
+def RIAA()
+    foo = rand(2)
+    if (0 == foo)
+        "RIAA's " +
+        any([ "Next", "Newest", "Latest" ]) + " " +
+        any([ "Dirty", "Dubious", "Abominable", "Horrific", "Ludicruous", "Unconstitutional" ]) + " " +
+        any([ "Method", "Tactic", "Trick" ]) + ": " +
+        any([ "Pre-Sale", "Thought-based", "Random", "Thought-Crime", "Probabilistic", "Automated", "Pre-Pirating", "EULA-based" ]) + " " +
+        any([ "Taxes", "Lawsuits", "Trials", "Executions", "Waterboarding" ])
+    else
+        any([ "The Pirate Bay", "TPB" ]) + " " +
+        any([ "Continue", "Are Still At It", "Haven't Given In", "Haven't Given Up" ]) + " " +
+        any([ "Despite Being", "Even Though They Are" ]) + " " +
+        any([ "Homeless", "In Jail", "Dead", "in Somalia", "in Parliament", "Now Born-Again Christians", "Surrounded", "Wanted Dead or Alive", "Computerless" ])
+    end
+end
 
 def Google()
   foo = rand(4)
@@ -472,7 +494,7 @@ def DeadWords() any([ "Dead", "Obsolete", "Finished", "Worth It", "Valuable", "O
 
 end
 
-#5.times{ puts HeadlineGenerator.new.headline }
+#500.times{ puts HeadlineGenerator.new.topic("yro") }
 #puts HeadlineGenerator.new.topic("yro")
 #puts HeadlineGenerator.new.topics.keys.sort.join("|")
 
