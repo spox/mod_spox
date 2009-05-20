@@ -5,10 +5,10 @@
 # by pizza
 
 class SlashdotHeadlineGenerator < ModSpox::Plugin
-
     def initialize(pipeline)
         super
         add_sig(:sig => 'fake/.(?: (\d))?', :method => :random, :desc => 'Slashdot Headline Generator', :params => [:count])
+        add_sig(:sig => 'fake/.(?: (' + HeadlineGenerator.new.topics.keys.sort.join("|") + '))?', :method => :topic, :desc => 'Slashdot Headline Generator', :params => [:topic])
     end
     
     def random(m, params)
@@ -16,42 +16,70 @@ class SlashdotHeadlineGenerator < ModSpox::Plugin
             params[:count] = params[:count].to_i
             params[:count] = 1 if params[:count] < 1
             params[:count] = 5 if params[:count] > 5
+            hg = HeadlineGenerator.new
             say = ""
-            params[:count].times { say += headline() + "\n" }
+            params[:count].times { say += hg.headline() + "\n" }
             reply m.replyto, say
         rescue Object => boom
             error m.replyto, "Whoops. #{boom}"
         end
     end
-    
+
+    def topic(m, params)
+        begin
+            reply m.replyto, HeadlineGenerator.new.topic(params[:topic])
+        rescue Object => boom
+            error m.replyto, "Whoops. #{boom}"
+        end
+    end
+end
+
+class HeadlineGenerator
+
+    def initialize()
+    @topics = {
+        #"apache" => { lambda{ Apache },
+        "apple" => lambda{ Apple() },
+        "ask" => lambda{ AskSlashdot() },
+        #backslash"" => lambda{ BackSlash() },
+        "book" => lambda{ BookReview() },
+        "bsd" => lambda{ BSD() },
+        "business" => lambda{ Business() },
+        "dev" => lambda{ Developers() },
+        #"entertainment" => lambda{ Entertainment() } 
+        #"features" => lambda{ Features() },
+        "games" => lambda{ Games() },
+        #"geeksinspace" => lambda{ GeeksInSpace() },
+        "hardware" => lambda{ Hardware() },
+        #"idle" => lambda{ Idle() },
+        "interview" => lambda{ Interviews() },
+        "it" => lambda{ IT() },
+        "linux" => lambda{ Linux() },
+        #"media" => lambda{ Media() },
+        "news" => lambda{ News() },
+        #"polls" => lambda{ Polls() },
+        #"politics" => lambda{ Politics() },
+        "science" => lambda{ Science() },
+        "space" => lambda{ Space() },
+        "tech" => lambda{ Technology() },
+        "yro" => lambda{ YourRightsOnline() }
+    }
+    end
+
+    def topics()
+        @topics
+    end
+
     def headline()
-        any([
-            #Apache,
-            lambda{ Apple() },
-            lambda{ AskSlashdot() },
-            #BackSlash,
-            lambda{ BookReview() },
-            lambda{ BSD() },
-            lambda{ Business() },
-            lambda{ Developers() },
-            #Entertainment,
-            #Features,
-            lambda{ Games() },
-            #GeeksInSpace,
-            lambda{ Hardware() },
-            #Idle,
-            lambda{ Interviews() },
-            lambda{ IT() },
-            lambda{ Linux() },
-            #Media,
-            lambda{ News() },
-            #Polls,
-            #Politics,
-            lambda{ Science() },
-            #Search,
-            lambda{ Technology() },
-            lambda{ YourRightsOnline() }
-        ]).call
+        @topics[any(@topics.keys)].call
+    end
+
+    def topic(what)
+        if (@topics.key?(what))
+            @topics[what].call 
+        else
+            headline()
+        end
     end
 
 def Apple()
@@ -61,17 +89,17 @@ def Apple()
   elsif(foo == 1)
     "Apple " + AppleHireFire()
   else
-    "Turn Your " + AppleHardware() + " Into A " + any([ "Fishbowl", "Phaser", "RC Car", "Robot", "Webserver", "Vibrator", "Calculator" ])
+    any([ "Turn", "Transform", "Hack" ]) + " Your " + AppleHardware() + " Into A " + any([ "Fishbowl", "Phaser", "RC Car", "Robot", "Webserver", "Vibrator", "Calculator", "Toaster", "Waterboard", "Coffee Machine", "Doorstop", "Brick" ])
   end
 end
 
 def AppleHireFire()
-  any([ "Hires", "Re-Hires", "Eying" ]) + [ " Former", ""][rand(2)] + " " + TechCompany() + " " + Profession()
+  any([ "Hires", "Re-Hires", "Eying", "Steals" ]) + [ " Former", "" ][rand(2)] + " " + TechCompany() + " " + Profession()
 end
 
 def AppleProduct() any([ lambda{ AppleSoftware() }, lambda{ AppleHardware() } ]).call; end
 def AppleSoftware() any([ "OS9", "OS X", "iTunes", "iLife", "SnowLeopard", "Cheetah", "Panther" ]); end
-def AppleHardware() any([ "iMac", "iPod", "iPhone", "MacBook" ]); end
+def AppleHardware() any([ "iMac", "iPod", "iPhone", "MacBook", "Mighty Mouse", "Mac Mini", "Airport" ]); end
 
 def AskSlashdot()
   any([ "Encrypting", "Porting", "Taking Over", "Forking", "Selling", "Buying", "Saving", "Archiving" ]) + " " +
@@ -79,7 +107,15 @@ def AskSlashdot()
   any([ "Hardware", "Software", "Projects", "Drivers", "Operating Systems", "Frameworks", "Programming Languages", "Coffee Machines", "Missile Guidance Software", "Filesystems", "Media" ]) + "?"
 end
 
-def BookReview() "Book Review: " + TechnoAdjective() + " " + ProgrammingLanguageOrFramework() end
+def BookReview() "Book Review: " + BookReviewAdjective() + " " + ProgrammingLanguageOrFramework() end
+
+def BookReviewAdjective()
+    if (0 == rand(2))
+        TechnoAdjective()
+    else
+        any([ "Ass-Out", "Balls-to-the-Walls", "Inside-Out", "Upside-down", "Kludge Your Way Through", "Learn Just Enough To Be Dangerous:", "Pig-Latin", "Buzzword-Compliant", "Outdated", "Ineffective" ])
+    end
+end
 
 def BSD()
   os = NerdOS()
@@ -95,8 +131,8 @@ def Business()
   elsif(foo == 2)
     TechCompany() + " Unveils Potential " + VenerableProduct() + " Killer"
   elsif(foo == 3)
-    TechCompany() + " " +
-      any([ "Considering", "Possibly" ]) + " "
+      TechCompany() + " " +
+      any([ "Considering", "Possibly" ]) + " " +
       any([ "Purchasing", "Alliance with", "Merging with"]) + " " +
       TechCompany() + "?"
   else
@@ -264,7 +300,40 @@ def NerdOSSuffix()
   end
 end
 
-def Space() [ SpaceAgency(), SpaceVessel(), SpaceVerb(), SpaceBullshit() ].join(" "); end
+def Space()
+    any([
+        lambda{ SpaceRevelation() },
+        lambda{ SpaceCountry() },
+        lambda{ SpaceGeneric() },
+        lambda{
+            any([ "Probe", "Mission" ]) + " " +
+            any([ "Encounters", "Confronts" ]) + " " +
+            any([ "Strange", "Debilitating", "Horrifying", "Unexpected", "Damaging" ]) + " " +
+            any([ "Turbulence", "Smell", "Sights", "Residue" ]) + " " +
+            any([ "on", "Near", "In Vicinity of" ]) + " " +
+            any([ "Uranus" ])
+        }
+    ]).call
+end
+
+def SpaceRevelation()
+    any([ "CO2", "Water", "Ice", "Fossils", "Methane", "Rocks", "Storms", "Canals", "Artifacts", "Impact Craters", "Strange Patterns" ]) +
+    " On " +
+    any([ "Moon", "Mars", "Phobos", "Deimos", "Io", "Europa", "Ganymede", "Jupiter", "Saturn", "the Sun" ]) + " " +
+    any([ "Could", "May" ]) + " " +
+    any([ "Indicate", "Signal", "Foretell", "Affect", "Hint at", "Explain the End of" ]) + " " +
+    any([ "Life as We Know It", "Early Life", "the Early Solar System", "Alien Dinosaurs", "Future Space Travel", "Acient Biosphere", "Sunspots", "Mystery Transmissions" ])
+end
+
+def SpaceCountry()
+    any([ "U.S.", "Canada", "Russia", "China", "Europe" ]) + " " +
+    any([ "On Path To", "Takes Aim at", "Looks Towards", "Contemplating" ]) + " " +
+    any([ "Moonbase", "Advanced Satellites", "Mars Exploration", "Mars Missions", "Mars Colony" ])
+end
+
+def SpaceGeneric()
+    [ SpaceAgency(), SpaceVessel(), SpaceVerb(), SpaceBullshit() ].join(" ")
+end
 
 def Physics()
   foo = rand(1+1-0)
@@ -288,7 +357,6 @@ def ParticleAccelerator()
     LastName() + " Particle Accelerator Bug Means " + LongTime()[0..-2] + " Delay"
   end
 end
-
 
 def Math()
   [
@@ -356,7 +424,6 @@ def WindowsPrefix()
   ])
 end
 
-
 def Prefix() any([ "Free", "Net", "Open", "Source", "Nerd", "StarTrek", "React", "Hacker", "Wifi", "Shmoo", "Foo" ]); end
 def NerdTopic() any([ "Text Editor", "Regular Expression", "Database Query", "Functional Programming Language", "Hacking Technique", "Stack-Smasher", "Cmdline", "Keyboard Shortcut", "Spam Solution", "Algorithm", "x86 Opcode", "DRM Workaround", "Filesharing Strategy", "Micro-Optimization", "Design Pattern" ]); end
 def VenerableProduct () any([ "Google", "Oracle", "Relational Database", "Windows", "Wifi", "TCP", "HTTP", "Search Engine", "Desktop", "Server" ]); end
@@ -377,8 +444,8 @@ def Victims() any([ "Customers", "Contractors", "Users", "Visitors", "Children",
 def MundaneApp() any([ "Email", "Word Processor", "Text Editor", "Spreadsheet", "BIOS", "Database" ]); end
 def SpaceAgency() any([ "NASA", "European Space Agency", "China" ]); end
 def SpaceVessel() any([ "Shuttle", "Probe", "Satellite", "Rocket", "RamJet" ]); end
-def SpaceVerb() any([ "Launches", "Deploys", "Repairs", "Loses", "Headed For", "Docks With", "Links Up To" ]); end
-def SpaceBullshit() any([ "Important Bolt", "Heatshield", "Experiment", "Sensor", "Orbit", "Mars" ]); end
+def SpaceVerb() any([ "Launched Toward", "Deploys", "Repairs", "Loses", "Headed For", "Docks With", "Links Up To" ]); end
+def SpaceBullshit() any([ "Important Bolt", "Heatshield", "Experiment", "Sensor", "Orbit", "Mars", "Jupiter", "Saturn", "Uranus" ]); end
 def Vowel() any("aeiou".split(//)); end
 def Consonant() any("bcdfghjklmnpqrtvwxyz".split(//)); end
 def GoodBrowserFeature() any([ "URLs", "Links", "Text", "Image", "Icons", "Mouse Pointer", "Tabs", "Extensions", "Multithreading", "HTTP/1.1", "Mouse Gestures", "Audio Support", "Scrolling" ]); end
@@ -404,4 +471,8 @@ def PersonalThing() any([ "Phone Calls", "Emails", "Handwriting", "HAM Radio Bro
 def DeadWords() any([ "Dead", "Obsolete", "Finished", "Worth It", "Valuable", "On the Way Out", "Stupid", "Done For" ]); end
 
 end
+
+#5.times{ puts HeadlineGenerator.new.headline }
+#puts HeadlineGenerator.new.topic("yro")
+#puts HeadlineGenerator.new.topics.keys.sort.join("|")
 
