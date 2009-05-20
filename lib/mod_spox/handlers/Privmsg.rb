@@ -9,6 +9,7 @@ module ModSpox
             # :spox!~spox@host PRIVMSG #m :foobar
             def process(string)
                 orig = string.dup
+                string = string.dup
                 begin
                     string.slice!(0)
                     base_source = string.slice!(0..string.index(' ')-1)

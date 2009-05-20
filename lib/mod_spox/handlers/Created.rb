@@ -8,6 +8,7 @@ module ModSpox
             end
             # :not.configured 003 spox :This server was created Tue Mar 24 2009 at 15:42:36 PDT'
             def process(string)
+                string = string.dup
                 begin
                     orig = string.dup
                     2.times{string.slice!(0..string.index(':'))}

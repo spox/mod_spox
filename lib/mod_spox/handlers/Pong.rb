@@ -7,6 +7,7 @@ module ModSpox
             end
             def process(string)
                 orig = string.dup
+                string = string.dup
                 begin
                     a = string.slice!(string.rindex(':')+1, string.size)
                     string.slice!(-2..string.size)

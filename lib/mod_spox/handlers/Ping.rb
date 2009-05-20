@@ -7,6 +7,7 @@ module ModSpox
             end
             def process(string)
                 orig = string.dup
+                string = string.dup
                 begin
                     string.slice!(0) if string[0] == ':'
                     server = string[0..string.index(' ')-1]

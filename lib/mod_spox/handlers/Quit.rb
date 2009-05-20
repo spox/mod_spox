@@ -9,6 +9,7 @@ module ModSpox
             #:spox!~spox@host QUIT :Ping timeout
             def process(string)
                 orig = string.dup
+                string = string.dup
                 begin
                     string.slice!(0)
                     nick = find_model(string.slice!(0..string.index('!')-1))

@@ -10,6 +10,7 @@ module ModSpox
             
             def process(string)
                 orig = string.dup
+                string = string.dup
                 begin
                     string.slice!(0)
                     source = string.slice!(0..string.index(' ')-1)

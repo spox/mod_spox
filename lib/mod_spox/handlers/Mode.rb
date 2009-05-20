@@ -10,6 +10,7 @@ module ModSpox
             # :spax MODE spax :+iw
             def process(string)
                 orig = string.dup
+                string = string.dup
                 begin
                     string.slice!(0)
                     if(string.index('!').nil?) # looks like self mode

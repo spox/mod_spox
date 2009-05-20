@@ -11,6 +11,7 @@ module ModSpox
             end
             # :host 352 spox #mod_spox ~pizza_ 12.229.112.195 punch.va.us.dal.net pizza_ H@ :5 pizza_
             def process(string)
+                string = string.dup
                 orig = string.dup
                 begin
                     until(string.slice(0..RPL_WHOREPLY.size-1) == RPL_WHOREPLY || string.slice(0..RPL_ENDOFWHO.size-1) == RPL_ENDOFWHO)
