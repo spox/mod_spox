@@ -35,6 +35,7 @@ module ModSpox
                 def lock
                     @locked = true
                     @raw_content = @raw.join("\n")
+                    @nick.refresh
                 end
                 
                 private
