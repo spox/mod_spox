@@ -56,9 +56,9 @@ class SlashdotHeadlineGenerator < ModSpox::Plugin
 
 def Apple()
   foo = rand(2+1-0)
-  if foo == 0
+  if(foo == 0)
     "New " + AppleProduct() + " Release Features " + GoodBrowserFeature()
-  elsif foo == 1
+  elsif(foo == 1)
     "Apple " + AppleHireFire()
   else
     "Turn Your " + AppleHardware() + " Into A " + any([ "Fishbowl", "Phaser", "RC Car", "Robot", "Webserver", "Vibrator", "Calculator" ])
@@ -88,13 +88,13 @@ end
 
 def Business()
   foo = rand(5)
-  if foo == 0
+  if(foo == 0)
     Google()
-  elsif foo == 1
+  elsif(foo == 1)
     Microsoft()
-  elsif foo == 2
+  elsif(foo == 2)
     TechCompany() + " Unveils Potential " + VenerableProduct() + " Killer"
-  elsif foo == 3
+  elsif(foo == 3)
     TechCompany() + " " +
       any([ "Considering", "Possibly" ]) + " "
       any([ "Purchasing", "Alliance with", "Merging with"]) + " " +
@@ -235,12 +235,12 @@ def FileSharing() EvilOrg() + " " + EvilVerb() + " " + Victims() end
 
 def Google()
   foo = rand(4)
-  if foo == 0:
+  if(foo == 0)
     x = MundaneApp()
     "New Google G" + x.sub(" ","") + " Beta Doesn't Just Reinvent the " + x
-  elsif foo == 1:
+  elsif(foo == 1)
     "Google's Long-Awaited Web-based " + MundaneApp() + " Enters Beta"
-  elsif foo == 2:
+  elsif(foo == 2)
     "Google's Next Recruits; World's Elite " + RandomProfession() + "s"
   else
     "Google Does It Again"
@@ -253,11 +253,11 @@ def MozillaDitchFeature() "Mozilla To Ditch Firefox's " + GoodBrowserFeature() +
 
 def NerdOSSuffix()
   foo = rand(4)
-  if foo == 0:
+  if(foo == 0)
     "Now Supports " + ArcaneFeature()
-  elsif foo == 1:
+  elsif(foo == 1)
     any([ "Voted Best", "Smash Hit", "Cracked" ]) + " At " + NerdCon()
-  elsif foo == 2
+  elsif(foo == 2)
     "Forked"
   else
     "Released"
@@ -280,9 +280,9 @@ end
 
 def ParticleAccelerator()
   foo = rand(3)
-  if foo == 0
+  if(foo == 0)
     LastName() + " Particle Accelerator Data Will Take " + LongTime() + " to Process"
-  elsif foo == 1
+  elsif(foo == 1)
     "Particle Accelerator " + any([ "Repairs", "Upgrade", "Construction", "Tune Up", "Systems Test", "Reboot" ]) + " Will " + any([ "Take " + LongTime(), "Cost $" + BigNumber() ])
   else
     LastName() + " Particle Accelerator Bug Means " + LongTime()[0..-2] + " Delay"
@@ -301,9 +301,9 @@ end
 
 def NerdOS()
   foo = rand(3)
-  if foo == 0
+  if(foo == 0)
     "Linux"
-  elsif foo == 1
+  elsif(foo == 1)
     RandomBSD()
   else
     RandomOS()
@@ -324,7 +324,7 @@ def GameVersion() (1+rand(9)).to_s; end
 def SimpleVersion() rand(10).to_s; end
 
 def OSVersion(os)
-  if "Linux" == os:
+  if("Linux" == os)
     LinuxVersion()
   else
     Version()
