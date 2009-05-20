@@ -277,7 +277,7 @@ def Google()
   elsif(foo == 1)
     "Google's Long-Awaited Web-based " + MundaneApp() + " Enters Beta"
   elsif(foo == 2)
-    "Google's Next Recruits; World's Elite " + RandomProfession() + "s"
+    "Google's Next Recruits: World's Elite " + RandomProfession() + "s"
   else
     "Google Does It Again"
   end
