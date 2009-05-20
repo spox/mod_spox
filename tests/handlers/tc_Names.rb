@@ -13,10 +13,10 @@ class TestNamesHandler < Test::Unit::TestCase
     end
 
     def test_expected
-        assert_equal('353', @bot.factory.find_key(@test[:names_start].dup))
-        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:names_start].dup)].process(@test[:names_start].dup))
-        assert_equal('366', @bot.factory.find_key(@test[:names_end].dup))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:names_end].dup)].process(@test[:names_end].dup)
+        assert_equal('353', @bot.factory.find_key(@test[:names_start]))
+        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:names_start])].process(@test[:names_start]))
+        assert_equal('366', @bot.factory.find_key(@test[:names_end]))
+        result = @bot.factory.handlers[@bot.factory.find_key(@test[:names_end])].process(@test[:names_end])
         assert_kind_of(ModSpox::Messages::Incoming::Names, result)
         assert_equal('#mod_spox', result.channel.name)
         assert_equal(5, result.nicks.size)
@@ -30,6 +30,6 @@ class TestNamesHandler < Test::Unit::TestCase
     end
 
     def test_unexpected
-        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:bad].dup)].process(@test[:bad].dup))
+        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:bad])].process(@test[:bad]))
     end
 end

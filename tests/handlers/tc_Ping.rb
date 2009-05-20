@@ -13,8 +13,8 @@ class TestPingHandler < Test::Unit::TestCase
     end
 
     def test_wo_server
-        assert_equal(:PING, @bot.factory.find_key(@test[:wo_server].dup))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:wo_server].dup)].process(@test[:wo_server].dup)
+        assert_equal(:PING, @bot.factory.find_key(@test[:wo_server]))
+        result = @bot.factory.handlers[@bot.factory.find_key(@test[:wo_server])].process(@test[:wo_server])
         assert_kind_of(ModSpox::Messages::Incoming::Ping, result)
         assert_equal(@test[:wo_server], result.raw_content)
         assert_kind_of(String, result.string)
@@ -24,8 +24,8 @@ class TestPingHandler < Test::Unit::TestCase
     end
 
     def test_w_server
-        assert_equal(:PING, @bot.factory.find_key(@test[:w_server].dup))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:w_server].dup)].process(@test[:w_server].dup)
+        assert_equal(:PING, @bot.factory.find_key(@test[:w_server]))
+        result = @bot.factory.handlers[@bot.factory.find_key(@test[:w_server])].process(@test[:w_server])
         assert_kind_of(ModSpox::Messages::Incoming::Ping, result)
         assert_equal(@test[:w_server], result.raw_content)
         assert_kind_of(String, result.string)
@@ -35,6 +35,6 @@ class TestPingHandler < Test::Unit::TestCase
     end
 
     def test_unexpected
-        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:bad].dup)].process(@test[:bad].dup))
+        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:bad])].process(@test[:bad]))
     end
 end

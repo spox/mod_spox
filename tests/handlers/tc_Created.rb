@@ -12,13 +12,13 @@ class TestCreatedHandler < Test::Unit::TestCase
     end
 
     def test_expected
-        assert_equal('003', @bot.factory.find_key(@test[:good].dup))
-        assert_kind_of(ModSpox::Messages::Incoming::Created, @bot.factory.handlers[@bot.factory.find_key(@test[:good].dup)].process(@test[:good].dup))
-        assert_equal(@test[:good], @bot.factory.handlers[@bot.factory.find_key(@test[:good].dup)].process(@test[:good].dup).raw_content)
-        assert_kind_of(Time, @bot.factory.handlers[@bot.factory.find_key(@test[:good].dup)].process(@test[:good].dup).date)
+        assert_equal('003', @bot.factory.find_key(@test[:good]))
+        assert_kind_of(ModSpox::Messages::Incoming::Created, @bot.factory.handlers[@bot.factory.find_key(@test[:good])].process(@test[:good]))
+        assert_equal(@test[:good], @bot.factory.handlers[@bot.factory.find_key(@test[:good])].process(@test[:good]).raw_content)
+        assert_kind_of(Time, @bot.factory.handlers[@bot.factory.find_key(@test[:good])].process(@test[:good]).date)
     end
 
     def test_unexpected
-        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:bad].dup)].process(@test[:bad].dup))
+        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:bad])].process(@test[:bad]))
     end
 end

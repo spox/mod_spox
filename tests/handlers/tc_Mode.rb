@@ -15,8 +15,8 @@ class TestModeHandler < Test::Unit::TestCase
     end
 
     def test_single
-        assert_equal(:MODE, @bot.factory.find_key(@test[:set_single].dup))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:set_single].dup)].process(@test[:set_single].dup)
+        assert_equal(:MODE, @bot.factory.find_key(@test[:set_single]))
+        result = @bot.factory.handlers[@bot.factory.find_key(@test[:set_single])].process(@test[:set_single])
         assert_kind_of(ModSpox::Messages::Incoming::Mode, result)
         assert_equal(@test[:set_single], result.raw_content)
         assert_kind_of(ModSpox::Models::Channel, result.channel)
@@ -31,8 +31,8 @@ class TestModeHandler < Test::Unit::TestCase
     end
 
     def test_double
-        assert_equal(:MODE, @bot.factory.find_key(@test[:set_double].dup))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:set_double].dup)].process(@test[:set_double].dup)
+        assert_equal(:MODE, @bot.factory.find_key(@test[:set_double]))
+        result = @bot.factory.handlers[@bot.factory.find_key(@test[:set_double])].process(@test[:set_double])
         assert_kind_of(ModSpox::Messages::Incoming::Mode, result)
         assert_equal(@test[:set_double], result.raw_content)
         assert_kind_of(ModSpox::Models::Channel, result.channel)
@@ -49,8 +49,8 @@ class TestModeHandler < Test::Unit::TestCase
     end
 
     def test_channel
-        assert_equal(:MODE, @bot.factory.find_key(@test[:set_channel].dup))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:set_channel].dup)].process(@test[:set_channel].dup)
+        assert_equal(:MODE, @bot.factory.find_key(@test[:set_channel]))
+        result = @bot.factory.handlers[@bot.factory.find_key(@test[:set_channel])].process(@test[:set_channel])
         assert_kind_of(ModSpox::Messages::Incoming::Mode, result)
         assert_equal(@test[:set_channel], result.raw_content)
         assert_kind_of(ModSpox::Models::Channel, result.channel)
@@ -64,8 +64,8 @@ class TestModeHandler < Test::Unit::TestCase
     end
     
     def test_self
-        assert_equal(:MODE, @bot.factory.find_key(@test[:set_self].dup))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:set_self].dup)].process(@test[:set_self].dup)
+        assert_equal(:MODE, @bot.factory.find_key(@test[:set_self]))
+        result = @bot.factory.handlers[@bot.factory.find_key(@test[:set_self])].process(@test[:set_self])
         assert_kind_of(ModSpox::Messages::Incoming::Mode, result)
         assert_equal(@test[:set_self], result.raw_content)
         assert_nil(result.channel)
@@ -80,6 +80,6 @@ class TestModeHandler < Test::Unit::TestCase
     end
 
     def test_unexpected
-        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:bad].dup)].process(@test[:bad].dup))
+        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:bad])].process(@test[:bad]))
     end
 end

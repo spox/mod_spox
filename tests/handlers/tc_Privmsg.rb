@@ -14,8 +14,8 @@ class TestPrivmsgHandler < Test::Unit::TestCase
     end
 
     def test_nick_to_channel
-        assert_equal(:PRIVMSG, @bot.factory.find_key(@test[:nick_to_channel].dup))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:nick_to_channel].dup)].process(@test[:nick_to_channel].dup)
+        assert_equal(:PRIVMSG, @bot.factory.find_key(@test[:nick_to_channel]))
+        result = @bot.factory.handlers[@bot.factory.find_key(@test[:nick_to_channel])].process(@test[:nick_to_channel])
         assert_kind_of(ModSpox::Messages::Incoming::Privmsg, result)
         assert_equal(@test[:nick_to_channel], result.raw_content)
         assert_kind_of(ModSpox::Models::Channel, result.target)
@@ -36,8 +36,8 @@ class TestPrivmsgHandler < Test::Unit::TestCase
     end
 
     def test_nick_to_channel_addressed
-        assert_equal(:PRIVMSG, @bot.factory.find_key(@test[:nick_to_channel_addressed].dup))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:nick_to_channel_addressed].dup)].process(@test[:nick_to_channel_addressed].dup)
+        assert_equal(:PRIVMSG, @bot.factory.find_key(@test[:nick_to_channel_addressed]))
+        result = @bot.factory.handlers[@bot.factory.find_key(@test[:nick_to_channel_addressed])].process(@test[:nick_to_channel_addressed])
         assert_kind_of(ModSpox::Messages::Incoming::Privmsg, result)
         assert_equal(@test[:nick_to_channel_addressed], result.raw_content)
         assert_kind_of(ModSpox::Models::Channel, result.target)
@@ -58,8 +58,8 @@ class TestPrivmsgHandler < Test::Unit::TestCase
     end
 
     def test_nick_to_nick
-        assert_equal(:PRIVMSG, @bot.factory.find_key(@test[:nick_to_nick].dup))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:nick_to_nick].dup)].process(@test[:nick_to_nick].dup)
+        assert_equal(:PRIVMSG, @bot.factory.find_key(@test[:nick_to_nick]))
+        result = @bot.factory.handlers[@bot.factory.find_key(@test[:nick_to_nick])].process(@test[:nick_to_nick])
         assert_kind_of(ModSpox::Messages::Incoming::Privmsg, result)
         assert_equal(@test[:nick_to_nick], result.raw_content)
         assert_kind_of(ModSpox::Models::Nick, result.target)
@@ -80,6 +80,6 @@ class TestPrivmsgHandler < Test::Unit::TestCase
     end
 
     def test_unexpected
-        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:bad].dup)].process(@test[:bad].dup))
+        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:bad])].process(@test[:bad]))
     end
 end
