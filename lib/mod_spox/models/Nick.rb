@@ -96,6 +96,7 @@ module ModSpox
                 super(val)
             end
 
+            # Auth model associated with nick
             def auth
                 if(auths.empty?)
                     a = Auth.find_or_create(:nick_id => pk)
@@ -111,6 +112,8 @@ module ModSpox
                 return g
             end
 
+            # Checks nick's source against available
+            # authentication masks
             def check_masks
                 AuthMask.all.each do |am|
                     add_auth_mask(am) if source =~ /#{am.mask}/ && !auth_masks.include?(am)
@@ -120,6 +123,7 @@ module ModSpox
             # Set nick as member of given group
             def group=(group)
                 auth.add_group(group)
+                auth.refresh
             end
 
             def in_group?(group)
