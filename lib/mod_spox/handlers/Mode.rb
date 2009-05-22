@@ -31,7 +31,11 @@ module ModSpox
                         action = modes.slice!(0)
                         if(string.size > 0) #nick modes
                             nicks = []
-                            string.split.each{|n| nicks << find_model(n)}
+                            string.split.each do |n|
+                                ni = find_model(n)
+                                ni.add_channel(channel)
+                                nicks << ni
+                            end
                             i = 0
                             modes.each_char do |m|
                                 nm = Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nicks[i].pk)
