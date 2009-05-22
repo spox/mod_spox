@@ -1,7 +1,7 @@
 require "#{File.dirname(__FILE__)}/../BotHolder.rb"
 require 'digest/sha1'
 
-class TestNickModel < Test::Unit::TestCase
+class TestAuthModel < Test::Unit::TestCase
     def setup
         h = BotHolder.instance
         @bot = h.bot
