@@ -16,8 +16,8 @@ module ModSpox
                 # new_nick:: this should be the target
                 def initialize(raw, old_nick, new_nick)
                     super(raw)
-                    @original_nick = @source_nick
-                    @new_nick = @target
+                    @original_nick = old_nick
+                    @new_nick = new_nick
                 end
             
             end
