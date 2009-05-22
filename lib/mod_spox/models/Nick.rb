@@ -107,8 +107,10 @@ module ModSpox
 
             # AuthGroups nick is authed to
             def auth_groups
-                g = auths.empty? || !auths[0].authed || auths[0].groups.empty? ? [] : auths[0].groups
-                g += auth_masks[0].groups unless auth_masks.empty?
+                g = (auth.groups.empty? || !auth.authed) ? [] : auth.groups
+                unless(auth_masks.empty?)
+                    auth_masks.each{|am| g += am.groups}
+                end
                 return g
             end
 
@@ -120,20 +122,11 @@ module ModSpox
                 end
             end
 
-            # Set nick as member of given group
-            def group=(group)
-                auth.add_group(group)
-                auth.refresh
-            end
-
+            # group:: Models::Group
+            # Return if nick is member of given group
             def in_group?(group)
                 group = Group.filter(:name => group).first if group.is_a?(String)
                 return group.nil? ? false : auth_groups.include?(group)
-            end
-
-            # Remove nick from given group
-            def remove_group(group)
-                auth.remove_group(group)
             end
 
             # Modes associated with this nick
@@ -150,19 +143,17 @@ module ModSpox
             # channel:: Models::Channel
             # Return if nick is operator in given channel
             def is_op?(channel)
-                modes.each do |m|
-                    return true if m.channel == channel && m.set?('o')
-                end
-                return false
+                raise Exceptions::NotInChannel.new(channel) unless channels.include?(channel)
+                m = NickMode.filter(:nick_id => pk, :channel_id => channel.pk).first
+                return m ? m.set?('o') : false
             end
 
             # channel:: Models::Channel
             # Return if nick is voiced in given channel
             def is_voice?(channel)
-                modes.each do |m|
-                    return true if m.channel == channel && m.set?('v')
-                end
-                return false
+                raise Exceptions::NotInChannel.new(channel) unless channels.include?(channel)
+                m = NickMode.filter(:nick_id => pk, :channel_id => channel.pk).first
+                return m ? m.set?('v') : false
             end
             
             def set_mode(m)

@@ -6,6 +6,13 @@ class TestNickModel < Test::Unit::TestCase
         @bot = h.bot
         @nick = ModSpox::Models::Nick.find_or_create(:nick => 'foobar')
         @group = ModSpox::Models::Group.find_or_create(:name => 'test')
+        @channel = ModSpox::Models::Channel.find_or_create(:name => '#test')
+    end
+
+    def teardown
+        @nick.auth.authed = false
+        @nick.auth.remove_all_groups
+        @nick.clear_channels
     end
     
     def test_nick
@@ -59,7 +66,68 @@ class TestNickModel < Test::Unit::TestCase
     
     def test_add_group
         @nick.auth.add_group(@group)
-        assert(@nick.auth.groups.include?(@group))
+        @nick.auth.authed = true
+        assert(@nick.auth_groups.include?(@group))
     end
+
+    def test_in_group
+        @nick.auth.add_group(@group)
+        @nick.auth.authed = true
+        assert(@nick.in_group?(@group))
+    end
+
+    def test_not_in_group
+        assert(!@nick.in_group?(@group))
+    end
+
+    def test_clear_channels
+        @nick.visible = true
+        @nick.refresh
+        @nick.add_channel(@channel)
+        assert_equal(1, @nick.channels.size)
+        @nick.clear_channels
+        assert(!@nick.visible)
+        assert_equal(0, @nick.channels.size)
+    end
+
+    def test_channel_op
+        @nick.visible = true
+        @nick.add_channel(@channel)
+        assert(!@nick.is_op?(@channel))
+        m = ModSpox::Models::NickMode.find_or_create(:nick_id => @nick.pk, :channel_id => @channel.pk)
+        m.set_mode('o')
+        assert(@nick.is_op?(@channel))
+    end
+
+    def test_channel_voice
+        @nick.visible = true
+        @nick.add_channel(@channel)
+        assert(!@nick.is_voice?(@channel))
+        m = ModSpox::Models::NickMode.find_or_create(:nick_id => @nick.pk, :channel_id => @channel.pk)
+        m.set_mode('v')
+        assert(@nick.is_voice?(@channel))
+    end
+
+    def test_nochannel_op_voice
+        assert_raise(ModSpox::Exceptions::NotInChannel){@nick.is_voice?(@channel)}
+        assert_raise(ModSpox::Exceptions::NotInChannel){@nick.is_op?(@channel)}
+    end
+
+    def test_set_mode
+        @nick.set_mode('ir')
+        assert(@nick.mode_set?('i'))
+        assert(@nick.mode_set?('r'))
+        assert(!@nick.mode_set?('o'))
+    end
+
+    def test_unset_mode
+        @nick.set_mode('ir')
+        assert(@nick.mode_set?('i'))
+        assert(@nick.mode_set?('r'))
+        @nick.unset_mode('ir')
+        assert(!@nick.mode_set?('i'))
+        assert(!@nick.mode_set?('r'))
+    end
+    
 
 end
