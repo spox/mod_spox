@@ -5,16 +5,23 @@ module ModSpox
             def initialize(handlers)
                 handlers[:NICK] = self
             end
+            # :spox!~spox@some.random.host NICK :flock_of_deer
             def process(string)
-                if(string =~ /^:([^!]+)!\S+\sNICK\s:(.+)$/)
-                    old_nick = find_model($1)
-                    new_nick = find_model($2)
-                    new_nick.visible = true
+                orig = string.dup
+                string = string.dup
+                begin
+                    string.slice!(0)
+                    old_nick = find_model(string.slice!(0..string.index('!')-1))
+                    string.slice!(0..string.index(':'))
+                    new_nick = find_model(string)
                     old_nick.channels.each do |channel|
-                        new_nick.channel_add(channel)
-                        Models::NickMode.find_or_create(:nick_id => new_nick.pk, :channel_id => channel.pk, :mode => 'o') if old_nick.is_op?(channel)
-                        Models::NickMode.find_or_create(:nick_id => new_nick.pk, :channel_id => channel.pk, :mode => 'v') if old_nick.is_voice?(channel)
-                        Models::NickMode.filter(:nick_id => old_nick.pk, :channel_id => channel.pk).destroy
+                        channel.remove_nick(old_nick)
+                        channel.add_nick(new_nick)
+                        m = Models::NickMode.filter(:nick_id => old_nick.pk, :channel_id => channel.pk).first
+                        if(m)
+                            m.nick_id = new_nick.pk
+                            m.save
+                        end
                     end
                     new_nick.username = old_nick.username
                     new_nick.address = old_nick.address
@@ -23,7 +30,6 @@ module ModSpox
                     new_nick.away = old_nick.away
                     new_nick.visible = true
                     new_nick.save_changes
-                    Models::Nick.transfer_groups(old_nick, new_nick)
                     old_nick.visible = false
                     old_nick.remove_all_channels
                     if(old_nick.botnick == true)
@@ -32,9 +38,9 @@ module ModSpox
                     end
                     new_nick.save
                     old_nick.save
-                    return Messages::Incoming::Nick.new(string, old_nick, new_nick)
-                else
-                    Logger.warn('Failed to parse NICK message')
+                    return Messages::Incoming::Nick.new(orig, old_nick, new_nick)
+                rescue Object => boom
+                    Logger.error("Failed to parse NICK message: #{orig}")
                     return nil
                 end
             end
