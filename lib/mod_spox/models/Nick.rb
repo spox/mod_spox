@@ -179,14 +179,14 @@ module ModSpox
             end
 
             def remove_channel(c)
-                unless(channels.map{|channel| true if c.name == channel.name}.empty?)
+                unless(channels.map{|channel| channel.name.downcase}.include?(c.name.downcase))
                     super(c)
                 end
             end
 
             # TODO: rewrite this to work
             def Nick.transfer_groups(old_nick, new_nick)
-                NickGroup.filter(:nick_id => old_nick.pk).update(:nick_id => new_nick.pk)
+                raise Exceptions::NotImplemented.new
             end
 
         end
