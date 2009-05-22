@@ -129,5 +129,14 @@ class TestNickModel < Test::Unit::TestCase
         assert(!@nick.mode_set?('r'))
     end
     
+    def test_channel
+        @nick.add_channel(@channel)
+        assert(@nick.channels.include?(@channel))
+        assert(@channel.nicks.include?(@nick))
+        @nick.remove_channel(@channel)
+        assert(!@nick.channels.include?(@channel))
+        assert(!@channel.nicks.include?(@nick))
+    end
+    
 
 end
