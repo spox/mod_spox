@@ -50,7 +50,9 @@ module ModSpox
                                 m = Models::NickMode.find_or_create(:nick_id => nick.pk, :channel_id => channel.pk)
                                 m.clear_modes
                             end
-                            channel.add_nick(nick)
+                            nick.add_channel(channel)
+                            nick.refresh
+                            channel.refresh
                         end
                         check_visibility(nicks, channel)
                         @names.delete(chan)
