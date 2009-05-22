@@ -72,13 +72,13 @@ module ModSpox
             end
 
             def add_nick(n)
-                if(nicks.map{|nick| true if n.nick == nick.nick}.empty?)
+                unless(nicks.map{|nick| nick.nick.downcase}.include?(n.nick.downcase))
                     super(n)
                 end
             end
 
             def remove_nick(n)
-                unless(nicks.map{|nick| true if n.nick == nick.nick}.empty?)
+                unless(nicks.map{|nick| nick.nick.downcase}.include?(n.nick.downcase))
                     super(n)
                 end
             end
