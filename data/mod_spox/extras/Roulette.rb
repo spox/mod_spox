@@ -20,7 +20,7 @@ class Roulette < ModSpox::Plugin
     # Display chamber statistics
     def chambers(m, p)
         total = Game.all.size
-        result = Game.group(:chamber).select(:chamber, :COUNT[:chamber] => :total).reverse_order(:total)
+        result = Game.group(:chamber).select(:chamber, 'COUNT(chamber) as total'.lit).reverse_order(:total)
         if(result)
             output = []
             result.each do |res|
@@ -75,8 +75,8 @@ class Roulette < ModSpox::Plugin
     def topten(message, params)
         return unless message.is_public?
         ds = Database.db[:infos].left_outer_join(:games, :id => :game_id)
-        ds.select!(:nick_id, :COUNT[:win] => :wins).where!(:channel_id => message.target.pk, :win => true).group!(:nick_id).reverse_order!(:wins).limit!(10)
-        ids = ds.map(:nick_id)
+        res = ds.select(:nick_id, 'COUNT(`win`) as `wins`'.lit).where(:channel_id => message.target.pk, :win => true).group(:nick_id).reverse_order(:wins).limit(10)
+        ids = res.map(:nick_id)
         top = []
         ids.each do |id|
             nick = Nick[id]
@@ -126,7 +126,7 @@ class Roulette < ModSpox::Plugin
     # channel:: ModSpox::Models::Channel
     # Return number of games nick has won
     def games_won(nick, channel)
-        Info.left_outer_join(:games, :id => :game_id).filter('nick_id = ?', nick.pk).filter('channel_id = ?', channel.pk).filter('win = ?', true).size
+        Info.left_outer_join(:games, :id => :game_id).filter('nick_id = ?', nick.pk).filter('channel_id = ?', channel.pk).filter('win = ?', true).count
     end
 
     # nick:: ModSpox::Models::Nick
@@ -140,7 +140,7 @@ class Roulette < ModSpox::Plugin
     # channel:: ModSpox::Models::Channel
     # Return number of games nick has played
     def games_total(nick, channel)
-        Info.left_outer_join(:games, :id => :game_id).filter('nick_id = ?', nick.pk).filter('channel_id = ?', channel.pk).exclude(:game_id => game(channel).pk).size
+        Info.left_outer_join(:games, :id => :game_id).filter('nick_id = ?', nick.pk).filter('channel_id = ?', channel.pk).exclude(:game_id => game(channel).pk).count
     end
 
     # nick:: ModSpox::Models::Nick
