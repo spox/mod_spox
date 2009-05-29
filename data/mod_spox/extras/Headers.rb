@@ -30,6 +30,7 @@ class Headers < ModSpox::Plugin
         uri = URI.parse(params[:url])
         begin
             path = uri.path.nil? || uri.path.empty? ? '/' : uri.path
+            path += "?#{uri.query}" unless uri.query.nil?
             reply message.replyto, "Connecting to: #{uri.host} on port: #{uri.port} retrieving: #{path}"
             con = Net::HTTP.new(uri.host, uri.port)
             #con.secure = uri.scheme == 'https'
