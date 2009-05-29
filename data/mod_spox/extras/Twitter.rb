@@ -378,6 +378,14 @@ class Twitter < ModSpox::Plugin
         return @aliases.has_key?(n.to_sym) ? Models::Nick[@aliases[n.to_sym]].nick : n
     end
     
+    def replace_names(s)
+        s.scan(/@\S+/).each do |n|
+            n.slice!(0)
+            s.gsub!("@#{n}", "@#{screen_name(n)}")
+        end
+        return s
+    end
+    
     def check_timeline
         if(@auth_info[:channels].size < 1 || @auth_info[:interval].to_i < 1)
             Logger.warn('Twitter has no channels to send information to')
@@ -390,12 +398,12 @@ class Twitter < ModSpox::Plugin
                         if(Helpers.convert_entities(status.text) =~ /^@(\S+)/)
                             next unless @twitter.my(:friends).map{|f|f.screen_name}.include?($1) || $1 == @twitter.login
                         end
-                        things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(status.text)}"
+                        things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(replace_names(status.text))}"
                     end
                 end
                 @twitter.timeline_for(:me, :since => @last_check) do |status|
                     next if status.created_at < @last_check
-                    things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(status.text)}"
+                    things << "[#{status.created_at.strftime("%H:%M:%S")}] <#{screen_name(status.user.screen_name)}> #{Helpers.convert_entities(replace_names(status.text))}"
                 end
                 unless(things.empty?)
                     things.uniq!
