@@ -16,8 +16,8 @@ module ModSpox
             end
 
             def self.val(sym)
-                s = self.filter(:name => sym.to_s)
-                return s ? s.first.value : nil
+                s = self.filter(:name => sym.to_s).first
+                return s ? s.value : nil
             end
 
             def self.set(sym, value)
