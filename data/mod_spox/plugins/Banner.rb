@@ -463,7 +463,7 @@ class Banner < ModSpox::Plugin
             foreign_key :nick_id, :null => false, :table => :nicks, :key => :id
         end
 
-        before_create do
+        def before_create
             update(:stamp => Object::Time.now)
         end
 
