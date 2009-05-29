@@ -150,18 +150,22 @@ class Karma < ModSpox::Plugin
         thing = params[:thing].downcase
         thing = thing[1..-2] if thing[0..0] == '(' && thing[-1..-1] == ')'
         thing = Datatype::Karma.filter(:thing => thing, :channel_id => message.target.pk).first
-        if(thing)
-            things = []
-            Datatype::Alias.get_aliases(thing.pk).each do |id|
-                things << Datatype::Karma[id].thing
-            end
-            if(things.empty?)
-                reply message.replyto, "#{thing.thing} is not currently aliased"
+        begin
+            if(thing)
+                things = []
+                Datatype::Alias.get_aliases(thing.pk).each do |id|
+                    things << Datatype::Karma[id].thing
+                end
+                if(things.empty?)
+                    reply message.replyto, "#{thing.thing} is not currently aliased"
+                else
+                    reply message.replyto, "#{thing.thing} is currently aliased to: #{things.sort.join(', ')}"
+                end
             else
-                reply message.replyto, "#{thing.thing} is currently aliased to: #{things.sort.join(', ')}"
+                reply message.replyto, "\2Error:\2 #{params[:thing]} has never been used and has no aliases"
             end
-        else
-            reply message.replyto, "\2Error:\2 #{params[:thing]} has never been used and has no aliases"
+        rescue Object
+            error message.replyto, "No aliases found"
         end
     end
     
