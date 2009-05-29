@@ -27,6 +27,7 @@ class Helper < ModSpox::Plugin
                 help << "\2Parameters:\2 [#{sig.params.join(' | ')}]" if sig.params
                 help << "\2Auth Group:\2 #{Group[sig.group_id].name}" if sig.group_id
                 help << "\2Description:\2 #{sig.description}" if sig.description
+                help << "\2Requirement:\2 #{['public', 'private'].include?(sig.requirement) ? sig.requirement : 'both'}"
                 output << help.join(' ')
             end
             if(message.is_dcc?)
