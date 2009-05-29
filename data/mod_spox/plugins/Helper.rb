@@ -12,7 +12,7 @@ class Helper < ModSpox::Plugin
         plugins = Signature.select(:plugin).map(:plugin)
         plugins.uniq!
         reply message.replyto, "Plugins currently available for help: #{plugins.sort.join(', ')}"
-        reply message.replyto, "Request help on a plugin: !help Plugin"
+        reply message.replyto, "Request help on a plugin: #{Models::Trigger.filter(:active => true).first.trigger}help Plugin"
     end
 
     def plugin_help(message, params)
@@ -35,7 +35,7 @@ class Helper < ModSpox::Plugin
                 reply message.source, output
             end
         else
-            Signature.all.each{|s| sigs << s.plugin if /#{s.signature.gsub(/\s.*$/, '')}/ =~ params[:plugin]}
+            Signature.all.each{|s| sigs << s.plugin if /#{s.signature.gsub(/(\s|\().*$/, '')}/ =~ params[:plugin]}
             if(sigs.count > 0)
                 sigs.uniq!
                 reply message.replyto, "Possible plugin matches for \2#{params[:plugin]}\2: #{sigs.sort.join(', ')}"
