@@ -58,8 +58,8 @@ class Topten < ModSpox::Plugin
     def life_stats(m, p)
         nick = p[:nick] ? Nick.locate(p[:nick], false) : m.source
         if(nick)
-            result = ChatStat.group(:nick_id).select(:SUM[:bytes].as(:tbytes), :SUM[:words].as(:twords), :SUM[:questions].as(:tquestions)).filter(:nick_id => nick.pk).first
-            bytes = (result[:tbytes] > 1023) ? "#{sprintf('%.2f', (result[:tbytes] / 1024.0))}kb" : "#{result[:tbytes]}b"
+            result = ChatStat.group(:nick_id).select('SUM(`bytes`) as `tbytes`'.lit, 'SUM(`words`) as `twords`'.lit, 'SUM(`questions`) as `tquestions`'.lit).filter(:nick_id => nick.pk).first
+            bytes = (result[:tbytes].to_i > 1023) ? "#{sprintf('%.2f', (result[:tbytes].to_i / 1024.0))}kb" : "#{result[:tbytes]}b"
             reply m.replyto, "#{nick.nick} (total): #{bytes} logged, #{result[:twords]} words spoken and #{result[:tquestions]} questions asked"
         else
             reply m.replyto, "\2Error:\2 Failed to find #{p[:nick]}"
