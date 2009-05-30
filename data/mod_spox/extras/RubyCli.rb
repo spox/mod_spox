@@ -45,16 +45,24 @@ class RubyCli < ModSpox::Plugin
 
     def execute_ruby(message, params, shh=false)
         return unless @channels.include?(message.target.pk)
-        begin
-            result = nil
-            Timeout::timeout(10) do
-                result = Proc.new{ $SAFE=4; eval(params[:code]) }.call
+        t = Thread.new do
+            begin
+                result = lambda{ $SAFE = 4; eval(params[:code]) }.call
+                result = result.to_s
+                @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "#{message.source.nick}: Your result has been truncated. Don't print so much.") if result.size > 300
+                @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "#{shh ? '' : 'Result: '}#{result.slice(0..300)}")
+            rescue Object => boom
+                Logger.error("BOOM: #{boom}")
+                @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "\2RubyCli (error):\2 Exception generated: #{boom.to_s.index(' for ').nil? ? boom.to_s : boom.to_s.slice(0..boom.to_s.index(' for '))}")
             end
-            reply message.replyto, "#{shh ? '' : 'Result: '}#{result}"
-        rescue Timeout::Error
-            error message.replyto, "Timeout exceeded."
-        rescue Object => boom
-            error message.replyto, "Exception generated: #{boom.to_s.index(' for ').nil? ? boom.to_s : boom.to_s.slice(0..boom.to_s.index(' for '))}"
+        end
+        @pipeline << Messages::Internal::TimerAdd.new(self, 10, true){ kill_thread(t, message.replyto) }
+    end
+
+    def kill_thread(t, chan)
+        if(t.alive?)
+            t.kill
+            error chan, "Execution timeout."
         end
     end
 
