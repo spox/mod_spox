@@ -1,0 +1,50 @@
+== mod_spox IRC bot
+
+mod_spox is an IRC robot, written in Ruby, and will completely change your prospective on life. mod_spox is proof that doing nothing is complex, and that doing nothing can, in fact, be doing something.
+
+The core of mod_spox is basically a framework for interacting with IRC. By itself, the bot does nothing of value, aside from sucking up bandwidth and resources from the server it is connected to. The core bot can connect to a server, format information from the server, and send information back to the server properly. That's pretty much it. 
+
+The framework that mod_spox provides is what allows it to quickly transition from an old sack of moldy potatoes to an old sack of moldy potatoes on fire. Luckly, mod_spox comes with a bunch of prepackaged plugins, so you too can have an IRC bot of your very own!
+
+== Critical informations
+
+* Author: spox <spox@rubyforge.org>
+* {Dev Site}[http://dev.modspox.com]
+* {Rubyforge}[http://rubyforge.org/projects/modspox]
+* {GitHub}[http://github.com/spox/mod_spox/tree/master]
+
+== Aquiring
+
+* Gem:    gem install mod_spox
+* Source: git clone git://github.com/spox/mod_spox.git
+
+== Requirements
+
+* {Sequel}[http://sequel.rubyforge.org]
+
+== Configuration
+
+    mod_spox --config
+
+== Running
+
+=== Plain
+
+    mod_spox
+
+=== Debug to STDOUT
+
+    mod_spox -V info -d
+
+=== Daemonize with debug to file
+
+    mod_spox -V info -d /home/user/logfiles/mod_spox.log -D
+
+== Extending
+
+{Plugins HOWTO}[http://dev.modspox.com/trac/mod_spox/wiki/PluginHowto]
+
+== License
+
+    mod_spox is licensed under the GPLv3
+    Copyright (c) 2009 spox <spox@modspox.com>
