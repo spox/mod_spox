@@ -49,11 +49,10 @@ class RubyCli < ModSpox::Plugin
             begin
                 result = lambda{ $SAFE = 4; eval(params[:code]) }.call
                 result = result.to_s
-                @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "#{message.source.nick}: Your result has been truncated. Don't print so much.") if result.size > 300
-                @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "#{shh ? '' : 'Result: '}#{result.slice(0..300)}")
+                reply message.replyto, "#{message.source.nick}: Your result has been truncated. Don't print so much." if result.size > 300
+                reply message.replyto, "#{shh ? '' : 'Result: '}#{result.slice(0..300)}"
             rescue Object => boom
-                Logger.error("BOOM: #{boom}")
-                @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "\2RubyCli (error):\2 Exception generated: #{boom.to_s.index(' for ').nil? ? boom.to_s : boom.to_s.slice(0..boom.to_s.index(' for '))}")
+                error message.replyto, "Exception generated: #{boom.to_s.index(' for ').nil? ? boom.to_s : boom.to_s.slice(0..boom.to_s.index(' for '))}"
             end
         end
         @pipeline << Messages::Internal::TimerAdd.new(self, 10, true){ kill_thread(t, message.replyto) }
