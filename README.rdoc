@@ -21,8 +21,8 @@ The framework that mod_spox provides is what allows it to quickly transition fro
 == Requirements
 
 * {Sequel}[http://sequel.rubyforge.org]
-* {ActionTimer}[http://dev.modspox.com/trac/ActionTimer]
-* {ActionPool}[http://dev.modspox.com/trac/ActionPool]
+* {ActionTimer}[http://dev.modspox.com/~sine/ActionTimer]
+* {ActionPool}[http://dev.modspox.com/~sine/ActionPool]
 
 == Configuration
 
