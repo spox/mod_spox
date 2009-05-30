@@ -4,7 +4,7 @@ mod_spox is an IRC robot, written in Ruby, and will completely change your prosp
 
 The core of mod_spox is basically a framework for interacting with IRC. By itself, the bot does nothing of value, aside from sucking up bandwidth and resources from the server it is connected to. The core bot can connect to a server, format information from the server, and send information back to the server properly. That's pretty much it. 
 
-The framework that mod_spox provides is what allows it to quickly transition from an old sack of moldy potatoes to an old sack of moldy potatoes on fire. Luckly, mod_spox comes with a bunch of prepackaged plugins, so you too can have an IRC bot of your very own!
+The framework that mod_spox provides is what allows it to quickly transition from an old sack of moldy potatoes to an old sack of moldy potatoes on fire, that will take down your house, your neighborhood, and everything you ever loved. This transformation is accomplished through the use of plugins. Lucky for you, mod_spox comes with a bunch of plugins prepackaged and ready to go so you too can have a warm, bytey bot of your very own.
 
 == Critical informations
 
