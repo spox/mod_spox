@@ -42,26 +42,52 @@ class RubyCli < ModSpox::Plugin
     def quiet_ruby(message, params)
         execute_ruby(message, params, true)
     end
-
+    
+    # we fork into a separate process for more control
+    # over untrusted code
     def execute_ruby(message, params, shh=false)
         return unless @channels.include?(message.target.pk)
-        t = Thread.new do
+        rd, wr = IO.pipe
+        cid = Kernel.fork do
+            rd.close
+            result = nil
             begin
-                result = lambda{ $SAFE = 4; eval(params[:code]) }.call
-                result = result.to_s
-                reply message.replyto, "#{message.source.nick}: Your result has been truncated. Don't print so much." if result.size > 300
-                reply message.replyto, "#{shh ? '' : 'Result: '}#{result.slice(0..300)}"
+                result = lambda{$SAFE=4; eval(params[:code])}.call
+                puts 'done with eval'
             rescue Object => boom
-                error message.replyto, "Exception generated: #{boom.to_s.index(' for ').nil? ? boom.to_s : boom.to_s.slice(0..boom.to_s.index(' for '))}"
+                result = boom
+            ensure
+                wr.write [Marshal.dump(result)].pack('m')
+                exit
             end
         end
-        @pipeline << Messages::Internal::TimerAdd.new(self, 10, true){ kill_thread(t, message.replyto) }
-    end
-
-    def kill_thread(t, chan)
-        if(t.alive?)
-            t.kill
-            error chan, "Execution timeout."
+        if(cid)
+            begin
+                result = nil
+                Timeout::timeout(5) do
+                    wr.close
+                    result = rd.read
+                    rd.close
+                end
+                result = result.size > 0 ? Marshal.load(result.unpack('m')[0]) : ''
+                if(result.is_a?(Exception))
+                    error message.replyto, "Exception generated: #{result.to_s.index(' for ').nil? ? result.to_s : result.to_s.slice(0..result.to_s.index(' for '))}"
+                else
+                    result = result.to_s
+                    reply message.replyto, "#{message.source.nick}: Your result has been truncated. Don't print so much." if result.size > 300
+                    reply message.replyto, "#{shh ? '' : 'Result: '}#{result.slice(0..300)}"
+                end
+            rescue Timeout::Error
+                error message.replyto, 'Execution timeout reached.'
+                Logger.warn("Child process #{cid} to be killed")
+                Process.kill('KILL', cid)
+                Logger.warn("Child process #{cid} has been killed")
+            rescue Object => boom
+                error message.replyto, "Unknown error encountered: #{boom}"
+            ensure
+                Process.wait(cid, Process::WNOHANG)
+                Logger.info("RubyCli process has exited.")
+            end
         end
     end
 
