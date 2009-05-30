@@ -1,4 +1,4 @@
-# IMPORTANT NOTE: This plugin will only function if the PHP executable can be located
+
 require 'timeout'
 class RubyCli < ModSpox::Plugin
 
