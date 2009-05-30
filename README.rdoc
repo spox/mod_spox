@@ -23,6 +23,7 @@ The framework that mod_spox provides is what allows it to quickly transition fro
 * {Sequel}[http://sequel.rubyforge.org]
 * {ActionTimer}[http://dev.modspox.com/~sine/ActionTimer]
 * {ActionPool}[http://dev.modspox.com/~sine/ActionPool]
+* {spockets}[http://dev.modspox.com/~sine/spockets]
 
 == Configuration
 
