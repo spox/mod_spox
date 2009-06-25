@@ -15,13 +15,13 @@ module ModSpox
                 super(config_name)
             end
 
-            def self.val(sym)
-                s = self.filter(:name => sym.to_s).first
+            def Config.val(sym)
+                s = Config.filter(:name => "#{sym}").first
                 return s ? s.value : nil
             end
 
-            def self.set(sym, value)
-                s = self.find_or_create(:name => sym.to_s)
+            def Config.set(sym, value)
+                s = Config.find_or_create(:name => "#{sym}")
                 s.value = value
                 s.save
             end

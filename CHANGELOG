@@ -1,3 +1,26 @@
+0.3.0 Release (Beta status)
+    Core:
+    * Optimization of message handlers (removed regular expression matching)
+    * Multi database support (MySQL, SQLite, and PostgreSQL)
+    * Sequel 3.0 support
+    * Output scheduling
+    * Daemonizing fixed and working properly on 1.8 and 1.9
+    Plugins:
+    * New plugins added:
+        * GoogleIt - letmegooglethatforyou.com searcher
+        * DownForEveryoneOrJustMe - Check if a site is down (author: Ryan "pizza_" Flynn)
+        * Bash - Grab bash.org quotes (author: Ryan "pizza_" Flynn)
+        * FML - Entries from fmylife.com
+        * SlashdotHeadlineGenerator - Fake slashdot headline generator (author: Ryan "pizza_" Flynn)
+        * RubyCli - Run ruby code
+    * Headers plugin fixed to use URI.parse
+    * Storable PHP functions for use in PhpCli plugin
+    * Alias twitter uses to their IRC nick
+    * PHP function lookup fixes
+    * Improved Helper plugin to provide help for plugins
+    * TracTicket updated to work with latest version of trac (trac >= 0.11 now required)
+    * Lots of bug fixes and optimizations throughout
+
 0.2.0 Release (Beta status)
     Core:
     * Removed support for MySQL and SQLite (SQLite support may be added at a later date)
@@ -25,7 +48,7 @@
         * TracTicket - Add help tickets to a trac system
         * DCC - Basic DCC chat and file server (alpha state - only works with some clients)
     * AutoRejoin plugin will automatically join channels on connect
-    * Confess fixed to use it's own sqlite database. See: http://dev.modspox.com/cgi-bin/trac.cgi/wiki/ConfessSqlite
+    * Confess fixed to use it's own sqlite database. See: http://dev.modspox.com/trac/mod_spox/wiki/ConfessSqlite
     * Headers fixed to support http and https plus support for non-standard ports
     * PhpLookup fixed for new manual layout
     * Translate fixed to interact with yahoo properly

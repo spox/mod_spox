@@ -102,6 +102,7 @@ module ModSpox
                     a = Auth.find_or_create(:nick_id => pk)
                     add_auth(a)
                 end
+                auths[0].refresh
                 return auths[0]
             end
 

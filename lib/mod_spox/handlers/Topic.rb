@@ -8,6 +8,10 @@ module ModSpox
                 handlers[RPL_TOPICINFO] = self
                 @topics = Hash.new
             end
+            
+#:irc.host 332 spox #mod_spox : the topic is here
+#:irc.host 333 spox #mod_spox spox 1232126516
+            
             def process(string)
                 if(string =~ /#{RPL_TOPIC}.+?(\S+)\s:(.+)$/)
                     channel = find_model($1)

@@ -27,8 +27,9 @@ module ModSpox
                     source.save_changes
                     source.add_channel(target) if target.is_a?(Models::Channel)
                     return Messages::Incoming::Privmsg.new(orig, source, target, string)
-                rescue Object
+                rescue Object => boom
                     Logger.warn("Failed to parse PRIVMSG message: #{orig}")
+                    Logger.warn("Reason for PRIVMSG failure: #{boom}")
                     return nil
                 end
             end

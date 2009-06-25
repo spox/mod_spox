@@ -25,15 +25,15 @@ module ModSpox
                 return values[:value] ? Marshal.load(values[:value].unpack('m')[0]) : nil
             end
 
-            def self.set(sym, value)
-                s = self.find_or_create(:name => sym.to_s)
+            def Setting.set(sym, value)
+                s = Setting.find_or_create(:name => "#{sym}")
                 s.value = value
                 s.save
             end
 
-            def self.val(sym)
-                s = self.filter(:name => sym.to_s)
-                return s ? nil : s.first.value
+            def Setting.val(sym)
+                s = Setting.filter(:name => "#{sym}").first
+                return s ? s.value : nil
             end
         end
     end

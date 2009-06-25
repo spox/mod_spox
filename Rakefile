@@ -11,7 +11,7 @@ require 'rake/gempackagetask'
 
 NAME = 'mod_spox'
 RUBYFORGENAME = 'modspox'
-BOTVERSION = '0.2.0'
+BOTVERSION = '0.3.0'
 
 spec = Gem::Specification.new do |s|
     s.name = NAME
@@ -20,7 +20,7 @@ spec = Gem::Specification.new do |s|
     s.summary = 'The mod_spox IRC robot'
     s.description = 'mod_spox is a Ruby IRC bot that is easily modifiable and extensible'
     s.requirements << 'sequel, espace-neverblock'
-    s.files = FileList['README', 'INSTALL', 'CHANGELOG', 'lib/**/*.rb', 'bin/*', 'data/**/*.rb'].to_a.delete_if {|item| item == ".svn"}
+    s.files = FileList['README.rdoc', 'INSTALL', 'CHANGELOG', 'lib/**/*.rb', 'bin/*', 'data/**/*.rb'].to_a.delete_if {|item| item == ".svn"}
     s.executables << 'mod_spox'
     s.require_path = 'lib'
     s.bindir = 'bin'
@@ -39,7 +39,7 @@ Rake::GemPackageTask.new(spec) do |package|
 end
 
 Rake::RDocTask.new(:rdoc) do |rdoc|
-    files = ['README', 'CHANGELOG', 'LICENSE', 'INSTALL', 'lib/**/*.rb', 'data/**/*.rb']
+    files = ['README.rdoc', 'CHANGELOG', 'LICENSE', 'INSTALL', 'lib/**/*.rb', 'data/**/*.rb']
     rdoc.rdoc_files.add(files)
     rdoc.main = 'README'
     rdoc.title = 'mod_spox Documentation'
