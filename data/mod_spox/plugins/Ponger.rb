@@ -9,8 +9,7 @@ class Ponger < ModSpox::Plugin
         @pipeline.hook(self, :ping, :Incoming_Ping)
         @pipeline.hook(self, :get_lag_pong, :Incoming_Pong)
         @lock = Mutex.new
-        @pipeline.hook(self, :check_start_ponger, :Incoming_LuserMe)
-        @pipeline.hook(self, :check_start_ponger, :Internal_SignaturesUpdate)
+        @pipeline.hook(self, :check_start_ponger, :Internal_PluginsReady)
         @running = false
         send_lag_ping
     end
@@ -22,7 +21,7 @@ class Ponger < ModSpox::Plugin
     end
     
     def send_lag_ping
-        if(@attempts > 2)
+        if(@attempts > 5)
             @pipeline << Messages::Internal::Reconnect.new
             @lag = nil
             @last = nil
