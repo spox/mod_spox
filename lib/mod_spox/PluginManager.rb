@@ -128,6 +128,7 @@ module ModSpox
                 end
             end
             @pipeline << Messages::Internal::SignaturesUpdate.new
+            @pipeline << Messages::Internal::PluginsReady.new
         end
 
         # Destroys plugins
@@ -160,6 +161,7 @@ module ModSpox
                             @plugins[plugin.to_sym] = PluginHolder.new(klass.new({:pipeline => @pipeline, :plugin_module => @plugins_module}))
                         end
                         Logger.info("Properly initialized new plugin: #{plugin}")
+                        Database.reset_connections
                     end
                     Logger.info("All plugins found at: #{path} have been loaded")
                 rescue Object => boom
