@@ -60,6 +60,7 @@ class RubyCli < ModSpox::Plugin
             end
         end
         if(cid)
+            Database.disconnect
             begin
                 result = nil
                 Timeout::timeout(5) do
