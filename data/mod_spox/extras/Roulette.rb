@@ -75,7 +75,7 @@ class Roulette < ModSpox::Plugin
     def topten(message, params)
         return unless message.is_public?
         ds = Database.db[:infos].left_outer_join(:games, :id => :game_id)
-        res = ds.select(:nick_id, 'COUNT(`win`) as `wins`'.lit).where(:channel_id => message.target.pk, :win => true).group(:nick_id).reverse_order(:wins).limit(10)
+        res = ds.select(:nick_id, 'COUNT(win) as wins'.lit).where(:channel_id => message.target.pk, :win => true).group(:nick_id).reverse_order(:wins).limit(10)
         ids = res.map(:nick_id)
         top = []
         ids.each do |id|

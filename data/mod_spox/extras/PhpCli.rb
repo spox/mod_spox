@@ -207,7 +207,8 @@ class PhpCli < ModSpox::Plugin
             primary_key :id
         end
         
-        serialize(:php_function, :format => :marshal)
+        Sequel::Model.plugin :serialization, :marshal, :php_function
+#         serialize(:php_function, :format => :marshal)
         
         def nick
             Models::Nick[nick_id]

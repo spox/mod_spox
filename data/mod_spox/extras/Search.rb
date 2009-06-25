@@ -8,7 +8,7 @@ class Search < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)
         add_sig(:sig => 'search count (.+)', :method => 'search_count', :params => [:terms], :desc => 'Show number of results for given search')
-        Models::Signature.find_or_create(:signature => 'search (?!count)(\d+)? ?(.+)', :plugin => name, :method => 'search', :description => 'Search the internet').params = [:number, :terms]
+        add_sig(:sig => 'search (?!count)(\d+)? ?(.+)', :method => 'search', :desc => 'Search the internet', :params => [:number, :terms])
     end
 
     def search(message, params)

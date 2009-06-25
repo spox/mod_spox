@@ -53,12 +53,10 @@ class RubyCli < ModSpox::Plugin
             result = nil
             begin
                 result = lambda{$SAFE=4; eval(params[:code])}.call
-                puts 'done with eval'
             rescue Object => boom
                 result = boom
             ensure
                 wr.write [Marshal.dump(result)].pack('m')
-                exit
             end
         end
         if(cid)

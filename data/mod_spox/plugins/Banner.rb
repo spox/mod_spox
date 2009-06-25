@@ -183,7 +183,7 @@ class Banner < ModSpox::Plugin
     # List all currently active bans originating from the bot
     def ban_list(message, params)
         set = BanRecord.filter(:removed => false)
-        if(set.size > 0)
+        if(set.count > 0)
             reply(message.replyto, "Currently active bans:")
             set.each do |record|
                 remains = record.remaining.to_i - (Object::Time.now.to_i - @time.to_i)

@@ -19,6 +19,7 @@ class Authenticator < ModSpox::Plugin
         add_sig(:sig => 'auth group info (\S+)', :method => :group_info, :group => group, :desc => 'List members of given group', :params => [:group])
         add_sig(:sig => 'groups', :method => :show_groups, :desc => 'Show user groups they are currently a member of')
         @nickserv_nicks = []
+        @nickserv_cache = []
         populate_nickserv
         @pipeline.hook(self, :check_join, :Incoming_Join)
         @pipeline.hook(self, :check_nicks, :Incoming_Who)
@@ -208,7 +209,7 @@ class Authenticator < ModSpox::Plugin
     # Send WHOIS for nick
     def do_ident(message, params)
         message.source.check_masks
-        check_nickserv(message.source)
+        check_nickserv(message.source, true)
         #@pipeline << Messages::Outgoing::Whois.new(message.source.nick)
     end
 
@@ -226,8 +227,10 @@ class Authenticator < ModSpox::Plugin
     def group_info(message, params)
         group = Models::Group.filter(:name => params[:group]).first
         if(group)
-            nicks = group.auths.map{|a| a.nick.nick}
-            masks = group.auth_masks.map{|a| a.map}
+            nicks = []
+            group.auths.each{|a| nicks << a.nick[0].nick}
+            masks = []
+            group.auth_masks.each{|a| masks << a.map}
             output = []
             output << "\2Nicks:\2 #{nicks.join(', ')}" if nicks.size > 0
             output << "\2Masks:\2 #{masks.join(' | ')}" if masks.size > 0
@@ -238,12 +241,16 @@ class Authenticator < ModSpox::Plugin
     end
 
     def check_notice(m)
-        if(m.source.is_a?(Models::Nick) && m.source.nick.downcase == 'nickserv' && m.source.host == 'dal.net' && m.message =~ /^(\S+) ACC (\d+)$/)
-            nick = $1
-            setting = $3.to_i
+        if(m.source.is_a?(Models::Nick) && m.source.nick.downcase == 'nickserv' && m.source.host == 'dal.net')
+            Logger.info("We are checking the acc")
+            message = m.message.dup
+            nick = message.slice!(0..message.index(' ')-1)
+            message.slice!(0)
+            message.slice!(0..message.index(' '))
+            setting = message.to_i
             if(setting == 3)
                 user = Helpers.find_model(nick)
-                user.auth.update(:authed => true)
+                user.auth.services_identified = true
                 Logger.info("User has been authenticated through NickServ services. (#{user.nick})")
             end
         end
@@ -256,9 +263,10 @@ class Authenticator < ModSpox::Plugin
         end
     end
 
-    def check_nickserv(nick)
+    def check_nickserv(nick, force=false)
         if(@nickserv_nicks.include?(nick.nick.downcase))
-            if(!nick.auth.authed)
+            if(force || (!nick.auth.authed && !@nickserv_cache.include?(nick.nick.downcase)))
+                @nickserv_cache << nick.nick.downcase unless @nickserv_cache.include?(nick.nick.downcase)
                 @pipeline << Messages::Outgoing::Raw.new("nickserv ACC #{nick.nick}")
             end
         end

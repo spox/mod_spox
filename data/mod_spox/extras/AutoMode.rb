@@ -57,7 +57,7 @@ class AutoMode < ModSpox::Plugin
         channel = Helpers.find_model(p[:channel], false)
         if(channel.is_a?(Channel))
             records = ModeRecord.filter(:channel_id => channel.pk)
-            if(records.size > 0)
+            if(records.count > 0)
                 reply m.replyto, "\2Auto-Mode Listing:\2"
                 sleep(0.01)
                 records.each do |record|
@@ -85,7 +85,7 @@ class AutoMode < ModSpox::Plugin
     def check_join(m)
         return unless me.is_op?(m.channel)
         matches = ModeRecord.filter(:nick_id => m.nick.pk, :channel_id => m.channel.pk)
-        if(matches.size > 0)
+        if(matches.count > 0)
             matches.each do |record|
                 mode = record.voice ? '+v' : '+o'
                 @pipeline << Messages::Outgoing::ChannelMode.new(m.channel, mode, m.nick.nick)
@@ -100,7 +100,7 @@ class AutoMode < ModSpox::Plugin
     
     def remove_modee(nick)
         modee = Group.find_or_create(:name => 'modee')
-        if(ModeRecord.filter(:nick_id => nick.pk).size < 1)
+        if(ModeRecord.filter(:nick_id => nick.pk).count < 1)
             nick.remove_group(modee)
         end
     end

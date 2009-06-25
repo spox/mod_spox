@@ -14,7 +14,7 @@ class Topten < ModSpox::Plugin
     
     def topten(m, p)
         stats = ChatStat.filter(:channel_id => m.target.pk, :daykey => construct_daykey).reverse_order(:bytes).limit(10)
-        if(stats.size > 0)
+        if(stats.count > 0)
             users = []
             stats.each do |stat|
                 bytes = (stat.bytes > 1023) ? "#{sprintf('%.2f', (stat.bytes / 1024.0))}kb" : "#{stat.bytes}b"
@@ -28,7 +28,7 @@ class Topten < ModSpox::Plugin
     
     def archive(m, p)
         stats = ChatStat.filter(:channel_id => m.target.pk, :daykey => p[:date]).reverse_order(:bytes).limit(10)
-        if(stats.size > 0)
+        if(stats.count > 0)
             users = []
             stats.each do |stat|
                 bytes = (stat.bytes > 1023) ? "#{sprintf('%.2f', (stat.bytes / 1024.0))}kb" : "#{stat.bytes}b"
@@ -58,7 +58,7 @@ class Topten < ModSpox::Plugin
     def life_stats(m, p)
         nick = p[:nick] ? Nick.locate(p[:nick], false) : m.source
         if(nick)
-            result = ChatStat.group(:nick_id).select('SUM(`bytes`) as `tbytes`'.lit, 'SUM(`words`) as `twords`'.lit, 'SUM(`questions`) as `tquestions`'.lit).filter(:nick_id => nick.pk).first
+            result = ChatStat.group(:nick_id).select('SUM(bytes) as tbytes'.lit, 'SUM(words) as twords'.lit, 'SUM(questions) as tquestions'.lit).filter(:nick_id => nick.pk).first
             bytes = (result[:tbytes].to_i > 1023) ? "#{sprintf('%.2f', (result[:tbytes].to_i / 1024.0))}kb" : "#{result[:tbytes]}b"
             reply m.replyto, "#{nick.nick} (total): #{bytes} logged, #{result[:twords]} words spoken and #{result[:tquestions]} questions asked"
         else

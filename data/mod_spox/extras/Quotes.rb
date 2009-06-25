@@ -44,7 +44,7 @@ class Quotes < ModSpox::Plugin
     
     def searchquote(message, params)
         result = Quote.filter(:quote => Regexp.new(params[:term], Regexp::IGNORECASE))
-        if(result.size > 0)
+        if(result.count > 0)
             ids = result.map(:id)
             ids.sort!
             ids = ids.slice(0, 20)
@@ -56,7 +56,7 @@ class Quotes < ModSpox::Plugin
     
     def delquote(message, params)
         result = Quote.filter(:id => params[:id].to_i)
-        if(result.size < 1)
+        if(result.count < 1)
             reply message.replyto, "\2Error:\2 Failed to find quote with ID: #{params[:id]}"
         else
             result.destroy

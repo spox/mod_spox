@@ -135,7 +135,7 @@ class Karma < ModSpox::Plugin
         otherthing = Datatype::Karma.filter(:thing => sotherthing, :channel_id => message.target.pk).first
         if(thing && otherthing)
             set = Datatype::Alias.filter('(thing_id = ? AND aka_id = ?) OR (thing_id = ? AND aka_id = ?)', thing.pk, otherthing.pk, otherthing.pk, thing.pk)
-            if(set.size < 1)
+            if(set.count < 1)
                 reply message.replyto, "\2Error:\2 No alias found between #{thing.thing} and #{otherthing.thing}"
             else
                 set.destroy
