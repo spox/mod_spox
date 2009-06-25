@@ -30,10 +30,7 @@ module ModSpox
         end
         
         def Database.reset_connections
-            Logger.warn('Resetting database connections. Any active connections are being closed.')
-            Database.db.pool.allocated.each_pair do |thread, connection|
-                thread.kill
-            end
+            @@db.disconnect
         end
 
         def Database.reconnect
