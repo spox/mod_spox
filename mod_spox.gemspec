@@ -14,6 +14,9 @@ spec = Gem::Specification.new do |s|
     s.homepage          = %q(http://dev.modspox.com)
     s.rubyforge_project = 'modspox'
     s.add_dependency 'sequel'
+    s.add_dependency 'ActionPool'
+    s.add_dependency 'ActionTimer'
+    s.add_dependency 'spockets'
     description         = []
     File.open("README.rdoc") do |file|
         file.each do |line|
