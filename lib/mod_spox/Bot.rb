@@ -41,6 +41,7 @@ module ModSpox
             end
             clean_models
             @servers = Array.new
+            @channels = Array.new
             @start_time = Time.now
             @pool = ActionPool::Pool.new(10, 100, 60, nil, logger)
             @pipeline = Pipeline.new(@pool)
@@ -181,7 +182,8 @@ module ModSpox
              :Internal_StatusRequest => :status, :Internal_ChangeNick => :set_nick,
              :Internal_NickRequest => :get_nick, :Internal_HaltBot => :halt,
              :Internal_Disconnected => :disconnected, :Internal_TimerClear => :clear_timer,
-             :Outgoing_Raw => :raw, :Internal_Reconnect => :reconnect
+             :Outgoing_Raw => :raw, :Internal_Reconnect => :reconnect,
+             :Incoming_Join => :check_join, :Incoming_Part => :check_part
              }.each_pair{ |type,method| @pipeline.hook(self, method, type) }
         end
 
@@ -532,6 +534,18 @@ module ModSpox
             @socket << message.message
         end
 
+        def check_join(m)
+            if(m.nick.botnick)
+                @channels << m.channel.name.downcase
+            end
+        end
+
+        def check_part(m)
+            if(m.nick.botnick)
+                @channels.delete(m.channel.name.downcase)
+            end
+        end
+
         private
 
         # channel:: channel to check
@@ -543,14 +557,30 @@ module ModSpox
                 channel = Helpers.find_model(channel)
             end
             return unless channel.is_a?(Models::Channel)
-            unless(Models::Nick.filter(:botnick => true).first.channels.include?(channel))
-                Logger.error("Attempted to send to channel where bot is not parked: #{channel.name}.")
-                raise Exceptions::NotInChannel.new(channel)
-            end
             if(channel.quiet)
                 Logger.error("Attempted to send to channel where bot is not allowed to speak: #{channel.name}")
                 raise Exceptions::QuietChannel.new(channel)
             end
+            unless(in_channel?(channel))
+                Logger.error("Attempted to send to channel where bot is not parked: #{channel.name}.")
+                raise Exceptions::NotInChannel.new(channel)
+            end
+        end
+
+        def in_channel?(channel)
+            unless(@channels.include?(channel.name.downcase))
+                repopulate_channels
+                return @channels.include?(channel.name.downcase)
+            else
+                return true
+            end
+        end
+
+        def repopulate_channels
+            bot = Models::Nick.filter(:botnick => true).first
+            raise Exceptions::BotException.new("I DON'T KNOW WHO I AM") unless bot
+            @channels.clear
+            bot.channels.each{|c| @channels << c.name.downcase}
         end
 
         # Cleans information from models to avoid
