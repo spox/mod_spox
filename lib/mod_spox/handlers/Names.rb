@@ -74,6 +74,7 @@ module ModSpox
                     unless(nicks.include?(nick))
                         channel.remove_nick(nick)
                         unless(nick.botnick)
+                            nick.refresh
                             nick.update(:visible => false) if (Models::Nick.filter(:botnick => true).first.channels & nick.channels).empty?
                         end
                     end
