@@ -93,17 +93,24 @@ class Translate < ModSpox::Plugin
         if(@cache.has_key?(langs) && @cache[langs].has_key?(text))
             return @cache[langs][text]
         end
-        content = Net::HTTP.post_form(URI.parse('http://babelfish.yahoo.com/translate_txt'), {
+        headers = {'Accept-Charset' => 'ISO-8859-1,utf-8;q=0.7,*;q=0.7'}
+        url = URI.parse('http://babelfish.yahoo.com/translate_txt')
+        post = Net::HTTP::Post.new(url.path, headers)
+        post.set_form_data({
             'ei' => 'UTF-8',
             'doit' => 'done',
-            'fr' => 'bf-home',
+            'fr' => 'bf-res',
             'intl' => '1',
             'tt' => 'urltext',
             'trtext' => text,
             'lp' => langs.gsub(/\|/, '_'),
             'btnTrTxt' => 'Translate'
-        }).body
-        if(content)
+        })
+        result = Net::HTTP.new(url.host, url.port).start do |http|
+            http.request(post)
+        end
+        if(result.is_a?(Net::HTTPSuccess))
+            content = result.body
             if(content =~ /<div id="result">(.+?)<input/im)
                 tr = $1
                 tr.gsub!(/<.+?>/, '')
