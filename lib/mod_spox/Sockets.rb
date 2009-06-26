@@ -19,7 +19,7 @@ module ModSpox
             @irc_socket = nil
             @dcc_sockets = []
             @mapped_sockets = {}
-            @spockets = Spockets::Spockets.new(:pool => bot.pool, :clean => true)
+            @spockets = Spockets::Spockets.new(:pool => bot.pool)
             @listening_dcc = []
             @dcc_ports = {:start => 49152, :end => 65535}
             @dcc_wait = 30
