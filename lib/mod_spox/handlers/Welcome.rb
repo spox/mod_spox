@@ -5,32 +5,22 @@ module ModSpox
             def initialize(handlers)
                 handlers[RPL_WELCOME] = self
             end
-            
+            # >> :holmes.freenode.net 001 spax :Welcome to the freenode IRC Network spax 
             def process(string)
-                if(string =~ /:(\S+)\s(\S+).+?(\S+)$/)
-                    server = $1
-                    message = $2
-                    userstring = $3
-                    if(userstring =~ /^(.+?)!(.+?)@(.+?)$/)
-                        Models::Nick.update(:botnick => false)
-                        nick = $1
-                        username = $2
-                        hostname = $3
-                        nick = Models::Nick.find_or_create(:nick => nick.downcase)
-                        nick.update(:visible => true)
-                        nick.update(:botnick => true)
-                        nick.username = username
-                        nick.address = hostname
-                        nick.source = userstring
-                        nick.save
-                        return Messages::Incoming::Welcome.new(string, server, message, nick, username, hostname)
-                    else
-                        Logger.warn('Failed to match user string in welcome message')
-                        return nil
-                    end
-                else
-                    Logger.warn('Failed to match welcome message')
-                    return nil
+                parse = string.dup
+                begin
+                    parse.slice!(0)
+                    server = parse.slice!(0..parse.index(' ')-1)
+                    2.times{parse.slice!(0..parse.index(' '))}
+                    nick = parse.slice!(0..parse.index(' ')-1)
+                    parse.slice!(0..parse.index(':'))
+                    nick = Models::Nick.find_or_create(:nick => nick)
+                    nick.botnick = true
+                    nick.visible = true
+                    nick.save
+                    return Messages::Incoming::Welcome.new(string, server, parse, nick, nil, nil)
+                rescue Object
+                    Logger.warn("Failed to parse welcome message: #{string}")
                 end
             end
         end
