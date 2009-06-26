@@ -1,7 +1,7 @@
 class Seen < ModSpox::Plugin
     def initialize(pipe)
         super
-        SeenLog.create_table unless SeenLog.exists?
+        SeenLog.create_table unless SeenLog.table_exists?
         @pipeline.hook(self, :log_privmsg, :Incoming_Privmsg)
         @pipeline.hook(self, :log_join, :Incoming_Join)
         @pipeline.hook(self, :log_part, :Incoming_Part)
@@ -11,7 +11,6 @@ class Seen < ModSpox::Plugin
         @pipeline.hook(self, :log_outpriv, :Outgoing_Privmsg)
         @pipeline.hook(self, :log_outpriv, :Outgoing_Notice)
         add_sig(:sig => 'seen (\S+)', :method => :seen, :desc => 'Report last sighting of nick', :params => [:nick])
-        add_sig(:sig => 'lastspoke (\S+)', :method => :spoke, :desc => 'Report last time nick spoke', :params => [:nick])
     end
 
     def seen(m, params)
@@ -27,7 +26,8 @@ class Seen < ModSpox::Plugin
                     message << "reason: #{log.message}" unless log.message.nil? || log.message.empty?
                 when 'privmsg'
                     message << "in #{log.channel.name} " unless log.channel.nil?
-                    message << "saying #{log.message}"
+                    message << "saying #{log.message}" unless log.action
+                    message << "doing: #{log.message}" if log.action
                 when 'notice'
                     message << "in #{log.channel.name} " unless log.channel.nil?
                     message << "sending notice: #{log.message}"
@@ -36,25 +36,22 @@ class Seen < ModSpox::Plugin
                     k = mes.slice!(0..mes.index('|')-1)
                     mes.slice!(0)
                     k = Models::Nick[k.to_i]
-                    message << "kicking #{k.nick} from #{log.channel.name} (Reason: #{log.message})"
+                    message << "kicking #{k.nick} from #{log.channel.name} (Reason: #{mes})"
                 when 'kicked'
                     mes = log.message.dup
                     k = mes.slice!(0..mes.index('|')-1)
                     mes.slice!(0)
                     k = Models::Nick[k.to_i]
-                    message << "kicked from #{log.channel.name} by #{k.nick} (Reason: #{log.message})"
+                    message << "kicked from #{log.channel.name} by #{k.nick} (Reason: #{mes})"
             end
-            info m.replyto, message
+            information m.replyto, message
         else
             error m.replyto, "Failed to find record of given nick: #{params[:nick]}"
         end
     end
 
-    def spoke(m, params)
-    end
-
     def log_outpriv(message)
-        type = message.is_a?(Messages::Outgoing::Privmsg) ? 'privmsg' : 'notice'
+        type = message.instance_of?(Messages::Outgoing::Privmsg) ? 'privmsg' : 'notice'
         target = message.target.is_a?(Sequel::Model) ? message.target : Helpers.find_model(message.target)
         target = nil unless target.is_a?(Models::Channel)
         log = get_log(me.pk)
@@ -68,7 +65,7 @@ class Seen < ModSpox::Plugin
     
     def log_privmsg(message)
         return unless message.source.is_a?(Models::Nick)
-        type = message.is_a?(Messages::Outgoing::Privmsg) ? 'privmsg' : 'notice'
+        type = message.instance_of?(Messages::Incoming::Privmsg) ? 'privmsg' : 'notice'
         target = message.target.is_a?(Sequel::Model) ? message.target : Helpers.find_model(message.target)
         target = nil unless target.is_a?(Models::Channel)
         log = get_log(message.source.pk)
@@ -92,7 +89,7 @@ class Seen < ModSpox::Plugin
     
     def log_part(message)
         log = get_log(message.nick.pk)
-        log.action = nil
+        log.action = false
         log.type = 'part'
         log.message = message.reason
         log.channel = message.channel
@@ -102,7 +99,7 @@ class Seen < ModSpox::Plugin
     
     def log_quit(message)
         log = get_log(message.nick.pk)
-        log.action = nil
+        log.action = false
         log.type = 'quit'
         log.message = message.message
         log.channel = nil
@@ -113,7 +110,7 @@ class Seen < ModSpox::Plugin
     def log_kick(message)
         # log kicker
         log = get_log(message.kicker.pk)
-        log.action = nil
+        log.action = false
         log.type = 'kicking'
         log.channel = message.channel
         log.received = message.time
@@ -121,7 +118,7 @@ class Seen < ModSpox::Plugin
         log.save
         # log kickee
         log = get_log(message.kickee.pk)
-        log.action = nil
+        log.action = false
         log.type = 'kicked'
         log.channel = message.channel
         log.received = message.time
@@ -144,6 +141,8 @@ class Seen < ModSpox::Plugin
             varchar :type, :default => 'privmsg'
             timestamp :received, :null => false
             boolean :action, :null => false, :default => true
+            text :message
+            primary_key :nick_id
         end
         many_to_one :nick, :class => 'ModSpox::Models::Nick'
         many_to_one :channel, :class => 'ModSpox::Models::Channel'
