@@ -63,6 +63,7 @@ module ModSpox
                 @port = s.port.to_i
                 Logger.info("Establishing connection to #{@server}:#{@port}")
                 @socket = TCPSocket.new(@server, @port)
+                @socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE, true)
                 @empty_lines = 0
                 s.connected = true
                 s.save
