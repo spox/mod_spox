@@ -33,20 +33,20 @@ module ModSpox
         # Converts bytes into easy human readable form
         # O(1) version by Ryan "pizza_milkshake" Flynn
         Suff = [
-        "",       # 1000^0
-        "Kilo",   # 1000^1
-        "Mega",   # 1000^2
-        "Giga",   # 1000^3
-        "Tera",   # 1000^4
-        "Peta",   # 1000^5
-        "Exa",    # 1000^6
-        "Zetta",  # 1000^7
-        "Yotta"   # 1000^8
+        "",       # 1024^0
+        "Kilo",   # 1024^1
+        "Mega",   # 1024^2
+        "Giga",   # 1024^3
+        "Tera",   # 1024^4
+        "Peta",   # 1024^5
+        "Exa",    # 1024^6
+        "Zetta",  # 1024^7
+        "Yotta"   # 1024^8
         ]
         def Helpers.format_size(bytes)
-            mag = (Math.log(bytes) / Math.log(1000)).floor
+            mag = (Math.log(bytes) / Math.log(1024)).floor
             mag = [ Suff.length - 1, mag ].min
-            val = bytes.to_f / (1000 ** mag)
+            val = bytes.to_f / (1024 ** mag)
             "%7.3f %sbyte%s" % [ val, Suff[mag], val == 1 ? "" : "s" ]
         end
 
