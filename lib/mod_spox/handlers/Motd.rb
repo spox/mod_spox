@@ -15,10 +15,14 @@ module ModSpox
                     @raw[$1] = [string]
                     return nil
                 elsif(string =~ /^:(\S+) #{RPL_MOTD.to_s}.*?:-\s?(.+)$/)
+                    @motds[$1] ||= []
+                    @raw[$1] ||= []
                     @motds[$1] << $2
                     @raw[$1] << string
                     return nil
                 elsif(string =~ /^:(\S+) #{RPL_ENDOFMOTD.to_s}/)
+                    @raw[$1] ||= []
+                    @motds[$1] ||= []
                     @raw[$1] << string
                     message = Messages::Incoming::Motd.new(@raw[$1].join("\n"), @motds[$1].join("\n"), $1)
                     @motds.delete($1)
