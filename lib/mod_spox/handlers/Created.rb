@@ -16,8 +16,9 @@ module ModSpox
                     time = Time.parse(string)
                     time = nil if Time.now == time
                     return time.nil? ? nil : Messages::Incoming::Created.new(orig, time)
-                rescue Object
-                    return nil
+                rescue Object => boom
+                    Logger.error("Failed to parse RPL_CREATED message: #{orig}")
+                    raise boom
                 end
             end
         end

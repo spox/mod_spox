@@ -92,6 +92,7 @@ module ModSpox
                     update :away => false
                     remove_all_channels
                     auth.update(:authed => false)
+                    puts "I DEAUTHED YOU MOTHERFUCKER"
                 end
                 super(val)
             end

@@ -19,8 +19,9 @@ module ModSpox
                     nick.visible = true
                     nick.save
                     return Messages::Incoming::Welcome.new(string, server, parse, nick, nil, nil)
-                rescue Object
+                rescue Object => boom
                     Logger.warn("Failed to parse welcome message: #{string}")
+                    raise boom
                 end
             end
         end

@@ -17,9 +17,9 @@ module ModSpox
                     string.slice!(0..string.index(':'))
                     channel = find_model(string.strip)
                     return Messages::Incoming::Invite.new(orig, source, target, channel)
-                rescue Object
+                rescue Object => boom
                     Logger.error("Failed to parse INVITE message: #{orig}")
-                    return nil
+                    raise boom
                 end
             end
         end

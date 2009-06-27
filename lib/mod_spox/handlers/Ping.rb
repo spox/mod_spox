@@ -14,8 +14,9 @@ module ModSpox
                     message = string[string.index(':')+1..string.size]
                     server = message.dup if server == 'PING'
                     return Messages::Incoming::Ping.new(orig, server, message)
-                rescue Object
+                rescue Object => boom
                     Logger.error("Failed to parse PING message: #{string}")
+                    raise boom
                 end
             end
         end

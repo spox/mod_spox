@@ -22,8 +22,9 @@ module ModSpox
                     nick.save_changes
                     channel.save_changes
                     return Messages::Incoming::Part.new(orig, channel, nick, string)
-                rescue Object
+                rescue Object => boom
                     Logger.error("Failed to parse PART message: #{orig}")
+                    raise boom
                 end
             end
         end

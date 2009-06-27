@@ -59,9 +59,9 @@ module ModSpox
                         @raw.delete(chan)
                         return Messages::Incoming::Names.new(raw, channel, nicks, ops, voice)
                     end
-                rescue Object
+                rescue Object => boom
                     Logger.error("Failed to parse NAMES message: #{orig}")
-                    return nil
+                    raise boom
                 end
             end
 

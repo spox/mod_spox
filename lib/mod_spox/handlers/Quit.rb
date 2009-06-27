@@ -18,9 +18,9 @@ module ModSpox
                     nick.visible = false
                     nick.save
                     return Messages::Incoming::Quit.new(orig, nick, string)
-                rescue Object
+                rescue Object => boom
                     Logger.error("Failed to parse QUIT message: #{orig}")
-                    return nil
+                    raise boom
                 end
             end
         end

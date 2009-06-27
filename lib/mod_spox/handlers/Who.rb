@@ -74,7 +74,7 @@ module ModSpox
                     end
                 rescue Object => boom
                     Logger.error("Failed to match WHO type message: #{orig}")
-                    return nil
+                    raise boom
                 end
             end
             

@@ -25,9 +25,9 @@ module ModSpox
                     kickee.save_changes
                     channel.save_changes
                     return Messages::Incoming::Kick.new(orig, channel, kicker, kickee, string)
-                rescue Object
+                rescue Object => boom
                     Logger.warn("Failed to parse KICK message: #{orig}")
-                    return nil
+                    raise boom
                 end
             end
         end

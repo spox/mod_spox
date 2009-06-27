@@ -53,7 +53,7 @@ module ModSpox
                     end
                 rescue Object => boom
                     Logger.warn("Failed to parse MODE message: #{orig}")
-                    return nil
+                    raise boom
                 end
             end
         end

@@ -12,9 +12,9 @@ module ModSpox
                     a = string.slice!(string.rindex(':')+1, string.size)
                     string.slice!(-2..string.size)
                     return Messages::Incoming::Pong.new(orig, string.slice(string.rindex(' ')+1..string.size), a)
-                rescue Object
+                rescue Object => boom
                     Logger.error("Failed to parse PONG message: #{orig}")
-                    return nil
+                    raise boom
                 end
             end
         end

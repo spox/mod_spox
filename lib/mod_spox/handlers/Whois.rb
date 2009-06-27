@@ -105,9 +105,9 @@ module ModSpox
                             Logger.error("Failed to parse WHOIS type reply. Unknown part found: #{orig}")
                     end
                     return nil
-                rescue Object
+                rescue Object => boom
                     Logger.error("Failed to parse WHOIS type reply: #{orig}")
-                    return nil
+                    raise boom
                 end
             end
 
