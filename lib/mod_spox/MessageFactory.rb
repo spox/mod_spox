@@ -98,7 +98,12 @@ module ModSpox
                     Logger.error("No handler was found to process message of type: #{key} Message: #{message}")
                 end
             rescue Object => boom
-                Logger.warn("Failed to parse message from server: #{boom}\n#{boom.backtrace.join("\n")}")
+                if(boom.class.to_s == 'SQLite3::BusyException')
+                    Database.reset_connections
+                    retry
+                else
+                    Logger.warn("Failed to parse message from server: #{boom}\n#{boom.backtrace.join("\n")}")
+                end
             end
         end
 
