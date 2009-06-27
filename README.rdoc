@@ -16,7 +16,18 @@ The framework that mod_spox provides is what allows it to quickly transition fro
 == Aquiring
 
 * Gem:    gem install mod_spox
-* Source: git clone git://github.com/spox/mod_spox.git
+
+== Aquiring current unstable
+
+Gem:
+    gem sources -a http://gems.github.com
+    gem install spox-mod_spox
+
+Source:
+    git clone git://github.com/spox/mod_spox.git
+    cd mod_spox/
+    gem build *.gemspec
+    gem install ./
 
 == Requirements
 
@@ -24,6 +35,7 @@ The framework that mod_spox provides is what allows it to quickly transition fro
 * {ActionTimer}[http://dev.modspox.com/~sine/ActionTimer]
 * {ActionPool}[http://dev.modspox.com/~sine/ActionPool]
 * {spockets}[http://dev.modspox.com/~sine/spockets]
+* Database adapter of choice compatible with sequel
 
 == Configuration
 
@@ -39,13 +51,21 @@ The framework that mod_spox provides is what allows it to quickly transition fro
 
     mod_spox -V info -d
 
-=== Daemonize with debug to file
+=== Daemonize with debug to file and daemonize
 
     mod_spox -V info -d /home/user/logfiles/mod_spox.log -D
 
 == Extending
 
 {Plugins HOWTO}[http://dev.modspox.com/trac/mod_spox/wiki/PluginHowto]
+
+== Helping
+
+Helpful things if you are feeling helpful:
+
+* Report bugs
+* Write unit tests
+* New and/or useful plugins
 
 == License
 
