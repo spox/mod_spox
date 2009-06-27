@@ -29,6 +29,10 @@ module ModSpox
             @pipeline.hook(self, :return_socket, :Internal_DCCRequest)
             @pipeline.hook(self, :dcc_listener, :Internal_DCCListener)
             @pipeline.hook(self, :disconnect_irc, :Internal_Disconnected)
+            @pipeline.hook(self, :queue_messages, :Internal_QueueSocket)
+            @pipeline.hook(self, :unqueue_messages, :Internal_UnqueueSocket)
+            @queues = {:irc => Queue.new, :dcc => Queue.new}
+            @queue_messages = false
         end
 
         # server:: IRC server string
@@ -150,6 +154,15 @@ module ModSpox
         def disconnect_irc(m=nil)
             @spockets.remove(@irc_socket.socket) if @spockets.include?(@irc_socket.socket)
         end
+        
+        def unqueue_messages(m)
+            @queue_messages = false
+            flush_queues
+        end
+        
+        def queue_messages(m)
+            @queue_messages = true
+        end
 
         private
 
@@ -176,16 +189,34 @@ module ModSpox
         end
 
         def process_irc_string(string)
-            @irc_socket.process(string)
+            if(@queue_messages)
+                @queues[:irc] << string
+            else
+                @irc_socket.process(string)
+            end
         end
         
         def process_dcc_string(string, socket)
-            Logger.info("DCC >> #{string}")
-            if(socket.closed? || string.nil?)
-                socket.close
-                close_dcc(socket)
+            if(@queue_messages)
+                @queues[:dcc] = {:string => string, :socket => socket}
             else
-                @pipeline << Messages::Incoming::Privmsg.new(string, @mapped_sockets[socket.object_id][:nick], "::#{sock.object_id}::", string)
+                Logger.info("DCC >> #{string}")
+                if(socket.closed? || string.nil?)
+                    socket.close
+                    close_dcc(socket)
+                else
+                    @pipeline << Messages::Incoming::Privmsg.new(string, @mapped_sockets[socket.object_id][:nick], "::#{sock.object_id}::", string)
+                end
+            end
+        end
+        
+        def flush_queues
+            until(@queues[:irc].empty?)
+                process_irc_string(@queues[:irc].pop)
+            end
+            until(@queues[:dcc].empty?)
+                con = @queues[:dcc].pop
+                process_dcc_string(con[:string], con[:socket])
             end
         end
 

@@ -30,17 +30,24 @@ module ModSpox
         # message:: Messages::Internal::PluginReload
         # Destroys and reinitializes plugins
         def reload_plugins(message=nil)
-            @plugin_lock.synchronize do
-                if(!message.nil? && (message.fresh && message.stale))
-                    do_unload(message.stale)
-                    FileUtils.remove_file(message.stale)
-                    FileUtils.copy(message.fresh, BotConfig[:userpluginpath])
-                    do_load(message.stale)
-                    Logger.info("Completed reload of plugin: #{message.stale}")
-                else
-                    unload_plugins
-                    load_plugins
+            @pipeline << Messages::Internal::QueueSocket.new
+            begin
+                @plugin_lock.synchronize do
+                    if(!message.nil? && (message.fresh && message.stale))
+                        do_unload(message.stale)
+                        FileUtils.remove_file(message.stale)
+                        FileUtils.copy(message.fresh, BotConfig[:userpluginpath])
+                        do_load(message.stale)
+                        Logger.info("Completed reload of plugin: #{message.stale}")
+                    else
+                        unload_plugins
+                        load_plugins
+                    end
                 end
+            rescue Object => boom
+                Logger.error("PluginManager caught error on plugin reload: #{boom}")
+            ensure
+                @pipeline << Messages::Internal::UnqueueSocket.new
             end
         end
 
@@ -52,6 +59,7 @@ module ModSpox
         # message:: Messages::Internal::PluginLoadRequest
         # Loads a plugin
         def load_plugin(message)
+            @pipeline << Messages::Internal::QueueSocket.new
             begin
                 path = !message.name ? "#{BotConfig[:userpluginpath]}/#{message.path.gsub(/^.+\//, '')}" : "#{BotConfig[:userpluginpath]}/#{message.name}"
                 begin
@@ -65,13 +73,16 @@ module ModSpox
             rescue Object => boom
                 Logger.warn("Failed to load plugin: #{message.path} Reason: #{boom}")
                 @pipeline << Messages::Internal::PluginLoadResponse.new(message.requester, false)
+            ensure
+                @pipeline << Messages::Internal::SignaturesUpdate.new
+                @pipeline << Messages::Internal::UnqueueSocket.new
             end
-            @pipeline << Messages::Internal::SignaturesUpdate.new
         end
 
         # message:: Messages::Internal::PluginUnloadRequest
         # Unloads a plugin
         def unload_plugin(message)
+            @pipeline << Messages::Internal::QueueSocket.new
             begin
                 do_unload(message.path)
                 unless(File.symlink?(message.path))
@@ -85,8 +96,10 @@ module ModSpox
             rescue Object => boom
                 Logger.warn("Failed to unload plugin: #{message.path} Reason: #{boom}")
                 @pipeline << Messages::Internal::PluginUnloadResponse.new(message.requester, false)
+            ensure
+                @pipeline << Messages::Internal::UnqueueSocket.new
+                @pipeline << Messages::Internal::SignaturesUpdate.new
             end
-            @pipeline << Messages::Internal::SignaturesUpdate.new
         end
 
         # message:: Messages::Internal::PluginModuleRequest
