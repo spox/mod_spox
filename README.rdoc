@@ -51,7 +51,7 @@ Source:
 
     mod_spox -V info -d
 
-=== Daemonize with debug to file and daemonize
+=== Daemonize with debug to file
 
     mod_spox -V info -d /home/user/logfiles/mod_spox.log -D
 
