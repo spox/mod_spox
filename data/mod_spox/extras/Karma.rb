@@ -7,13 +7,14 @@ class Karma < ModSpox::Plugin
         Datatype::Karma.create_table unless Datatype::Karma.table_exists?
         Datatype::Alias.create_table unless Datatype::Alias.table_exists?
         alias_group = Models::Group.find_or_create(:name => 'alias')
-        add_sig(:sig => 'karma (?!(fight|alias|dealias|aliases|reset) (\S+|\(.+?\)) ?(\S+|\(.+?\))?$)(\S+|\(.+?\))', :method => :score, :desc => 'Returns karma for given thing', :params => [:crap, :crap2, :crap3, :thing])
+        add_sig(:sig => 'karma (?!topten$)(?!(fight|alias|dealias|aliases|reset) (\S+|\(.+?\)) ?(\S+|\(.+?\))?$)(\S+|\(.+?\))', :method => :score, :desc => 'Returns karma for given thing', :params => [:crap, :crap2, :crap3, :thing])
         add_sig(:sig => 'karma reset (\S+|\(.+?\))', :method => :reset, :group => Models::Group.filter(:name => 'admin').first, :desc => 'Reset a karma score', :params => [:thing])
         add_sig(:sig => 'karma alias (\S+|\(.+?\)) (\S+|\(.+?\))', :method => :aka, :group => alias_group, :desc => 'Alias a karma object to another karma object', :params => [:thing, :thang])
         add_sig(:sig => 'karma dealias (\S+|\(.+?\)) (\S+|\(.+?\))', :method => :dealias, :group => alias_group, :desc => 'Remove a karma alias', :params => [:thing, :otherthing])
         add_sig(:sig => 'karma aliases (\S+|\(.+?\))', :method => :show_aliases, :desc => 'Show all aliases for given thing', :params => [:thing])
         add_sig(:sig => 'karma fight (\S+|\(.+?\)) (\S+|\(.+?\))', :method => :fight, :desc => 'Make two karma objects fight', :params => [:thing, :thang])
         add_sig(:sig => 'antikarma (\S+|\(.+?\))', :method => :antikarma, :desc => 'Show things antikarma', :params => [:thing])
+        add_sig(:sig => 'karma topten', :method => :topten, :desc => 'Show top ten highest karma objects')
         @pipeline.hook(self, :check, :Incoming_Privmsg)
         @thing_maxlen = 32
         @karma_regex = /(\(.{1,#@thing_maxlen}?\)|\S{1,#@thing_maxlen})([+-]{2})(?:\s|$)/
@@ -61,6 +62,19 @@ class Karma < ModSpox::Plugin
         end
         if(@eggs.has_key?(params[:thing].downcase.to_sym))
             @pipeline << Messages::Internal::TimerAdd.new(self, rand(5) + 1, nil, true){ egg(params[:thing].downcase, message) }
+        end
+    end
+    
+    def topten(m, params)
+        set = Datatype::Karma.filter(:channel_id => m.target.pk).order(:score.desc).limit(10)
+        if(set.count > 0)
+            output = []
+            set.each do |thing|
+                output << "#{thing.thing} (#{thing.score.to_s.slice(0) == '-' ? '' : '+'}#{thing.score})"
+            end
+            reply m.replyto, "\2Karma topten:\2 #{output.join(', ')}"
+        else
+            error m.replyto, 'No karma objects stored'
         end
     end
 
