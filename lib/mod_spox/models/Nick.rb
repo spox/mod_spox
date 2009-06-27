@@ -92,7 +92,6 @@ module ModSpox
                     update :away => false
                     remove_all_channels
                     auth.update(:authed => false)
-                    puts "I DEAUTHED YOU MOTHERFUCKER"
                 end
                 super(val)
             end
@@ -188,7 +187,7 @@ module ModSpox
 
             # TODO: rewrite this to work
             def Nick.transfer_groups(old_nick, new_nick)
-                raise Exceptions::NotImplemented.new
+                # do nothing
             end
 
         end
