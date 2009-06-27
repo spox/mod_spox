@@ -135,8 +135,9 @@ module ModSpox
                                             if(boom.class.to_s == 'SQLite3::BusyException')
                                                 Database.reset_connections
                                                 retry
+                                            else
+                                                Logger.error("Failed to pass message to plugin. (Plugin: #{v[:object]} Message: #{message.message} Reason: #{boom}")
                                             end
-                                            Logger.error("Failed to pass message to plugin. (Plugin: #{v[:object]} Message: #{message}")
                                         end
                                     end
                                 end
