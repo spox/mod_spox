@@ -128,10 +128,19 @@ module ModSpox
                         @hooks[type].each_value do |objects|
                             begin
                                 objects.each do |v|
-                                    @pool.process{ v[:object].send(v[:method].to_s, message) }
+                                    @pool.process do
+                                        begin
+                                            v[:object].send(v[:method].to_s, message)
+                                        rescue Object => boom
+                                            if(boom.class.to_s == 'SQLite3::BusyException')
+                                                Database.reset_connections
+                                                retry
+                                            end
+                                            Logger.error("Failed to pass message to plugin. (Plugin: #{v[:object]} Message: #{message}")
+                                        end
+                                    end
                                 end
                             rescue Object => boom
-                                Database.reset_connections if boom.class.to_s == 'SQLite3::BusyException'
                                 Logger.warn("Plugin threw exception while attempting to process message: #{boom}\n#{boom.backtrace.join("\n")}")
                             end
                         end
