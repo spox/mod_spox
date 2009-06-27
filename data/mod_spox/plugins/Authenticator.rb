@@ -142,6 +142,7 @@ class Authenticator < ModSpox::Plugin
     def clear_pass(message, params)
         nick = Models::Nick.locate(params[:nick])
         nick.auth.password = nil
+        nick.auth.save
         information message.replyto, "Nick #{params[:nick]} has been updated. Password has been unset."
     end
 
@@ -158,7 +159,7 @@ class Authenticator < ModSpox::Plugin
                 groups << ag.name
             end
             info << "Groups: #{groups.uniq.sort.join(', ')}."
-            nick.auth.password.nil? ? info << 'Password has not been set.' : info << 'Password has been set.'
+            nick.auth.password.nil? || nick.auth.password.empty? ? info << 'Password has not been set.' : info << 'Password has been set.'
             nick.auth.services ? info << 'Nickserv ident is enabled.' : info << 'Nickserv ident is disabled.'
             information message.replyto, "#{info.join(' ')}"
         else
@@ -228,7 +229,7 @@ class Authenticator < ModSpox::Plugin
         group = Models::Group.filter(:name => params[:group]).first
         if(group)
             nicks = []
-            group.auths.each{|a| nicks << a.nick[0].nick}
+            group.auths.each{|a| nicks << a.nick.nick}
             masks = []
             group.auth_masks.each{|a| masks << a.map}
             output = []
@@ -258,12 +259,14 @@ class Authenticator < ModSpox::Plugin
 
     # Populates array with nicks that authenticate by nickserv
     def populate_nickserv
+        @nickserv_nicks.clear
         Models::Auth.filter('services = ?', true).each do |auth|
             @nickserv_nicks << auth.nick.nick.downcase
         end
     end
 
     def check_nickserv(nick, force=false)
+        populate_nickserv if @nickserv_nicks.empty?
         if(@nickserv_nicks.include?(nick.nick.downcase))
             if(force || (!nick.auth.authed && !@nickserv_cache.include?(nick.nick.downcase)))
                 @nickserv_cache << nick.nick.downcase unless @nickserv_cache.include?(nick.nick.downcase)
@@ -273,9 +276,7 @@ class Authenticator < ModSpox::Plugin
     end
 
     def check_join(message)
-        if(@nickserv_nicks.include?(message.nick.nick.downcase))
-            check_nickserv(message.nick) unless message.nick == me
-        end
+        check_nickserv(message.nick) unless message.nick == me
     end
 
     def check_nicks(message)
