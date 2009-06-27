@@ -28,10 +28,14 @@ class Karma < ModSpox::Plugin
 
     def check(message)
         if(message.is_public?)
+            @dupes = {}
             message.message.scan(@karma_regex) do |match|
                 thing, adj = match
                 thing.downcase!
                 thing = thing[1..-2] if thing[0..0] == '(' && thing[-1..-1] == ')'
+                next if @dupes.has_key?(thing) && @dupes[thing].include?(adj)
+                @dupes[thing] = [] unless @dupes[thing]
+                @dupes[thing] << adj
                 adj = adj == '++' ? +1 : -1
                 things = [thing]
                 karma = Datatype::Karma.find_or_create(:thing => thing, :channel_id => message.target.pk)
