@@ -44,7 +44,7 @@ module ModSpox
             config[:memcache] = get_input('Use memcache (EXPERIMENTAL): ', '(yes|no)', 'no')
             valid_connection = false
             until valid_connection do
-                config[:db_adapter] = get_input('Database type (pgsql|sqlite): ', '(pgsql|sqlite)', 'sqlite')
+                config[:db_adapter] = get_input('Database type (pgsql|sqlite|mysql): ', '(pgsql|sqlite|mysql)', 'sqlite')
                 unless(config[:db_adapter] == 'sqlite')
                     config[:db_username] = get_input('Database username: ', '.+', 'mod_spox')
                     config[:db_password] = get_input('Database password: ', '.*', nil)
