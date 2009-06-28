@@ -174,13 +174,13 @@ module ModSpox
             end
 
             def add_channel(c)
-                unless(channels_dataset.filter(:channel_pk => c.pk).count > 0)
+                unless(channels_dataset.filter(:channel_id => c.pk).count > 0)
                     super(c)
                 end
             end
 
             def remove_channel(c)
-                if(channels_dataset.filter(:channel_pk => c.pk).count > 0)
+                if(channels_dataset.filter(:channel_id => c.pk).count > 0)
                     super(c)
                 end
             end
