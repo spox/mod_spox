@@ -14,6 +14,7 @@ class Karma < ModSpox::Plugin
         add_sig(:sig => 'karma aliases (\S+|\(.+?\))', :method => :show_aliases, :desc => 'Show all aliases for given thing', :params => [:thing])
         add_sig(:sig => 'karma fight (\S+|\(.+?\)) (\S+|\(.+?\))', :method => :fight, :desc => 'Make two karma objects fight', :params => [:thing, :thang])
         add_sig(:sig => 'antikarma (\S+|\(.+?\))', :method => :antikarma, :desc => 'Show things antikarma', :params => [:thing])
+        add_sig(:sig => 'antikarma fight (\S+|\(.+?\)) (\S+|\(.+?\))', :method => :antifight, :desc => 'Make two antikarma objects fight', :params => [:thing, :thang])
         add_sig(:sig => 'karma topten', :method => :topten, :desc => 'Show top ten highest karma objects')
         add_sig(:sig => 'karma bottomten', :method => :bottomten, :desc => 'Show bottom ten lowest karma objects')
         @pipeline.hook(self, :check, :Incoming_Privmsg)
@@ -135,12 +136,34 @@ class Karma < ModSpox::Plugin
         winner = thing_score > thang_score ? thing : thang
         loser = thing_score > thang_score ? thang : thing
         distance = (thing_score - thang_score).abs
-        output = "\2KARMA FIGHT RESULTS:\2 "
+        output = ["\2KARMA FIGHT RESULTS:\2 "]
         if(distance > 0)
-            reply message.replyto, "\2#{winner}\2 #{winner[-1] == 's' || winner[-1] == 115 ? 'have' : 'has'} beaten \2#{loser}\2 #{distance > 50 ? 'like a redheaded step child' : ''} (+#{distance} points)"
+            output << "\2#{winner}\2 #{winner[-1] == 's' || winner[-1] == 115 ? 'have' : 'has'} beaten \2#{loser}\2 #{distance > 50 ? 'like a redheaded step child' : ''} (+#{distance} points)"
         else
-            reply message.replyto, "\2#{winner}\2 #{winner[-1] == 's' || winner[-1] == 115 ? 'have' : 'has'} tied \2#{loser}\2"
+            output << "\2#{winner}\2 #{winner[-1] == 's' || winner[-1] == 115 ? 'have' : 'has'} tied \2#{loser}\2"
         end
+        reply message.replyto, output
+    end
+
+    def antifight(message, params)
+        thing = params[:thing]
+        thang = params[:thang]
+        thing = thing[1..-2] if thing[0..0] == '(' && thing[-1..-1] == ')'
+        thang = thang[1..-2] if thang[0..0] == '(' && thang[-1..-1] == ')'
+        rthing = Datatype::Karma.find_or_create(:thing => thing.downcase, :channel_id => message.target.pk)
+        rthang = Datatype::Karma.find_or_create(:thing => thang.downcase, :channel_id => message.target.pk)
+        thing_score = Datatype::Alias.score_object(rthing.pk) * -1
+        thang_score = Datatype::Alias.score_object(rthang.pk) * -1
+        winner = thing_score > thang_score ? thing : thang
+        loser = thing_score > thang_score ? thang : thing
+        distance = (thing_score - thang_score).abs
+        output = ["\2ANTI-KARMA FIGHT RESULTS:\2 "]
+        if(distance > 0)
+            output << "\2#{winner}\2 #{winner[-1] == 's' || winner[-1] == 115 ? 'have' : 'has'} beaten \2#{loser}\2 #{distance > 50 ? 'like a redheaded step child' : ''} (+#{distance} points)"
+        else
+            output << "\2#{winner}\2 #{winner[-1] == 's' || winner[-1] == 115 ? 'have' : 'has'} tied \2#{loser}\2"
+        end
+        reply message.replyto, output
     end
 
     def aka(message, params)
