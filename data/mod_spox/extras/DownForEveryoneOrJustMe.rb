@@ -4,7 +4,7 @@ require "net/http"
 # downforeveryoneorjustme.com website-upness-checker plugin
 # by pizza
 
-class Bash < ModSpox::Plugin
+class DownForEveryoneOrJustMe < ModSpox::Plugin
 
     def initialize(pipeline)
         super
@@ -18,7 +18,7 @@ class Bash < ModSpox::Plugin
     def down(m, params)
         begin
             # check for valid domain
-            dom = params[:domain].downcase
+            domain = params[:domain].downcase
             url = @site + domain
             reply m.replyto, get_text(domain, url)
         rescue Object => boom
@@ -36,6 +36,7 @@ class Bash < ModSpox::Plugin
                 t = t + "up"
             else
                 t = t + "down"
+            end
             return t
         rescue Object => boom
             Logger.error(boom)
