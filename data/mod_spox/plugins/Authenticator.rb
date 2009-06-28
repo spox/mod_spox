@@ -280,7 +280,7 @@ class Authenticator < ModSpox::Plugin
     end
 
     def check_nicks(message)
-        message.nicks.each{|nick| check_nickserv(nick) }
+        @pipeline << Messages::Internal::TimerAdd.new(self, 20, nil, true){ message.nicks.each{|nick| check_nickserv(nick) } }
     end
 
 end
