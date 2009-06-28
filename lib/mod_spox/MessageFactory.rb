@@ -98,7 +98,7 @@ module ModSpox
                     Logger.error("No handler was found to process message of type: #{key} Message: #{message}")
                 end
             rescue Object => boom
-                if(boom.class.to_s == 'SQLite3::BusyException')
+                if(boom.class.to_s == 'SQLite3::BusyException' || boom.class.to_s == 'PGError')
                     Database.reset_connections
                     retry
                 else
