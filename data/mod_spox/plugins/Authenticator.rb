@@ -123,6 +123,7 @@ class Authenticator < ModSpox::Plugin
         else
             nick.auth.update(:services => false)
         end
+        populate_nickserv
         information message.replyto, "Nick #{params[:nick]} has been updated. Services for authentication has been set to #{params[:ident]}"
     end
 
@@ -243,7 +244,6 @@ class Authenticator < ModSpox::Plugin
 
     def check_notice(m)
         if(m.source.is_a?(Models::Nick) && m.source.nick.downcase == 'nickserv' && m.source.host == 'dal.net')
-            Logger.info("We are checking the acc")
             message = m.message.dup
             nick = message.slice!(0..message.index(' ')-1)
             message.slice!(0)
