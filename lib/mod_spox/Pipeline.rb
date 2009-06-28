@@ -136,7 +136,7 @@ module ModSpox
                                                 Database.reset_connections
                                                 retry
                                             else
-                                                Logger.error("Failed to pass message to plugin. (Plugin: #{v[:object]} Message: #{message} Reason: #{boom}")
+                                                raise boom
                                             end
                                         end
                                     end
