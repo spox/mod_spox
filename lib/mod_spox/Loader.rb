@@ -38,7 +38,7 @@ module ModSpox
                     Database.db = Sequel.connect("#{ModSpox.jdbc ? 'jdbc:' : ''}postgres://#{config[:db_username]}:#{config[:db_password]}@#{config[:db_host]}/#{config[:db_database]}")
                     Database.type = :pgsql
                 when 'sqlite'
-                    Database.db = Sequel.sqlite("#{BotConfig[:userpath]}/mod_spox.db", :pool_timeout => 20)
+                    Database.db = Sequel.sqlite("#{BotConfig[:userpath]}/mod_spox.db", :pool_timeout => 20, :timeout => 5000)
                     Database.type = :sqlite
             end
         end
