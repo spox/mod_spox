@@ -144,7 +144,7 @@ module ModSpox
             # channel:: Models::Channel
             # Return if nick is operator in given channel
             def is_op?(channel)
-                raise Exceptions::NotInChannel.new(channel) unless channels.include?(channel)
+                raise Exceptions::NotInChannel.new(channel) unless channels_dataset.filter(:channel_id => channel.pk).count > 0
                 m = NickMode.filter(:nick_id => pk, :channel_id => channel.pk).first
                 return m ? m.set?('o') : false
             end
@@ -152,7 +152,7 @@ module ModSpox
             # channel:: Models::Channel
             # Return if nick is voiced in given channel
             def is_voice?(channel)
-                raise Exceptions::NotInChannel.new(channel) unless channels.include?(channel)
+                raise Exceptions::NotInChannel.new(channel) unless channels_dataset.filter(:channel_id => channel.pk).count > 0
                 m = NickMode.filter(:nick_id => pk, :channel_id => channel.pk).first
                 return m ? m.set?('v') : false
             end
@@ -174,13 +174,13 @@ module ModSpox
             end
 
             def add_channel(c)
-                unless(channels.map{|channel| channel.name.downcase}.include?(c.name.downcase))
+                unless(channels_dataset.filter(:channel_pk => c.pk).count > 0)
                     super(c)
                 end
             end
 
             def remove_channel(c)
-                unless(channels.map{|channel| channel.name.downcase}.include?(c.name.downcase))
+                if(channels_dataset.filter(:channel_pk => c.pk).count > 0)
                     super(c)
                 end
             end

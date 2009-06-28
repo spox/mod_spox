@@ -72,13 +72,13 @@ module ModSpox
             end
 
             def add_nick(n)
-                unless(nicks.map{|nick| nick.nick.downcase}.include?(n.nick.downcase))
+                unless(nicks_dataset.filter(:nick_id => n.pk).count > 0)
                     super(n)
                 end
             end
 
             def remove_nick(n)
-                unless(nicks.map{|nick| nick.nick.downcase}.include?(n.nick.downcase))
+                if(nicks_dataset.filter(:nick_id => n.pk).count > 0)
                     super(n)
                 end
             end
