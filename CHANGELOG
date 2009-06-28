@@ -5,6 +5,9 @@
     * Sequel 3.0 support
     * Output scheduling
     * Daemonizing fixed and working properly on 1.8 and 1.9
+    * Message queueing during plugin reloads
+    * Default to UTF-8 encoding
+    * 
     Plugins:
     * New plugins added:
         * GoogleIt - letmegooglethatforyou.com searcher
@@ -13,12 +16,16 @@
         * FML - Entries from fmylife.com
         * SlashdotHeadlineGenerator - Fake slashdot headline generator (author: Ryan "pizza_" Flynn)
         * RubyCli - Run ruby code
+        * Seen - Provides a seen trigger without all the bloat the Logger brings
     * Headers plugin fixed to use URI.parse
     * Storable PHP functions for use in PhpCli plugin
     * Alias twitter uses to their IRC nick
     * PHP function lookup fixes
     * Improved Helper plugin to provide help for plugins
     * TracTicket updated to work with latest version of trac (trac >= 0.11 now required)
+    * Karma top/bottom ten and antikarma fight triggers added
+    * Nicker plugin for changing bot's nick
+    * Translate now works with all available languages
     * Lots of bug fixes and optimizations throughout
 
 0.2.0 Release (Beta status)
