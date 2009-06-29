@@ -137,10 +137,8 @@ class RegexTracker < ModSpox::Plugin
             foreign_key :channel_id, :table => :channels, :null => false
             index [:regex, :channel_id], :unique => true
         end
-        
-        def channel
-            Channel[channel_id]
-        end
+
+        many_to_one :channel, :class => ModSpox::Models::Channel
         
         def channel=(chan)
             raise Exceptions::InvalidType.new('Channel model was expected') unless chan.is_a?(Models::Channel)

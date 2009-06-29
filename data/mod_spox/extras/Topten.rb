@@ -96,6 +96,8 @@ class Topten < ModSpox::Plugin
             foreign_key :channel_id, :table => :channels
             foreign_key :nick_id, :table => :nicks
         end
+        many_to_one :channel, :class => ModSpox::Models::Channel
+        many_to_one :nick, :class => ModSpox::Models::Nick
     end
 
 end

@@ -113,14 +113,9 @@ class AutoMode < ModSpox::Plugin
             foreign_key :channel_id, :table => :channels, :null => false
             index [:nick_id, :channel_id, :voice], :unique => true
         end
-        
-        def channel
-            ModSpox::Models::Channel[channel_id]
-        end
-        
-        def nick
-            ModSpox::Models::Nick[nick_id]
-        end
+
+        many_to_one :channel, :class => ModSpox::Models::Channel
+        many_to_one :nick, :class => ModSpox::Models::Nick
     end
     
 end

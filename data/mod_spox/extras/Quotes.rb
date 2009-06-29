@@ -72,6 +72,8 @@ class Quotes < ModSpox::Plugin
             foreign_key :nick_id, :table => :nicks
             foreign_key :channel_id, :table => :channels
         end
+        many_to_one :nick, :class => ModSpox::Models::Nick
+        many_to_one :channel, :class => ModSpox::Models::Channel
     end
     
 end

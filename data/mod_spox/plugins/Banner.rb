@@ -463,16 +463,11 @@ class Banner < ModSpox::Plugin
             foreign_key :nick_id, :null => false, :table => :nicks, :key => :id
         end
 
+        many_to_one :channel, :class => ModSpox::Models::Channel
+        many_to_one :nick, :class => ModSpox::Models::Nick
+
         def before_create
             update(:stamp => Object::Time.now)
-        end
-
-        def channel
-            ModSpox::Models::Channel[channel_id]
-        end
-
-        def nick
-            ModSpox::Models::Nick[nick_id]
         end
     end
 
@@ -486,9 +481,7 @@ class Banner < ModSpox::Plugin
             foreign_key :channel_id, :null => false, :table => :channels, :key => :id
         end
 
-        def channel
-            ModSpox::Models::Channel[channel_id]
-        end
+        many_to_one :channel, :class => ModSpox::Models::Channel
 
         def self.map_masks
             masks = {}
@@ -507,14 +500,9 @@ class Banner < ModSpox::Plugin
             foreign_key :nick_id, :table => :nicks, :null => false, :key => :id
             foreign_key :channel_id, :table => :channels, :key => :id
         end
-
-        def nick
-            return Models::Nick[nick_id]
-        end
-
-        def channel
-            return Models::Channel[channel_id]
-        end
+        
+        many_to_one :nick, :class => ModSpox::Models::Nick
+        many_to_one :channel, :class => ModSpox::Models::Channel
     end
 
     class BanSourceExempt < Sequel::Model
@@ -524,9 +512,7 @@ class Banner < ModSpox::Plugin
             foreign_key :channel_id, :table => :channels, :key => :id
         end
 
-        def channel
-            return Models::Channel[channel_id]
-        end
+        many_to_one :channel, :class => ModSpox::Models::Channel
 
         def mask
             return values[:source] ? Marshal.load(values[:source].unpack('m')[0]) : nil
@@ -545,10 +531,8 @@ class Banner < ModSpox::Plugin
             foreign_key :channel_id, :table => :channels, :key => :id
             index [:channel_id, :mode]
         end
-
-        def channel
-            return Models::Channel[channel_id]
-        end
+        
+        many_to_one :channel, :class => ModSpox::Models::Channel
     end
 
     class NotOperator < Exceptions::BotException

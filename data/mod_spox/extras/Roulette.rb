@@ -236,12 +236,10 @@ class Roulette < ModSpox::Plugin
             foreign_key :channel_id, :null => false, :table => :channels
         end
 
+        many_to_one :channel, :class => ModSpox::Models::Channel
+
         def before_create
             self.stamp = Time.now
-        end
-
-        def channel
-            Models::Channel[channel_id]
         end
     end
 
@@ -253,14 +251,9 @@ class Roulette < ModSpox::Plugin
             foreign_key :nick_id, :null => false, :table => :nicks
             foreign_key :game_id, :null => false, :table => :games
         end
-
-        def nick
-            Models::Nick[nick_id]
-        end
-
-        def game
-            Models::Game[game_id]
-        end
+        
+        many_to_one :nick, :class => ModSpox::Models::Nick
+        many_to_one :game, :class => Game
     end
 
     class Bullet < Exception

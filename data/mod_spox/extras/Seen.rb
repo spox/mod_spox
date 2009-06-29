@@ -144,7 +144,7 @@ class Seen < ModSpox::Plugin
             text :message
             primary_key :nick_id
         end
-        many_to_one :nick, :class => 'ModSpox::Models::Nick'
-        many_to_one :channel, :class => 'ModSpox::Models::Channel'
+        many_to_one :nick, :class => ModSpox::Models::Nick
+        many_to_one :channel, :class => ModSpox::Models::Channel
     end
 end

@@ -132,9 +132,7 @@ class AutoKick < ModSpox::Plugin
             foreign_key :channel_id, :table => :channels
         end
 
-        def channel
-            ModSpox::Models::Channel[channel_id]
-        end
+        many_to_one :channel, :class => ModSpox::Models::Channel
     end
     
     class AutoKickPersonal < Sequel::Model
@@ -146,14 +144,9 @@ class AutoKick < ModSpox::Plugin
             foreign_key :nick_id, :table => :nicks
             foreign_key :channel_id, :table => :channels
         end
-        
-        def nick
-            ModSpox::Models::Nick[nick_id]
-        end
-        
-        def channel
-            ModSpox::Models::Channel[channel_id]
-        end
+
+        many_to_one :nick, :class => ModSpox::Models::Nick
+        many_to_one :channel, :class => ModSpox::Models::Channel
     end
 
 end

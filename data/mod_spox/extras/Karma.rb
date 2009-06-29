@@ -240,9 +240,7 @@ class Karma < ModSpox::Plugin
                 index [:thing, :channel_id], :unique => true
             end
 
-            def channel
-                ModSpox::Models::Channel[channel_id]
-            end
+            many_to_one :channel, :class => ModSpox::Models::Channel
         end
         class Alias < Sequel::Model
             set_schema do
