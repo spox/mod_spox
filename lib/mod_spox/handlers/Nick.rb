@@ -41,7 +41,7 @@ module ModSpox
                     return Messages::Incoming::Nick.new(orig, old_nick, new_nick)
                 rescue Object => boom
                     Logger.error("Failed to parse NICK message: #{orig}")
-                    raise boom
+                    raise Exceptions::GeneralException.new(boom)
                 end
             end
         end

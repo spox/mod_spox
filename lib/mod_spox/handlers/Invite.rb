@@ -19,7 +19,7 @@ module ModSpox
                     return Messages::Incoming::Invite.new(orig, source, target, channel)
                 rescue Object => boom
                     Logger.error("Failed to parse INVITE message: #{orig}")
-                    raise boom
+                    raise Exceptions::GeneralException.new(boom)
                 end
             end
         end

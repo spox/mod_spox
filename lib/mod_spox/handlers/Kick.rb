@@ -27,7 +27,7 @@ module ModSpox
                     return Messages::Incoming::Kick.new(orig, channel, kicker, kickee, string)
                 rescue Object => boom
                     Logger.warn("Failed to parse KICK message: #{orig}")
-                    raise boom
+                    raise Exceptions::GeneralException.new(boom)
                 end
             end
         end

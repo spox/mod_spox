@@ -20,7 +20,7 @@ module ModSpox
                     return Messages::Incoming::Quit.new(orig, nick, string)
                 rescue Object => boom
                     Logger.error("Failed to parse QUIT message: #{orig}")
-                    raise boom
+                    raise Exceptions::GeneralException.new(boom)
                 end
             end
         end

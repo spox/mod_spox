@@ -107,7 +107,7 @@ module ModSpox
                     return nil
                 rescue Object => boom
                     Logger.error("Failed to parse WHOIS type reply: #{orig}")
-                    raise boom
+                    raise Exceptions::GeneralException.new(boom)
                 end
             end
 

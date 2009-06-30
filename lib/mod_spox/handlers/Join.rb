@@ -29,7 +29,7 @@ module ModSpox
                     return Messages::Incoming::Join.new(orig, channel, nick)
                 rescue Object => boom
                     Logger.warn("Failed to parse JOIN message: #{orig}")
-                    raise boom
+                    raise Exceptions::GeneralException.new(boom)
                 end
             end
         end

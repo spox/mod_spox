@@ -30,7 +30,7 @@ module ModSpox
                 rescue Object => boom
                     Logger.warn("Failed to parse PRIVMSG message: #{orig}")
                     Logger.warn("Reason for PRIVMSG failure: #{boom}")
-                    raise boom
+                    raise Exceptions::GeneralException.new(boom)
                 end
             end
         end

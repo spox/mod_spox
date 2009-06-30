@@ -21,7 +21,7 @@ module ModSpox
                     return Messages::Incoming::Welcome.new(string, server, parse, nick, nil, nil)
                 rescue Object => boom
                     Logger.warn("Failed to parse welcome message: #{string}")
-                    raise boom
+                    raise Exceptions::GeneralException.new(boom)
                 end
             end
         end

@@ -1,5 +1,6 @@
 require 'mod_spox/rfc2812'
 require 'mod_spox/Helpers'
+require 'mod_spox/Exceptions'
 module ModSpox
     module Handlers
     

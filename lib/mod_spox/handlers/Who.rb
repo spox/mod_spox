@@ -74,7 +74,7 @@ module ModSpox
                     end
                 rescue Object => boom
                     Logger.error("Failed to match WHO type message: #{orig}")
-                    raise boom
+                    raise Exceptions::GeneralException.new(boom)
                 end
             end
             

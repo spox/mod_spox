@@ -53,7 +53,7 @@ module ModSpox
                     end
                 rescue Object => boom
                     Logger.warn("Failed to parse MODE message: #{orig}")
-                    raise boom
+                    raise Exceptions::GeneralException.new(boom)
                 end
             end
         end

@@ -30,7 +30,7 @@ module ModSpox
                     return Messages::Incoming::Part.new(orig, channel, nick, string)
                 rescue Object => boom
                     Logger.error("Failed to parse PART message: #{orig}")
-                    raise boom
+                    raise Exceptions::GeneralException.new(boom)
                 end
             end
         end
