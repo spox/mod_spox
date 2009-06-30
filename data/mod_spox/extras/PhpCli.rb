@@ -11,8 +11,12 @@ class PhpCli < ModSpox::Plugin
         unless(File.directory?(@path))
             FileUtils.mkdir_p(@path)
         end
-        result = Helpers.safe_exec('which php')
-        raise NoInterpreter.new if result.empty?
+        @exec = Config.val(:phpexec)
+        if(@exec.nil?)
+            result = Helpers.safe_exec('which php')
+            raise NoInterpreter.new if result.empty?
+            @exec = 'php'
+        end
         unless File.exists?(@botini)
             ini = File.new(@botini, 'w')
             ini.write($ini)
@@ -30,10 +34,32 @@ class PhpCli < ModSpox::Plugin
         add_sig(:sig => 'pf list', :method => :list, :desc => 'List custom PHP functions')
         add_sig(:sig => 'pf edit (.+)', :method => :edit, :params => [:function], :group => phpfunc, :desc => 'Overwrite existing custom PHP function')
         add_sig(:sig => 'pf show (\d+)', :method => :show, :params => [:func_id], :group => phpfunc, :desc => 'Show given PHP function source')
+        add_sig(:sig => 'phpexec( (\S+))?', :method => :set_exec, :params => [:exec], :group => admin, :desc => 'Set custom PHP executable')
         @customfuncs = []
         populate_customs
         @channels = Setting.filter(:name => 'phpcli').first
         @channels = @channels.nil? ? [] : @channels.value
+    end
+
+    def set_exec(m, params)
+        if(params[:exec])
+            path = params[:exec].strip
+            unless(path == 'none')
+                if(File.executable?(path))
+                    Config.set(:phpexec, path)
+                    @exec = path
+                    information m.replyto, "PHP executable path has been updated: #{@exec}"
+                else
+                    error m.replyto, 'Path given is not a valid executable path'
+                end
+            else
+                Config.filter(:name => 'phpexec').destroy
+                @exec = 'php'
+                information m.replyto, 'Bot is now using default php executable'
+            end
+        else
+            information m.replyto, "Executable path is: #{@exec}"
+        end
     end
 
     def set_channel(message, params)
@@ -70,7 +96,7 @@ class PhpCli < ModSpox::Plugin
         file.write("<? $_SERVER = $_ENV = $GLOBALS = array(); #{@customfuncs.join(' ')} #{params[:code]} ?>")
         file.close
         begin
-            output = Helpers.safe_exec("php -c #{@path}/bot.ini -d max_execution_time=10 #{filepath} 2>&1 | head -n 4")
+            output = Helpers.safe_exec("#{@exec} -c #{@path}/bot.ini -d max_execution_time=10 #{filepath} 2>&1 | head -n 4")
             if(output =~ /^sh: line [0-9]+:(.*)$/)
                 output = $1
             end
