@@ -7,7 +7,7 @@ class RubyCli < ModSpox::Plugin
 
     def initialize(pipeline)
         super(pipeline)
-        ruby = Group.find_or_create(:name => 'php')
+        ruby = Group.find_or_create(:name => 'ruby')
         admin = Group.filter(:name => 'admin').first
         add_sig(:sig => 'ruby (on|off)', :method => :set_channel, :group => admin, :desc => 'Add or remove channel from allowing ruby command', :params => [:action])
         add_sig(:sig => 'ruby (?!on|off)(.+)', :method => :execute_ruby, :group => ruby, :desc => 'Execute ruby code', :params => [:code])
