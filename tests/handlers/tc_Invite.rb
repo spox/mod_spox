@@ -32,7 +32,7 @@ class TestInviteHandler < Test::Unit::TestCase
     end
     
     def test_unexpected
-        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:bad])].process(@test[:bad]))
+        assert_raise(ModSpox::Exceptions::GeneralException){@bot.factory.handlers[@bot.factory.find_key(@test[:bad])].process(@test[:bad])}
     end
     
     private

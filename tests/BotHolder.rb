@@ -14,7 +14,7 @@ class BotHolder
     attr_reader :bot
     def initialize
         ModSpox::Database.db = nil
-        ModSpox.initialize_bot(Sequel.sqlite) # in memory db
+        ModSpox.initialize_bot(Sequel.sqlite('test.db'))
         require 'mod_spox/Bot'
         @bot = ModSpox::Bot.new
         m = ModSpox::Models::Nick.find_or_create(:nick => 'mod_spox')

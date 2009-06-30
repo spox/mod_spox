@@ -1,4 +1,6 @@
 require 'test/unit'
-Dir.new("#{File.dirname(__FILE__)}/handlers").each{|f|
-    require "#{File.dirname(__FILE__)}/handlers/#{f}" if f[-2..f.size] == 'rb'
+['handlers', 'models'].each{|d|
+    Dir.new("#{File.dirname(__FILE__)}/#{d}").each{|f|
+        require "#{File.dirname(__FILE__)}/#{d}/#{f}" if f[-2..f.size] == 'rb'
+    }
 }

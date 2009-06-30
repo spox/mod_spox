@@ -19,15 +19,20 @@ class TestAuthModel < Test::Unit::TestCase
     def test_password
         password = 'password'
         c_pass = Digest::SHA1.hexdigest(password)
-        @nick.auth.password = password
-        assert_equal(c_pass, @nick.auth.password)
-        @nick.check_password(password)
+        auth = @nick.auth
+        auth.password = password
+        auth.save
+        auth.refresh
+        assert_equal(c_pass, auth.password)
+        @nick.auth.check_password(password)
         assert(@nick.auth.authed)
     end
     
     def test_services
-        @nick.auth.services = true
-        @nick.auth.services_identified = true
+        auth = @nick.auth
+        auth.services = true
+        auth.services_identified = true
+        auth.save
         assert(@nick.auth.authed)
     end
 

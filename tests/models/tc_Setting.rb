@@ -10,12 +10,12 @@ class TestSettingModel < Test::Unit::TestCase
     
     def test_setting
         ModSpox::Models::Setting.set('Foobar', [1,2])
-        s = ModSpox::Models::Setting.filter('Foobar').first
+        s = ModSpox::Models::Setting.filter(:name => 'foobar').first
         assert(s)
         assert_equal('foobar', s.name)
         assert_kind_of(Array, s.value)
         assert_equal(2, s.value.size)
-        assert_equal(s, ModSpox::Models::Setting.val(:foobar))
+        assert_equal(s.value, ModSpox::Models::Setting.val(:foobar))
     end
 
 end

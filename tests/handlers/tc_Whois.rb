@@ -40,7 +40,7 @@ class TestWhoHandler < Test::Unit::TestCase
         assert_kind_of(ModSpox::Messages::Incoming::Whois, m)
         assert_equal('spox', m.nick.nick)
         assert_equal(6, m.channels.size)
-        assert(m.nick.auth.services)
+        assert(!m.nick.auth.services)
         @voice.each do |chan|
             assert(m.nick.is_voice?(ModSpox::Helpers.find_model(chan)))
         end
@@ -56,6 +56,6 @@ class TestWhoHandler < Test::Unit::TestCase
     end
 
     def test_unexpected
-        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:bad].dup)].process(@test[:bad].dup))
+        assert_raise(ModSpox::Exceptions::GeneralException){@bot.factory.handlers[@bot.factory.find_key(@test[:bad].dup)].process(@test[:bad].dup)}
     end
 end

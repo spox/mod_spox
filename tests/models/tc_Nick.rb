@@ -71,8 +71,10 @@ class TestNickModel < Test::Unit::TestCase
     end
 
     def test_in_group
-        @nick.auth.add_group(@group)
-        @nick.auth.authed = true
+        auth = @nick.auth
+        auth.add_group(@group)
+        auth.authed = true
+        auth.save
         assert(@nick.in_group?(@group))
     end
 
