@@ -3,6 +3,16 @@ module ModSpox
 
         class BotException < Exception
         end
+
+        class GeneralException < Exception
+            attr_reader :original
+            def initialize(o)
+                @original = o
+            end
+            def to_s
+                @original.to_s
+            end
+        end
         
         class NotImplemented < BotException
         end
