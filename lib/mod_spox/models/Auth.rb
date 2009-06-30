@@ -18,7 +18,7 @@ module ModSpox
                 remove_all_groups
             end
 
-            # Is nick identified with services
+            # Is nick authed using services
             def services
                 s = values[:services]
                 if(s == 0 || s == '0' || !s)
