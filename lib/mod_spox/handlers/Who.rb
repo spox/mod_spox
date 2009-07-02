@@ -1,11 +1,11 @@
-['mod_spox/handlers/Handler'].each{|f|require f}
-
+require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/Who'
 module ModSpox
     module Handlers
         class Who < Handler
             def initialize(handlers)
-                handlers[RPL_WHOREPLY] = self
-                handlers[RPL_ENDOFWHO] = self
+                handlers[RFC[:RPL_WHOREPLY][:value]] = self
+                handlers[RFC[:RPL_ENDOFWHO][:value]] = self
                 @cache = Hash.new
                 @raw_cache = Hash.new
             end
@@ -14,10 +14,10 @@ module ModSpox
                 string = string.dup
                 orig = string.dup
                 begin
-                    until(string.slice(0..RPL_WHOREPLY.size-1) == RPL_WHOREPLY || string.slice(0..RPL_ENDOFWHO.size-1) == RPL_ENDOFWHO)
+                    until(string.slice(0..RFC[:RPL_WHOREPLY][:value].size-1) == RFC[:RPL_WHOREPLY][:value] || string.slice(0..RFC[:RPL_ENDOFWHO][:value].size-1) == RFC[:RPL_ENDOFWHO][:value])
                         string.slice!(0..string.index(' '))
                     end
-                    if(string.slice(0..RPL_WHOREPLY.size-1) == RPL_WHOREPLY)
+                    if(string.slice(0..RFC[:RPL_WHOREPLY][:value].size-1) == RFC[:RPL_WHOREPLY][:value])
                         2.times{string.slice!(0..string.index(' '))}
                         location = string.slice!(0..string.index(' ')-1)
                         string.slice!(0)

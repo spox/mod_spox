@@ -1,10 +1,11 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/Names'
 module ModSpox
     module Handlers
         class Names < Handler
             def initialize(handlers)
-                handlers[RPL_NAMREPLY] = self
-                handlers[RPL_ENDOFNAMES] = self
+                handlers[RFC[:RPL_NAMREPLY][:value]] = self
+                handlers[RFC[:RPL_ENDOFNAMES][:value]] = self
                 @names = Hash.new
                 @raw = Hash.new
             end
@@ -15,7 +16,7 @@ module ModSpox
                 begin
                     string.slice!(0..string.index(' '))
                     type = string.slice!(0..string.index(' ')-1)
-                    if(type == RPL_NAMREPLY)
+                    if(type == RFC[:RPL_NAMREPLY][:value])
                         3.times{ string.slice!(0..string.index(' ')) }
                         chan = string.slice!(0..string.index(' ')-1)
                         string.slice!(0..string.index(':'))

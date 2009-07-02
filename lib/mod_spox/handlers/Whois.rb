@@ -1,15 +1,16 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/Whois'
 module ModSpox
     module Handlers
         class Whois < Handler
             def initialize(handlers)
-                handlers[RPL_WHOISUSER] = self
-                handlers[RPL_WHOISSERVER] = self
-                handlers[RPL_WHOISOPERATOR] = self
-                handlers[RPL_WHOISIDLE] = self
-                handlers[RPL_WHOISCHANNELS] = self
-                handlers[RPL_WHOISIDENTIFIED] = self
-                handlers[RPL_ENDOFWHOIS] = self
+                handlers[RFC[:RPL_WHOISUSER][:value]] = self
+                handlers[RFC[:RPL_WHOISSERVER][:value]] = self
+                handlers[RFC[:RPL_WHOISOPERATOR][:value]] = self
+                handlers[RFC[:RPL_WHOISIDLE][:value]] = self
+                handlers[RFC[:RPL_WHOISCHANNELS][:value]] = self
+                handlers[RFC[:RPL_WHOISIDENTIFIED][:value]] = self
+                handlers[RFC[:RPL_ENDOFWHOIS][:value]] = self
                 @cache = Hash.new
                 @raw = Hash.new
             end
@@ -18,17 +19,17 @@ module ModSpox
                 orig = string.dup
                 string = string.dup
                 begin
-                    until(string.slice(0..string.index(' ')-1) == RPL_WHOISUSER ||
-                            string.slice(0..string.index(' ')-1) == RPL_WHOISSERVER ||
-                            string.slice(0..string.index(' ')-1) == RPL_WHOISOPERATOR ||
-                            string.slice(0..string.index(' ')-1) == RPL_WHOISIDLE ||
-                            string.slice(0..string.index(' ')-1) == RPL_WHOISCHANNELS ||
-                            string.slice(0..string.index(' ')-1) == RPL_WHOISIDENTIFIED ||
-                            string.slice(0..string.index(' ')-1) == RPL_ENDOFWHOIS)
+                    until(string.slice(0..string.index(' ')-1) ==RFC[:RPL_WHOISUSER][:value] ||
+                            string.slice(0..string.index(' ')-1) ==RFC[:RPL_WHOISSERVER][:value] ||
+                            string.slice(0..string.index(' ')-1) ==RFC[:RPL_WHOISOPERATOR][:value] ||
+                            string.slice(0..string.index(' ')-1) ==RFC[:RPL_WHOISIDLE][:value] ||
+                            string.slice(0..string.index(' ')-1) ==RFC[:RPL_WHOISCHANNELS][:value] ||
+                            string.slice(0..string.index(' ')-1) ==RFC[:RPL_WHOISIDENTIFIED][:value] ||
+                            string.slice(0..string.index(' ')-1) ==RFC[:RPL_ENDOFWHOIS][:value])
                         string.slice!(0..string.index(' '))
                     end
                     case string.slice!(0..string.index(' ')-1)
-                        when RPL_WHOISUSER
+                        whenRFC[:RPL_WHOISUSER][:value]
                             string.slice!(0)
                             string.slice!(0..string.index(' '))
                             nick = find_model(string.slice!(0..string.index(' ')-1))
@@ -41,7 +42,7 @@ module ModSpox
                             nick.save_changes
                             @cache[nick.nick] = Messages::Incoming::Whois.new(nick)
                             @cache[nick.nick].raw_push(orig)
-                        when RPL_WHOISCHANNELS
+                        whenRFC[:RPL_WHOISCHANNELS][:value]
                             2.times{string.slice!(0..string.index(' '))}
                             nick = find_model(string.slice!(0..string.index(' ')-1))
                             @cache[nick.nick] = Messages::Incoming::Whois.new(nick) unless @cache[nick.nick]
@@ -62,7 +63,7 @@ module ModSpox
                                 end
                             end
                             @cache[nick.nick].raw_push(orig)
-                        when RPL_WHOISSERVER
+                        whenRFC[:RPL_WHOISSERVER][:value]
                             2.times{string.slice!(0..string.index(' '))}
                             nick = find_model(string.slice!(0..string.index(' ')-1))
                             string.slice!(0)
@@ -70,13 +71,13 @@ module ModSpox
                             nick.connected_to = string.slice!(0..string.index(' ')-1)
                             nick.save_changes
                             @cache[nick.nick].raw_push(orig)
-                        when RPL_WHOISIDENTIFIED
+                        whenRFC[:RPL_WHOISIDENTIFIED][:value]
                             2.times{string.slice!(0..string.index(' '))}
                             nick = find_model(string.slice!(0..string.index(' ')-1))
                             @cache[nick.nick] = Messages::Incoming::Whois.new(nick) unless @cache[nick.nick]
                             nick.auth.services_identified = true
                             @cache[nick.nick].raw_push(orig)
-                        when RPL_WHOISIDLE
+                        whenRFC[:RPL_WHOISIDLE][:value]
                             2.times{string.slice!(0..string.index(' '))}
                             nick = find_model(string.slice!(0..string.index(' ')-1))
                             string.slice!(0)
@@ -86,13 +87,13 @@ module ModSpox
                             nick.connected_at = Time.at(string.slice!(0..string.index(' ')-1).to_i)
                             nick.save_changes
                             @cache[nick.nick].raw_push(orig)
-                        when RPL_WHOISOPERATOR
+                        whenRFC[:RPL_WHOISOPERATOR][:value]
                             2.times{string.slice!(0..string.index(' '))}
                             nick = find_model(string.slice!(0..string.index(' ')-1))
                             string.slice!(0)
                             @cache[nick.nick] = Messages::Incoming::Whois.new(nick) unless @cache[nick.nick]
                             @cache[nick.nick].raw_push(orig)
-                        when RPL_ENDOFWHOIS
+                        whenRFC[:RPL_ENDOFWHOIS][:value]
                             2.times{string.slice!(0..string.index(' '))}
                             nick = find_model(string.slice!(0..string.index(' ')-1))
                             @cache[nick.nick] = Messages::Incoming::Whois.new(nick) unless @cache[nick.nick]

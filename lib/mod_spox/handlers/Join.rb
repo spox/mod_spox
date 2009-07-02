@@ -1,4 +1,5 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/Join'
 module ModSpox
     module Handlers
         class Join < Handler

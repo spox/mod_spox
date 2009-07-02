@@ -1,9 +1,10 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/LuserUnknown'
 module ModSpox
     module Handlers
         class LuserUnknown < Handler
             def initialize(handlers)
-                handlers[RPL_LUSERUNKNOWN] = self
+                handlers[RFC[:RPL_LUSERUNKNOWN][:value]] = self
             end
             def process(string)
                 if(string =~ /(\d+) :.*[Uu]nknown/)

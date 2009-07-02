@@ -1,171 +1,184 @@
 module ModSpox
-
-    #client server messages#
-    RPL_WELCOME='001'
-    RPL_YOURHOST='002'
-    RPL_CREATED='003'
-    RPL_MYINFO='004'
-    RPL_BOUNCE='005'
-    #response replies#
-    RPL_USERHOST='302'
-    RPL_ISON='303'
-    RPL_AWAY='301'
-    RPL_UNAWAY='305'
-    RPL_NOWAWAY='306'
-    RPL_WHOISIDENTIFIED='307'
-    RPL_WHOISUSER='311'
-    RPL_WHOISSERVER='312'
-    RPL_WHOISOPERATOR='313'
-    RPL_WHOISIDLE='317'
-    RPL_ENDOFWHOIS='318'
-    RPL_WHOISCHANNELS='319'
-    RPL_WHOWASUSER='314'
-    RPL_ENDOFWHOWAS='369'
-    RPL_LISTSTART='321'
-    RPL_LIST='322'
-    RPL_LISTEND='323'
-    RPL_UNIQOPIS='325'
-    RPL_CHANNELMODEIS='324'
-    RPL_NOTOPIC='331'
-    RPL_TOPIC='332'
-    RPL_TOPICINFO='333'
-    RPL_INVITING='341'
-    RPL_SUMMONING='342'
-    RPL_INVITELIST='346'
-    RPL_ENDOFINVITELIST='347'
-    RPL_EXCEPTLIST='348'
-    RPL_ENDOFEXCEPTLIST='349'
-    RPL_VERSION='351'
-    RPL_WHOREPLY='352'
-    RPL_ENDOFWHO='315'
-    RPL_NAMREPLY='353'
-    RPL_ENDOFNAMES='366'
-    RPL_LINKS='364'
-    RPL_ENDOFLINKS='365'
-    RPL_BANLIST='367'
-    RPL_ENDOFBANLIST='368'
-    RPL_INFO='371'
-    RPL_ENDOFINFO='374'
-    RPL_MOTDSTART='375'
-    RPL_MOTD='372'
-    RPL_ENDOFMOTD='376'
-    RPL_YOUREOPER='381'
-    RPL_REHASHING='382'
-    RPL_YOURESERVICE='383'
-    RPL_TIME='391'
-    RPL_USERSSTART='392'
-    RPL_USERS='393'
-    RPL_ENDOFUSERS='394'
-    RPL_NOUSERS='395'
-    RPL_TRACELINK='200'
-    RPL_TRACECONNECTING='201'
-    RPL_TRACEHANDSHAKE='202'
-    RPL_TRACEUNKNOWN='203'
-    RPL_TRACEOPERATOR='204'
-    RPL_TRACEUSER='205'
-    RPL_TRACESERVER='206'
-    RPL_TRACESERVICE='207'
-    RPL_TRACENEWTYPE='208'
-    RPL_TRACECLASS='209'
-    RPL_TRACERECONNECT='210'
-    RPL_TRACELOG='261'
-    RPL_TRACEEND='262'
-    RPL_STATSLINKINFO='211'
-    RPL_STATSCOMMANDS='212'
-    RPL_ENDOFSTATS='219'
-    RPL_STATSUPTIME='242'
-    RPL_STATSOLINE='243'
-    RPL_UMODEIS='221'
-    RPL_SERVLIST='234'
-    RPL_SERVLISTEND='235'
-    RPL_LUSERCLIENT='251'
-    RPL_LUSEROP='252'
-    RPL_LUSERUNKNOWN='253'
-    RPL_LUSERCHANNELS='254'
-    RPL_LUSERME='255'
-    RPL_ADMINME='256'
-    RPL_ADMINLOC1='257'
-    RPL_ADMINLOC2='258'
-    RPL_ADMINEMAIL='259'
-    RPL_TRYAGAIN='263'
-    #error messages#
-    ERR_NOSUCHNICK='401'
-    ERR_NOSUCHSERVER='402'
-    ERR_NOSUCHCHANNEL='403'
-    ERR_CANNOTSENDTOCHAN='404'
-    ERR_TOOMANYCHANNELS='405'
-    ERR_WASNOSUCHNICK='406'
-    ERR_TOOMANYTARGETS='407'
-    ERR_NOSUCHSERVICE='408'
-    ERR_NOORIGIN='409'
-    ERR_NORECIPIENT='411'
-    ERR_NOTEXTTOSEND='412'
-    ERR_NOTOPLEVEL='413'
-    ERR_WILDTOPLEVEL='413'
-    ERR_BADMASK='415'
-    ERR_UNKNOWNCOMMAND='421'
-    ERR_NOMOTD='422'
-    ERR_NOADMININFO='423'
-    ERR_FILEERROR='424'
-    ERR_NONICKNAMEGIVEN='431'
-    ERR_ERRONEOUSNICKNAME='432'
-    ERR_NICKNAMEINUSE='433'
-    ERR_NICKCOLLISION='436'
-    ERR_UNAVAILRESOURCE='437'
-    ERR_USERNOTINCHANNEL='441'
-    ERR_NOTONCHANNEL='442'
-    ERR_USERONCHANNEL='443'
-    ERR_NOLOGIN='444'
-    ERR_SUMMONDISABLED='445'
-    ERR_USERDISABLED='446'
-    ERR_NOTREGISTERED='451'
-    ERR_NEEDMOREPARAMS='461'
-    ERR_ALREADYREGISTERED='462'
-    ERR_NOPERMFORHOST='463'
-    ERR_PASSWDMISMATCH='464'
-    ERR_YOUREBANNEDCREEP='465'
-    ERR_YOUWILLBEBANNED='466'
-    ERR_KEYSET='467'
-    ERR_CHANNELISFULL='471'
-    ERR_UNKNOWNMODE='472'
-    ERR_INVITEONLYCHAN='473'
-    ERR_BANNEDFROMCHAN='474'
-    ERR_BADCHANNELKEY='475'
-    ERR_BADCHANMASK='476'
-    ERR_NOCHANMODES='477'
-    ERR_BANLISTFULL='478'
-    ERR_NOPRIVILEGES='481'
-    ERR_CHANOPRIVSNEEDED='482'
-    ERR_CANTKILLSERVER='483'
-    ERR_RESTRICTED='484'
-    ERR_UNIQOPPRIVSNEEDED='485'
-    ERR_NOOPERHOST='491'
-    ERR_UMODEUNKNOWNFLAG='501'
-    ERR_USERSDONTMATCH='502'
-    #extras#
-    RPL_SERVICEINFO='231'
-    RPL_ENDOFSERVICES='232'
-    RPL_SERVICE='233'
-    RPL_NONE='300'
-    RPL_WHOISCHANOP='316'
-    RPL_KILLDONE='361'
-    RPL_CLOSING='362'
-    RPL_CLOSEEND='363'
-    RPL_INFOSTART='373'
-    RPL_MYPORTIS='384'
-    RPL_STATSCLINE='213'
-    RPL_STATSNLINE='214'
-    RPL_STATSILINE='215'
-    RPL_STATSKLINE='216'
-    RPL_STATSQLINE='217'
-    RPL_STATSYLINE='218'
-    RPL_STATSVLINE='240'
-    RPL_STATSLLINE='241'
-    RPL_STATSHLINE='244'
-    RPL_STATSSLINE='244'
-    RPL_STATSPING='246'
-    RPL_STATSBLINE='247'
-    RPL_STATSDLINE='250'
-    ERR_NOSERVICEHOST='492'
-
+    
+    RFC = {
+        # basic
+        :INVITE => {:value => :INVITE, :handlers => ['Invite']},
+        :JOIN => {:value => :JOIN, :handlers => ['Join']},
+        :KICK => {:value => :KICK, :handlers => ['Kick']},
+        :MODE => {:value => :MODE, :handlers => ['Mode']},
+        :NICK => {:value => :NICK, :handlers => ['Nick']},
+        :NOTICE => {:value => :NOTICE, :handlers => ['Notice']},
+        :PART => {:value => :PART, :handlers => ['Part']},
+        :PING => {:value => :PING, :handlers => ['Ping']},
+        :PONG => {:value => :PONG, :handlers => ['Pong']},
+        :PRIVMSG => {:value => :PRIVMSG, :handlers => ['Privmsg']},
+        :QUIT => {:value => :QUIT, => ['Quit']},
+        #client server messages#
+        :RPL_WELCOME => {:value => '001', :handlers => ['Welcome']},
+        :RPL_YOURHOST => {:value => '002'},
+        :RPL_CREATED => {:value => '003', :handlers => ['Created']},
+        :RPL_MYINFO => {:value => '004', :handlers => ['MyInfo']},
+        :RPL_BOUNCE => {:value => '005', :handlers => ['Bounce']},
+        #response replies#
+        :RPL_USERHOST => {:value => '302'},
+        :RPL_ISON => {:value => '303'},
+        :RPL_AWAY => {:value => '301'},
+        :RPL_UNAWAY => {:value => '305'},
+        :RPL_NOWAWAY => {:value => '306'},
+        :RPL_WHOISIDENTIFIED => {:value => '307', :handlers => ['Whois']},
+        :RPL_WHOISUSER => {:value => '311', :handlers => ['Whois']},
+        :RPL_WHOISSERVER => {:value => '312', :handlers => ['Whois']},
+        :RPL_WHOISOPERATOR => {:value => '313', :handlers => ['Whois']},
+        :RPL_WHOISIDLE => {:value => '317', :handlers => ['Whois']},
+        :RPL_ENDOFWHOIS => {:value => '318', :handlers => ['Whois']},
+        :RPL_WHOISCHANNELS => {:value => '319', :handlers => ['Whois']},
+        :RPL_WHOWASUSER => {:value => '314'},
+        :RPL_ENDOFWHOWAS => {:value => '369'},
+        :RPL_LISTSTART => {:value => '321'},
+        :RPL_LIST => {:value => '322'},
+        :RPL_LISTEND => {:value => '323'},
+        :RPL_UNIQOPIS => {:value => '325'},
+        :RPL_CHANNELMODEIS => {:value => '324'},
+        :RPL_NOTOPIC => {:value => '331', :handlers => ['Topic']},
+        :RPL_TOPIC => {:value => '332', :handlers => ['Topic']},
+        :RPL_TOPICINFO => {:value => '333', :handlers => ['Topic']},
+        :RPL_INVITING => {:value => '341'},
+        :RPL_SUMMONING => {:value => '342'},
+        :RPL_INVITELIST => {:value => '346'},
+        :RPL_ENDOFINVITELIST => {:value => '347'},
+        :RPL_EXCEPTLIST => {:value => '348'},
+        :RPL_ENDOFEXCEPTLIST => {:value => '349'},
+        :RPL_VERSION => {:value => '351'},
+        :RPL_WHOREPLY => {:value => '352', :handlers => ['Who']},
+        :RPL_ENDOFWHO => {:value => '315', :handlers => ['Who']},
+        :RPL_NAMREPLY => {:value => '353', :handlers => ['Names']},
+        :RPL_ENDOFNAMES => {:value => '366', :handlers => ['Names']},
+        :RPL_LINKS => {:value => '364'},
+        :RPL_ENDOFLINKS => {:value => '365'},
+        :RPL_BANLIST => {:value => '367'},
+        :RPL_ENDOFBANLIST => {:value => '368'},
+        :RPL_INFO => {:value => '371'},
+        :RPL_ENDOFINFO => {:value => '374'},
+        :RPL_MOTDSTART => {:value => '375', :handlers => ['Motd']},
+        :RPL_MOTD => {:value => '372', :handlers => ['Motd']},
+        :RPL_ENDOFMOTD => {:value => '376', :handlers => ['Motd']},
+        :RPL_YOUREOPER => {:value => '381'},
+        :RPL_REHASHING => {:value => '382'},
+        :RPL_YOURESERVICE => {:value => '383'},
+        :RPL_TIME => {:value => '391'},
+        :RPL_USERSSTART => {:value => '392'},
+        :RPL_USERS => {:value => '393'},
+        :RPL_ENDOFUSERS => {:value => '394'},
+        :RPL_NOUSERS => {:value => '395'},
+        :RPL_TRACELINK => {:value => '200'},
+        :RPL_TRACECONNECTING => {:value => '201'},
+        :RPL_TRACEHANDSHAKE => {:value => '202'},
+        :RPL_TRACEUNKNOWN => {:value => '203'},
+        :RPL_TRACEOPERATOR => {:value => '204'},
+        :RPL_TRACEUSER => {:value => '205'},
+        :RPL_TRACESERVER => {:value => '206'},
+        :RPL_TRACESERVICE => {:value => '207'},
+        :RPL_TRACENEWTYPE => {:value => '208'},
+        :RPL_TRACECLASS => {:value => '209'},
+        :RPL_TRACERECONNECT => {:value => '210'},
+        :RPL_TRACELOG => {:value => '261'},
+        :RPL_TRACEEND => {:value => '262'},
+        :RPL_STATSLINKINFO => {:value => '211'},
+        :RPL_STATSCOMMANDS => {:value => '212'},
+        :RPL_ENDOFSTATS => {:value => '219'},
+        :RPL_STATSUPTIME => {:value => '242'},
+        :RPL_STATSOLINE => {:value => '243'},
+        :RPL_UMODEIS => {:value => '221'},
+        :RPL_SERVLIST => {:value => '234'},
+        :RPL_SERVLISTEND => {:value => '235'},
+        :RPL_LUSERCLIENT => {:value => '251', :handlers => ['LuserClient']},
+        :RPL_LUSEROP => {:value => '252', :handlers => ['LuserOp']},
+        :RPL_LUSERUNKNOWN => {:value => '253', :handlers => ['LuserUnknown']},
+        :RPL_LUSERCHANNELS => {:value => '254', :handlers => ['LuserChannels']},
+        :RPL_LUSERME => {:value => '255', :handlers => ['LuserMe']},
+        :RPL_ADMINME => {:value => '256'},
+        :RPL_ADMINLOC1 => {:value => '257'},
+        :RPL_ADMINLOC2 => {:value => '258'},
+        :RPL_ADMINEMAIL => {:value => '259'},
+        :RPL_TRYAGAIN => {:value => '263'},
+        #error messages#
+        :ERR_NOSUCHNICK => {:value => '401'},
+        :ERR_NOSUCHSERVER => {:value => '402'},
+        :ERR_NOSUCHCHANNEL => {:value => '403'},
+        :ERR_CANNOTSENDTOCHAN => {:value => '404'},
+        :ERR_TOOMANYCHANNELS => {:value => '405'},
+        :ERR_WASNOSUCHNICK => {:value => '406'},
+        :ERR_TOOMANYTARGETS => {:value => '407'},
+        :ERR_NOSUCHSERVICE => {:value => '408'},
+        :ERR_NOORIGIN => {:value => '409'},
+        :ERR_NORECIPIENT => {:value => '411'},
+        :ERR_NOTEXTTOSEND => {:value => '412'},
+        :ERR_NOTOPLEVEL => {:value => '413'},
+        :ERR_WILDTOPLEVEL => {:value => '413'},
+        :ERR_BADMASK => {:value => '415'},
+        :ERR_UNKNOWNCOMMAND => {:value => '421'},
+        :ERR_NOMOTD => {:value => '422'},
+        :ERR_NOADMININFO => {:value => '423'},
+        :ERR_FILEERROR => {:value => '424'},
+        :ERR_NONICKNAMEGIVEN => {:value => '431'},
+        :ERR_ERRONEOUSNICKNAME => {:value => '432', :handlers => ['BadNick']},
+        :ERR_NICKNAMEINUSE => {:value => '433', :handlers => ['NickInUse']},
+        :ERR_NICKCOLLISION => {:value => '436'},
+        :ERR_UNAVAILRESOURCE => {:value => '437'},
+        :ERR_USERNOTINCHANNEL => {:value => '441'},
+        :ERR_NOTONCHANNEL => {:value => '442'},
+        :ERR_USERONCHANNEL => {:value => '443'},
+        :ERR_NOLOGIN => {:value => '444'},
+        :ERR_SUMMONDISABLED => {:value => '445'},
+        :ERR_USERDISABLED => {:value => '446'},
+        :ERR_NOTREGISTERED => {:value => '451'},
+        :ERR_NEEDMOREPARAMS => {:value => '461'},
+        :ERR_ALREADYREGISTERED => {:value => '462'},
+        :ERR_NOPERMFORHOST => {:value => '463'},
+        :ERR_PASSWDMISMATCH => {:value => '464'},
+        :ERR_YOUREBANNEDCREEP => {:value => '465'},
+        :ERR_YOUWILLBEBANNED => {:value => '466'},
+        :ERR_KEYSET => {:value => '467'},
+        :ERR_CHANNELISFULL => {:value => '471'},
+        :ERR_UNKNOWNMODE => {:value => '472'},
+        :ERR_INVITEONLYCHAN => {:value => '473'},
+        :ERR_BANNEDFROMCHAN => {:value => '474'},
+        :ERR_BADCHANNELKEY => {:value => '475'},
+        :ERR_BADCHANMASK => {:value => '476'},
+        :ERR_NOCHANMODES => {:value => '477'},
+        :ERR_BANLISTFULL => {:value => '478'},
+        :ERR_NOPRIVILEGES => {:value => '481'},
+        :ERR_CHANOPRIVSNEEDED => {:value => '482'},
+        :ERR_CANTKILLSERVER => {:value => '483'},
+        :ERR_RESTRICTED => {:value => '484'},
+        :ERR_UNIQOPPRIVSNEEDED => {:value => '485'},
+        :ERR_NOOPERHOST => {:value => '491'},
+        :ERR_UMODEUNKNOWNFLAG => {:value => '501'},
+        :ERR_USERSDONTMATCH => {:value => '502'},
+        #extras#
+        :RPL_SERVICEINFO => {:value => '231'},
+        :RPL_ENDOFSERVICES => {:value => '232'},
+        :RPL_SERVICE => {:value => '233'},
+        :RPL_NONE => {:value => '300'},
+        :RPL_WHOISCHANOP => {:value => '316'},
+        :RPL_KILLDONE => {:value => '361'},
+        :RPL_CLOSING => {:value => '362'},
+        :RPL_CLOSEEND => {:value => '363'},
+        :RPL_INFOSTART => {:value => '373'},
+        :RPL_MYPORTIS => {:value => '384'},
+        :RPL_STATSCLINE => {:value => '213'},
+        :RPL_STATSNLINE => {:value => '214'},
+        :RPL_STATSILINE => {:value => '215'},
+        :RPL_STATSKLINE => {:value => '216'},
+        :RPL_STATSQLINE => {:value => '217'},
+        :RPL_STATSYLINE => {:value => '218'},
+        :RPL_STATSVLINE => {:value => '240'},
+        :RPL_STATSLLINE => {:value => '241'},
+        :RPL_STATSHLINE => {:value => '244'},
+        :RPL_STATSSLINE => {:value => '244'},
+        :RPL_STATSPING => {:value => '246'},
+        :RPL_STATSBLINE => {:value => '247'},
+        :RPL_STATSDLINE => {:value => '250'},
+        :ERR_NOSERVICEHOST => {:value => '492'}
+    }
 end

@@ -1,9 +1,10 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/LuserClient'
 module ModSpox
     module Handlers
         class LuserClient < Handler
             def initialize(handlers)
-                handlers[RPL_LUSERCLIENT] = self
+                handlers[RFC[:RPL_LUSERCLIENT][:value]] = self
             end
             def process(string)
                 users = string =~ /(\d+) users/ ? $1 : 0

@@ -1,9 +1,10 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/Welcome'
 module ModSpox
     module Handlers
         class Welcome < Handler
             def initialize(handlers)
-                handlers[RPL_WELCOME] = self
+                handlers[RFC[:RPL_WELCOME][:value]] = self
             end
             # >> :holmes.freenode.net 001 spax :Welcome to the freenode IRC Network spax 
             def process(string)

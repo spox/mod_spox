@@ -37,7 +37,3 @@ module ModSpox
         
     end
 end
-
-Dir.new(File.dirname(__FILE__)).each do |file|
-    require File.dirname(__FILE__) + '/' + file if file =~ /\.rb$/
-end

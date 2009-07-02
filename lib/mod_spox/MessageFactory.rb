@@ -16,7 +16,8 @@ module ModSpox
             @pool = pool
             @sync_pool = ActionPool::Pool.new(1, 1, nil, 2, Logger.raw)
             @handlers = Hash.new
-            build_handlers
+            @available = {}
+            RFC.each_pair{|k,v| @avaliable[v[:value]] = v[:handlers]}
             @sync = [RPL_MOTDSTART, RPL_MOTD, RPL_ENDOFMOTD, RPL_WHOREPLY, RPL_ENDOFWHO,
                      RPL_NAMREPLY, RPL_ENDOFNAMES, RPL_WHOISUSER, RPL_WHOISSERVER, RPL_WHOISOPERATOR,
                      RPL_WHOISIDLE, RPL_WHOISCHANNELS, RPL_WHOISIDENTIFIED, RPL_ENDOFWHOIS]
@@ -53,31 +54,11 @@ module ModSpox
 
         private
 
-        # Builds the message handlers. This will load all Messages and Handlers
-        # found in the lib directory and then initialize all the Handlers
-        def build_handlers
-            # load our handlers in first
-            # note: the handlers add themselves to the @handlers hash
-            # during initialization
-            Handlers.constants.each{|name|
-                klass = Handlers.const_get(name)
-                if(klass < Handlers::Handler)
-                    Logger.info("Building handler: #{name}")
-                    begin
-                        klass.new(@handlers)
-                    rescue Object => boom
-                        Logger.warn("ERROR: Failed to build handler: #{name} -> #{boom}")
-                    end
-                end
-            }
-            Logger.info("Handlers now available:")
-            @handlers.each_pair{|k,v| Logger.info("#{k} -> #{v}")}
-        end
-
         # message:: server message
         # Parses the server message and passes it to the proper handler
         def parse_message(message)
             Logger.info("Processing message: #{message}")
+            loaded = false
             begin
                 key = find_key(message)
                 if(@handlers.has_key?(key))
@@ -96,7 +77,19 @@ module ModSpox
                     end
                 else
                     Logger.error("No handler was found to process message of type: #{key} Message: #{message}")
+                    raise Exceptions::HanlderNotFound.new(key)
                 end
+            rescue Exceptions::HandlerNotFound => boom
+                unless(loaded)
+                    if(@available[boom.message_type] && @available[boom.message_type].has_key?(:handlers))
+                        @avalable[boom.message_type].each{|f| require "mod_spox/handlers/#{f}"}
+                        # TODO: need to initialize handler here
+                        Logger.info("Loaded handler for message type: #{boom.message_type}. Reprocessing message")
+                        loaded = true
+                        retry
+                    end
+                end
+                raise boom
             rescue Object => boom
                 if(boom.class.to_s == 'SQLite3::BusyException' || boom.class.to_s == 'PGError')
                     Database.reset_connections

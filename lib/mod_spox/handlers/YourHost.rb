@@ -1,9 +1,10 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/YourHost'
 module ModSpox
     module Handlers
         class YourHost < Handler
             def initialize(handlers)
-                handlers[RPL_YOURHOST] = self
+                handlers[RFC[:RPL_YOURHOST][:value]] = self
             end
             
             def process(string)

@@ -1,4 +1,5 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/Pong'
 module ModSpox
     module Handlers
         class Pong < Handler

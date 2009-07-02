@@ -1,11 +1,13 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/Topic'
+require 'mod_spox/messages/incoming/TopicInfo'
 module ModSpox
     module Handlers
         class Topic < Handler
             def initialize(handlers)
-                handlers[RPL_TOPIC] = self
-                handlers[RPL_NOTOPIC] = self
-                handlers[RPL_TOPICINFO] = self
+                handlers[RFC[:RPL_TOPIC][:value]] = self
+                handlers[RFC[:RPL_NOTOPIC][:value]] = self
+                handlers[RFC[:RPL_TOPICINFO][:value]] = self
                 @topics = Hash.new
             end
             
@@ -13,14 +15,14 @@ module ModSpox
 #:irc.host 333 spox #mod_spox spox 1232126516
             
             def process(string)
-                if(string =~ /#{RPL_TOPIC}.+?(\S+)\s:(.+)$/)
+                if(string =~ /#{RFC[:RPL_TOPIC][:value]}.+?(\S+)\s:(.+)$/)
                     channel = find_model($1)
                     channel.update(:topic => $2)
                     return Messages::Incoming::Topic.new(string, channel, $2)
-                elsif(string =~ /#{RPL_NOTOPIC}.+?(\S+)\s:/)
+                elsif(string =~ /#{RFC[:RPL_NOTOPIC][:value]}.+?(\S+)\s:/)
                     channel = find_model($1)
                     return Messages::Incoming::Topic.new(string, channel, nil)
-                elsif(string =~ /#{RPL_TOPICINFO}\s\S+\s(\S+)\s(\S+)\s(.+)$/)
+                elsif(string =~ /#{RFC[:RPL_TOPICINFO][:value]}\s\S+\s(\S+)\s(\S+)\s(.+)$/)
                     channel = find_model($1)
                     nick = find_model($1)
                     time = Time.at($3.to_i)

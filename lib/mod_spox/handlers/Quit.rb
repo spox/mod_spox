@@ -1,4 +1,5 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/Quit'
 module ModSpox
     module Handlers
         class Quit < Handler

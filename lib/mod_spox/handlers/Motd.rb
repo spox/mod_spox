@@ -1,26 +1,27 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/Motd'
 module ModSpox
     module Handlers
         class Motd < Handler
             def initialize(handlers)
-                handlers[RPL_MOTDSTART] = self
-                handlers[RPL_MOTD] = self
-                handlers[RPL_ENDOFMOTD] = self
+                handlers[RFC[:RPL_MOTDSTART][:value]] = self
+                handlers[RFC[:RPL_MOTD][:value]] = self
+                handlers[RFC[:RPL_ENDOFMOTD][:value]] = self
                 @motds = Hash.new
                 @raw = Hash.new
             end
             def process(string)
-                if(string =~ /^:(\S+) #{RPL_MOTDSTART.to_s}.*?:-\s?(\S+)/)
+                if(string =~ /^:(\S+) #{RFC[:RPL_MOTDSTART][:value]}.*?:-\s?(\S+)/)
                     @motds[$1] = Array.new
                     @raw[$1] = [string]
                     return nil
-                elsif(string =~ /^:(\S+) #{RPL_MOTD.to_s}.*?:-\s?(.+)$/)
+                elsif(string =~ /^:(\S+) #{RFC[:RPL_MOTD][:value]}.*?:-\s?(.+)$/)
                     @motds[$1] ||= []
                     @raw[$1] ||= []
                     @motds[$1] << $2
                     @raw[$1] << string
                     return nil
-                elsif(string =~ /^:(\S+) #{RPL_ENDOFMOTD.to_s}/)
+                elsif(string =~ /^:(\S+) #{RFC[:RPL_ENDOFMOTD][:value]}/)
                     @raw[$1] ||= []
                     @motds[$1] ||= []
                     @raw[$1] << string

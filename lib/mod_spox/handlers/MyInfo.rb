@@ -1,9 +1,10 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/MyInfo'
 module ModSpox
     module Handlers
         class MyInfo < Handler
             def initialize(handlers)
-                handlers[RPL_MYINFO] = self
+                handlers[RFC[:RPL_MYINFO][:value]] = self
             end
 
             def process(string)

@@ -1,9 +1,10 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/Bounce'
 module ModSpox
     module Handlers
         class Bounce < Handler
             def initialize(handlers)
-                handlers[RPL_BOUNCE] = self
+                handlers[RFC[:RPL_BOUNCE][:value]] = self
             end
             
             def process(string)

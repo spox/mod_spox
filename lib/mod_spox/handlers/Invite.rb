@@ -1,4 +1,5 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/Invite'
 module ModSpox
     module Handlers
         class Invite < Handler

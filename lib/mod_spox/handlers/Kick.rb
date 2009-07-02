@@ -1,4 +1,5 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/Kick'
 module ModSpox
     module Handlers
         class Kick < Handler

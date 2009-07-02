@@ -47,6 +47,13 @@ module ModSpox
         class Disconnected < BotException
         end
 
+        class HandlerNotFound < BotException
+            attr_reader :message_type
+            def initialize(type)
+                @message_type = type
+            end
+        end
+
         class NotInChannel < BotException
             attr_reader :channel
             def initialize(channel)

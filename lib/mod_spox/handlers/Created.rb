@@ -1,10 +1,11 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/Created'
 require 'time'
 module ModSpox
     module Handlers
         class Created < Handler
             def initialize(handlers)
-                handlers[RPL_CREATED] = self
+                handlers[RFC[:RPL_CREATED][:value]] = self
             end
             # :not.configured 003 spox :This server was created Tue Mar 24 2009 at 15:42:36 PDT'
             def process(string)

@@ -1,9 +1,10 @@
 require 'mod_spox/handlers/Handler'
+require 'mod_spox/messages/incoming/LuserChannels'
 module ModSpox
     module Handlers
         class LuserChannels < Handler
             def initialize(handlers)
-                handlers[RPL_LUSERCHANNELS] = self
+                handlers[RFC[:RPL_LUSERCHANNELS][:value]] = self
             end
             def process(string)
                 if(string =~ /(\d+)\s:channels/)
