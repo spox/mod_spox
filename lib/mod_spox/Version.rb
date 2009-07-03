@@ -1,6 +1,6 @@
 module ModSpox
-    @botversion='0.3.0'
-    @botcodename='potato flamer'
+    @botversion='0.3.1'
+    @botcodename='potato shotgun'
     @verbosity = 0
     @mod_spox_path = nil
     @daemon_bot = false

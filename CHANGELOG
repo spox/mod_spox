@@ -1,3 +1,17 @@
+0.3.1 Release (Alpha status)
+    Core:
+    * As needed class loading
+        * Core is no longer fully loaded at startup. Classes are loaded as needed
+          to reduce unused Classes (mainly message types) sitting uselessly in memory
+        * Plugins now need to require any message types it will be using directly or with helper:
+            * require 'mod_spox/messages/outgoing/Part'
+            * Helpers.load_message(:outgoing, :Part)
+    Plugins:
+    * New plugins:
+        * Locator: Perform IP locator lookup on given nick IP
+        * Fortune: Display fortunes (based on unix fortune files)
+    * Added custom executable support for PhpCli
+
 0.3.0 Release (Beta status)
     Core:
     * Optimization of message handlers (removed regular expression matching)
