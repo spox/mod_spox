@@ -12,7 +12,7 @@ module ModSpox
         :PING => {:value => :PING, :handlers => ['Ping']},
         :PONG => {:value => :PONG, :handlers => ['Pong']},
         :PRIVMSG => {:value => :PRIVMSG, :handlers => ['Privmsg']},
-        :QUIT => {:value => :QUIT, => ['Quit']},
+        :QUIT => {:value => :QUIT, :handlers => ['Quit']},
         #client server messages#
         :RPL_WELCOME => {:value => '001', :handlers => ['Welcome']},
         :RPL_YOURHOST => {:value => '002'},
