@@ -6,6 +6,6 @@ class Pinger < ModSpox::Plugin
     end
     
     def ping(message, params)
-        @pipeline << Messages::Outgoing::Privmsg.new(message.replyto, "#{message.source.nick}: pong")
+        reply message.replyto, "#{message.source.nick}: pong"
     end
 end

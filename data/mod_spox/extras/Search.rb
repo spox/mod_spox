@@ -31,7 +31,7 @@ class Search < ModSpox::Plugin
             output = output.empty? ? "No results for: \2#{params[:terms]}\2" :  ["Search results for \2#{params[:terms]}:\2"] + output
             reply message.replyto, output
         rescue Object => boom
-            @pipeline << Privmsg.new(message.replyto, "Failed to find any results for: #{params[:terms]} Reason: #{boom}")
+            reply message.replyto, "Failed to find any results for: #{params[:terms]} Reason: #{boom}"
             Logger.warn("Error: #{boom}\n#{boom.backtrace.join("\n")}")
         end
     end

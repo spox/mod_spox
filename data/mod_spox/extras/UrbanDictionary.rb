@@ -24,7 +24,7 @@ class UrbanDictionary < ModSpox::Plugin
                 #defs = udict.lookup(key, params[:term])
                 output = []
                 if defs.size < result + 1
-                    @pipeline << Privmsg.new(message.replyto, "Error: Definition number #{result+1} for term: #{params[:term]} not found.")
+                    reply message.replyto, "Error: Definition number #{result+1} for term: #{params[:term]} not found."
                 else
                     defin = defs[result].definition.length > 390 ? defs[result].definition.slice(0..390) + " *[CUT]*" : defs[result].definition
                     exp = defs[result].example.length > 390 ? defs[result].example.slice(0..390) + " *[CUT]*" : defs[result].example
@@ -34,21 +34,21 @@ class UrbanDictionary < ModSpox::Plugin
                     reply message.replyto, output
                 end
             rescue Timeout::Error
-                @pipeline << Privmsg.new(message.replyto, "Failed to establish connection to server.")
+                reply message.replyto, "Failed to establish connection to server."
             rescue Object => boom
-                @pipeline << Privmsg.new(message.replyto, "Unexpected error encountered: #{boom}")
+                reply message.replyto, "Unexpected error encountered: #{boom}"
             end
         else
-            @pipeline << Privmsg.new(message.replyto, "\2Error:\2 No valid key available for dictionary")
+            reply message.replyto, "\2Error:\2 No valid key available for dictionary"
         end
     end
 
     def key(message, params)
         if(message.is_public?)
-            @pipeline << Privmsg.new(message.replyto, 'I don\'t set keys in public')
+            reply message.replyto, 'I don\'t set keys in public'
         else
             Config.set(:urban_key, params[:key])
-            @pipeline << Privmsg.new(message.replyto, 'Urban Dictionary API key has been set.')
+            reply message.replyto, 'Urban Dictionary API key has been set.'
         end
     end
 

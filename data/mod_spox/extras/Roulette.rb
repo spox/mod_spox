@@ -1,3 +1,5 @@
+require 'mod_spox/messages/internal/PluginRequest'
+
 class Roulette < ModSpox::Plugin
 
     include Models

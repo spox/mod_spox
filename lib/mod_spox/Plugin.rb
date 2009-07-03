@@ -1,6 +1,7 @@
 ['mod_spox/Pipeline',
  'mod_spox/Logger',
- 'mod_spox/Exceptions'].each{|f|require f}
+ 'mod_spox/Exceptions',
+ 'mod_spox/messages/outgoing/Privmsg'].each{|f|require f}
 module ModSpox
     class Plugin
         include Models

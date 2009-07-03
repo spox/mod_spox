@@ -1,3 +1,8 @@
+['mod_spox/messages/outgoing/Privmsg',
+ 'mod_spox/messages/internal/PluginLoadRequest',
+ 'mod_spox/messages/internal/PluginUnloadRequest',
+ 'mod_spox/messages/internal/PluginReload',
+ 'mod_spox/messages/internal/PluginModuleRequest'].each{|f|require f}
 class PluginLoader < ModSpox::Plugin
 
     def initialize(pipeline)

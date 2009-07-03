@@ -1,3 +1,5 @@
+require 'mod_spox/messages/internal/HaltBot'
+
 class Quitter < ModSpox::Plugin
 
     def initialize(pipeline)

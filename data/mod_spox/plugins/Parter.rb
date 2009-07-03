@@ -1,3 +1,4 @@
+require 'mod_spox/messages/outgoing/Part'
 class Parter < ModSpox::Plugin
 
     def initialize(pipeline)

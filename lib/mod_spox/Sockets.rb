@@ -3,7 +3,9 @@
  'mod_spox/Bot',
  'mod_spox/Pipeline',
  'mod_spox/MessageFactory',
- 'mod_spox/Socket'
+ 'mod_spox/Socket',
+ 'mod_spox/messages/internal/DCCSocket',
+ 'mod_spox/messages/outgoing/Privmsg'
 ].each{|f| require f}
 
 require 'spockets'

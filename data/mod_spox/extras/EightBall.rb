@@ -1,3 +1,4 @@
+require 'mod_spox/messages/outgoing/Privmsg'
 class EightBall < ModSpox::Plugin
 
     include Models

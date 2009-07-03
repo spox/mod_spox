@@ -1,3 +1,8 @@
+['mod_spox/messages/outgoing/ChannelMode',
+ 'mod_spox/messages/outgoing/Kick',
+ 'mod_spox/messages/internal/TimerAdd',
+ 'mod_spox/messages/outgoing/Invite'].each{|f| require f}
+ 
 class Banner < ModSpox::Plugin
 
     include Models

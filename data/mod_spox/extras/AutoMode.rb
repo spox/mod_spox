@@ -1,3 +1,4 @@
+require 'mod_spox/messages/outgoing/ChannelMode'
 class AutoMode < ModSpox::Plugin
     
     include Models

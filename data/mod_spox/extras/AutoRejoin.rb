@@ -1,3 +1,5 @@
+require 'mod_spox/messages/outgoing/Join'
+
 class AutoRejoin < ModSpox::Plugin
 
     def initialize(pipeline)

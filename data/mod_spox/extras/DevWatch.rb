@@ -1,5 +1,7 @@
 require 'rexml/document'
 require 'open-uri'
+require 'mod_spox/messages/internal/TimerAdd'
+require 'mod_spox/messages/internal/TimerRemove'
 
 class DevWatch < ModSpox::Plugin
 

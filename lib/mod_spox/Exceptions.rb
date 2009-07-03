@@ -74,5 +74,11 @@ module ModSpox
             end
         end
 
+        class PluginMissing < BotException
+        end
+
+        class PluginFileNotFound < BotException
+        end
+
     end
 end

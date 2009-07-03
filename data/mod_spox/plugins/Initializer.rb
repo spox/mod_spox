@@ -1,3 +1,7 @@
+['mod_spox/messages/internal/EstablishConnection',
+ 'mod_spox/messages/internal/Reconnect',
+ 'mod_spox/messages/outgoing/Nick',
+ 'mod_spox/messages/outgoing/User'].each{|f| require f}
 class Initializer < ModSpox::Plugin
 
     def initialize(pipeline)

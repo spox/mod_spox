@@ -1,5 +1,6 @@
 ['mod_spox/Logger',
- 'mod_spox/Pipeline'].each{|f|require f}
+ 'mod_spox/Pipeline',
+ 'mod_spox/messages/internal/TimerResponse'].each{|f|require f}
 
 module ModSpox
 

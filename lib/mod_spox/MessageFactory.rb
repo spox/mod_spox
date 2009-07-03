@@ -18,9 +18,9 @@ module ModSpox
             @handlers = Hash.new
             @available = {}
             RFC.each_pair{|k,v| @avaliable[v[:value]] = v[:handlers]}
-            @sync = [RPL_MOTDSTART, RPL_MOTD, RPL_ENDOFMOTD, RPL_WHOREPLY, RPL_ENDOFWHO,
-                     RPL_NAMREPLY, RPL_ENDOFNAMES, RPL_WHOISUSER, RPL_WHOISSERVER, RPL_WHOISOPERATOR,
-                     RPL_WHOISIDLE, RPL_WHOISCHANNELS, RPL_WHOISIDENTIFIED, RPL_ENDOFWHOIS]
+            @sync = [:RPL_MOTDSTART, :RPL_MOTD, :RPL_ENDOFMOTD, :RPL_WHOREPLY, :RPL_ENDOFWHO,
+                     :RPL_NAMREPLY, :RPL_ENDOFNAMES, :RPL_WHOISUSER, :RPL_WHOISSERVER, :RPL_WHOISOPERATOR,
+                     :RPL_WHOISIDLE, :RPL_WHOISCHANNELS, :RPL_WHOISIDENTIFIED, :RPL_ENDOFWHOIS].map{|s| RFC[s][:value]}
         end
 
         # string:: server message to be parsed
@@ -82,8 +82,15 @@ module ModSpox
             rescue Exceptions::HandlerNotFound => boom
                 unless(loaded)
                     if(@available[boom.message_type] && @available[boom.message_type].has_key?(:handlers))
-                        @avalable[boom.message_type].each{|f| require "mod_spox/handlers/#{f}"}
-                        # TODO: need to initialize handler here
+                        @avalable[boom.message_type].each do|f|
+                            require "mod_spox/handlers/#{f}"
+                            klass = ModSpox::Handlers.const_get(f)
+                            if(klass.nil?)
+                                Logger.error("File name does not seem to match class name. Now what? #{boom}")
+                            else
+                                klass.new(self)
+                            end
+                        end
                         Logger.info("Loaded handler for message type: #{boom.message_type}. Reprocessing message")
                         loaded = true
                         retry

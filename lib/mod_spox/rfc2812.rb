@@ -181,4 +181,5 @@ module ModSpox
         :RPL_STATSDLINE => {:value => '250'},
         :ERR_NOSERVICEHOST => {:value => '492'}
     }
+    # i feel kinda dirty after that, but hey, lets keep things interesting!
 end

@@ -1,3 +1,5 @@
+require 'mod_spox/messages/internal/StatusRequest'
+
 class Status < ModSpox::Plugin
 
     def initialize(pipeline)

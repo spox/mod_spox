@@ -1,4 +1,6 @@
-['ipaddr', 'socket', 'timeout'].each{|f| require f}
+['ipaddr', 'socket', 'timeout',
+ 'mod_spox/messages/outgoing/Privmsg',
+ 'mod_spox/messages/internal/DCCListener'].each{|f| require f}
 
 class DCC < ModSpox::Plugin
 

@@ -4,10 +4,23 @@
  'mod_spox/models/Models',
  'mod_spox/messages/Messages',
  'mod_spox/Plugin',
- 'mod_spox/PluginHolder'].each{|f|require f}
+ 'mod_spox/PluginHolder',
+ 'mod_spox/Exceptions',
+ 'mod_spox/messages/internal/QueueSocket',
+ 'mod_spox/messages/internal/UnqueueSocket',
+ 'mod_spox/messages/internal/PluginLoadResponse',
+ 'mod_spox/messages/internal/SignaturesUpdate',
+ 'mod_spox/messages/internal/PluginUnloadResponse',
+ 'mod_spox/messages/internal/PluginModuleResponse',
+ 'mod_spox/messages/internal/PluginResponse',
+ 'mod_spox/messages/internal/TimerClear',
+ 'mod_spox/messages/internal/PluginsReady'].each{|f|require f}
+ 
 module ModSpox
 
     class PluginManager
+
+        include Exceptions
 
         # Hash of plugins. Defined by class name symbol (i.e. Trivia class: plugins[:Trivia])
         attr_reader :plugins
@@ -237,12 +250,6 @@ module ModSpox
             rescue Object => boom
                 return nil
             end
-        end
-
-        class PluginMissing < Exceptions::BotException
-        end
-
-        class PluginFileNotFound < Exceptions::BotException
         end
 
     end

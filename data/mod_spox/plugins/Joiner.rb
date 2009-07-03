@@ -1,3 +1,6 @@
+require 'mod_spox/messages/outgoing/Join'
+require 'mod_spox/messages/outgoing/Who'
+
 class Joiner < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)

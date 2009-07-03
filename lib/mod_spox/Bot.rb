@@ -4,12 +4,16 @@
  'mod_spox/PluginManager',
  'mod_spox/MessageFactory',
  'mod_spox/BaseConfig',
- 'mod_spox/messages/Messages',
  'mod_spox/models/Models',
  'mod_spox/Helpers',
- 'mod_spox/Timer'].each{|f|require f}
-require 'actionpool'
-require 'actiontimer'
+ 'mod_spox/Timer',
+ 'mod_spox/messages/internal/BotInitialized',
+ 'mod_spox/messages/internal/Shutdown',
+ 'mod_spox/messages/internal/ConnectionFailed',
+ 'mod_spox/messages/internal/StatusResponse',
+ 'mod_spox/messages/internal/NickResponse',
+ 'actionpool',
+ 'actiontimer'].each{|f|require f}
 
 module ModSpox
 

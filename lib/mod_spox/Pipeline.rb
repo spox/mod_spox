@@ -1,6 +1,8 @@
 ['mod_spox/models/Models.rb',
  'mod_spox/Logger',
- 'mod_spox/Exceptions'].each{|f|require f}
+ 'mod_spox/Exceptions',
+ 'mod_spox/messages/incoming/Privmsg',
+ 'mod_spox/messages/incoming/Notice'].each{|f|require f}
 module ModSpox
 
     class Pipeline

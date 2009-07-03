@@ -1,3 +1,4 @@
+require 'mod_spox/messages/outgoing/Privmsg'
 class Talk < ModSpox::Plugin
 
     include Models

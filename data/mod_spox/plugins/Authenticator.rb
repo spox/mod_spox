@@ -1,3 +1,6 @@
+require 'mod_spox/messages/outgoing/Raw'
+require 'mod_spox/messages/internal/TimerAdd'
+
 class Authenticator < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)

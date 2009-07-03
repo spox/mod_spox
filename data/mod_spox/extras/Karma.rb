@@ -1,3 +1,6 @@
+require 'mod_spox/messages/internal/TimerAdd'
+require 'mod_spox/messages/outgoing/Privmsg'
+
 class Karma < ModSpox::Plugin
 
     include Messages::Outgoing

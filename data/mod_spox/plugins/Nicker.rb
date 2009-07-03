@@ -1,3 +1,4 @@
+require 'mod_spox/messages/outgoing/Nick'
 class Nicker < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)

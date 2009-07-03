@@ -1,7 +1,8 @@
 require 'net/http'
 require 'digest/md5'
 require 'cgi'
-
+require 'mod_spox/messages/internal/TimerAdd'
+require 'mod_spox/messages/internal/TimerRemove'
 
 # IMPORTANT NOTE: This plugin requires installation of the HTMLEntities gem 
 class Confess < ModSpox::Plugin

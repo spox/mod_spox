@@ -111,5 +111,12 @@ module ModSpox
                 return string
             end
         end
+
+        # kind:: (:internal|:incoming|:outgoing)
+        # type:: message type (Example: :Privmsg)
+        # Easy loader for messages
+        def load_message(kind, type)
+            require "mod_spox/messages/#{kind}/#{type}"
+        end
     end
 end

@@ -1,3 +1,6 @@
+require 'mod_spox/messages/internal/TriggersUpdate'
+require 'mod_spox/messages/outgoing/Privmsg'
+
 class Triggers < ModSpox::Plugin
 
 include Messages::Outgoing

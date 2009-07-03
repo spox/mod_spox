@@ -1,11 +1,12 @@
 ['iconv',
  'mod_spox/Logger',
  'mod_spox/Exceptions',
- 'mod_spox/messages/Messages',
+ 'mod_spox/messages/internal/Connected',
+ 'mod_spox/messages/internal/Disconnected',
  'mod_spox/models/Models',
  'mod_spox/Pipeline',
  'mod_spox/PriorityQueue'].each{|f|require f}
-
+ 
 module ModSpox
 
     class Socket
@@ -45,7 +46,6 @@ module ModSpox
             @pause = false
             @sendq = PriorityQueue.new
             @lock = Mutex.new
-            @ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
             @connected_at = nil
             @empty_lines = 0
             @max_empty = 5

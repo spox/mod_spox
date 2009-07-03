@@ -1,3 +1,8 @@
+require 'mod_spox/messages/outgoing/Pong'
+require 'mod_spox/messages/outgoing/Ping'
+require 'mod_spox/messages/internal/Reconnect'
+require 'mod_spox/messages/internal/TimerAdd'
+
 class Ponger < ModSpox::Plugin
 
     def initialize(pipeline)

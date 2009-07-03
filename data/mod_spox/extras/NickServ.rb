@@ -1,3 +1,4 @@
+require 'mod_spox/messages/outgoing/Privmsg'
 class NickServ < ModSpox::Plugin
 
     #TODO: Add support for things like RECOVERY and GHOST

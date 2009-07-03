@@ -1,6 +1,7 @@
 require 'open-uri'
 require 'uri'
-
+require 'mod_spox/messages/internal/TimerAdd'
+require 'mod_spox/messages/internal/TimerRemove'
 class Twitter < ModSpox::Plugin
 
     def initialize(pipeline)
