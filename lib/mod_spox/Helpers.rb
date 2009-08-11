@@ -59,8 +59,9 @@ module ModSpox
             begin
                 Timeout::timeout(timeout) do
                     pro = IO.popen(command)
-                    until((output << pro.getc).nil?) do
-                        raise IOError.new unless output.count <= maxbytes
+                    until(pro.closed? || pro.eof?)
+                        output << pro.getc
+                        raise IOError.new("Maximum allowed output bytes exceeded. (#{maxbytes} bytes)") unless output.count <= maxbytes
                     end
                     return output.join('')
                 end
