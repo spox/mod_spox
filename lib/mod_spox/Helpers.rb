@@ -52,11 +52,17 @@ module ModSpox
 
         # command:: command to execute
         # timeout:: maximum number of seconds to run
+        # maxbytes:: maximum number of result bytes to accept
         # Execute a system command (use with care)
-        def Helpers.safe_exec(command, timeout=10)
+        def Helpers.safe_exec(command, timeout=10, maxbytes=500)
+            output = []
             begin
                 Timeout::timeout(timeout) do
-                    result = `#{command}`
+                    pro = IO.popen(command)
+                    until((output << pro.getc).nil?) do
+                        raise IOError.new unless output.count <= maxbytes
+                    end
+                    return output.join('')
                 end
             rescue Timeout::Error => boom
                 Logger.warn("Command execution exceeded allowed time (command: #{command} | timeout: #{timeout})")
