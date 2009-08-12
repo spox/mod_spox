@@ -60,7 +60,7 @@ opts.each do |opt, arg|
             puts '--help -h:                          print this help message'
             exit
         when '--version'
-            puts "mod_spox IRC bot version: #{$BOTVERSION}"
+            puts "mod_spox IRC bot version: #{ModSpox.botversion}"
             puts 'http://rubyforge.org/projects/modspox'
             exit
         when '--jdbc'
