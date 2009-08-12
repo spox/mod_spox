@@ -24,12 +24,12 @@ Included with mod_spox are a variety of plugins to help make the bot a bit more 
 * Status - Show bot status and version information
 * Triggers - Show, add, remove triggers
 
-Wow. So many amazing plugins that some how seem to make the bot even more boring than it was when it was completely useless. Fear not, for there are a variety of optional plugins designed to strip the boring and replace it with disco balls and techno.
+Wow. So many amazing plugins that some how seem to make the bot even more boring than it was when it was completely useless. Fear not, for there are a variety of optional plugins designed to strip the boring and replace it with rainbows and unicorns.
 
 * AOLSpeak - Speak in AOL. Kick in AOL.
 * AutoKick - Kick/Ban based on message pattern matching
 * AutoMode - Automatically set nicks +o or +v
-* AutoRejoin - Rejoin on a channel on KICK or on connection automatically
+* AutoRejoin - Rejoin channel on KICK or connection automatically
 * Bash - Grab a bash.org quote
 * Bullshit - Spout bullshit
 * Bytes - Convert bytes to human readable
