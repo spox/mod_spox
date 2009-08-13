@@ -12,6 +12,7 @@ class Bouncer < ModSpox::Plugin
         add_sig(:sig => 'bouncer status', :method => :status, :group => bounce, :desc => 'Show current bouncer status')
         add_sig(:sig => 'bouncer disconnect', :method => :do_disconnect, :group => bounce, :desc => 'Disconnect all connected clients')
         add_sig(:sig => 'bouncer clients', :method => :clients, :group => bounce, :desc => 'List clients connected to bouncer')
+        add_sig(:sig => 'bouncer generate cert', :method => :certgen, :group => bounce, :desc => 'Generate new certification')
         @pipeline.hook(self, :get_msgs, :Incoming)
         @spockets = Spockets::Spockets.new
         @listener_thread = nil
@@ -95,13 +96,52 @@ class Bouncer < ModSpox::Plugin
     def status(m, params)
         information m.replyto, "Status: #{running? ? 'listening' : 'stopped'}"
     end
+    
+    def certgen(m, params)
+        begin
+            create_certs
+            information m.replyto, 'New certificate has been generated'
+        rescue Object
+            error m.replyto, "Failed to create new certificate: #{boom}"
+        end
+    end
 
     private
+    
+    def generate_ctx
+        c = Models::Setting.filter(:name => 'bouncer_ssl').first
+        sc = nil
+        if(c)
+            cert = c.value
+            sc = OpenSSL::SSL::SSLContext.new
+            sc.key = cert[:key]
+            sc.cert = cert[:cert]
+        else
+            create_certs
+            sc = generate_ctx
+        end
+        return sc
+    end
+
+    def create_certs
+        Logger.info('Generating key/cert pair for bouncer SSL')
+        key = OpenSSL::PKey::RSA.new(2048)
+        cert = OpenSSL::X509::Certificate.new
+        cert.not_before = Time.now
+        cert.not_after = Time.now + 9999999
+        cert.public_key = key.public_key
+        cert.sign(key, OpenSSL::Digest::SHA1.new)
+        
+        #TODO: Dump cert to be read and parsed. This will fail 
+        c = Models::Setting.find_or_create(:name => 'bouncer_ssl')
+        c.value = {:cert => cert, :key => key}
+        c.save
+    end
 
     def start_listener
         raise 'Port has not been set' if port.nil?
         begin
-            @socket = OpenSSL::SSL::SSLServer.new('0.0.0.0', port)
+            @socket = OpenSSL::SSL::SSLServer.new(TCPServer.new(port), generate_ctx)
             @listener = Thread.new do
                 until(@socket.closed?) do
                     begin
