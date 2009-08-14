@@ -15,7 +15,7 @@ module ModSpox
         :QUIT => {:value => :QUIT, :handlers => ['Quit']},
         #client server messages#
         :RPL_WELCOME => {:value => '001', :handlers => ['Welcome']},
-        :RPL_YOURHOST => {:value => '002'},
+        :RPL_YOURHOST => {:value => '002', :handlers => ['YourHost']},
         :RPL_CREATED => {:value => '003', :handlers => ['Created']},
         :RPL_MYINFO => {:value => '004', :handlers => ['MyInfo']},
         :RPL_BOUNCE => {:value => '005', :handlers => ['Bounce']},
