@@ -472,7 +472,7 @@ class Banner < ModSpox::Plugin
         many_to_one :nick, :class => ModSpox::Models::Nick
 
         def before_create
-            update(:stamp => Object::Time.now)
+            stamp = Object::Time.now
         end
     end
 
