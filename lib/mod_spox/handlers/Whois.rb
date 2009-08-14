@@ -29,7 +29,7 @@ module ModSpox
                         string.slice!(0..string.index(' '))
                     end
                     case string.slice!(0..string.index(' ')-1)
-                        whenRFC[:RPL_WHOISUSER][:value]
+                        when RFC[:RPL_WHOISUSER][:value]
                             string.slice!(0)
                             string.slice!(0..string.index(' '))
                             nick = find_model(string.slice!(0..string.index(' ')-1))
@@ -42,7 +42,7 @@ module ModSpox
                             nick.save_changes
                             @cache[nick.nick] = Messages::Incoming::Whois.new(nick)
                             @cache[nick.nick].raw_push(orig)
-                        whenRFC[:RPL_WHOISCHANNELS][:value]
+                        when RFC[:RPL_WHOISCHANNELS][:value]
                             2.times{string.slice!(0..string.index(' '))}
                             nick = find_model(string.slice!(0..string.index(' ')-1))
                             @cache[nick.nick] = Messages::Incoming::Whois.new(nick) unless @cache[nick.nick]
@@ -63,7 +63,7 @@ module ModSpox
                                 end
                             end
                             @cache[nick.nick].raw_push(orig)
-                        whenRFC[:RPL_WHOISSERVER][:value]
+                        when RFC[:RPL_WHOISSERVER][:value]
                             2.times{string.slice!(0..string.index(' '))}
                             nick = find_model(string.slice!(0..string.index(' ')-1))
                             string.slice!(0)
@@ -71,13 +71,13 @@ module ModSpox
                             nick.connected_to = string.slice!(0..string.index(' ')-1)
                             nick.save_changes
                             @cache[nick.nick].raw_push(orig)
-                        whenRFC[:RPL_WHOISIDENTIFIED][:value]
+                        when RFC[:RPL_WHOISIDENTIFIED][:value]
                             2.times{string.slice!(0..string.index(' '))}
                             nick = find_model(string.slice!(0..string.index(' ')-1))
                             @cache[nick.nick] = Messages::Incoming::Whois.new(nick) unless @cache[nick.nick]
                             nick.auth.services_identified = true
                             @cache[nick.nick].raw_push(orig)
-                        whenRFC[:RPL_WHOISIDLE][:value]
+                        when RFC[:RPL_WHOISIDLE][:value]
                             2.times{string.slice!(0..string.index(' '))}
                             nick = find_model(string.slice!(0..string.index(' ')-1))
                             string.slice!(0)
@@ -87,13 +87,13 @@ module ModSpox
                             nick.connected_at = Time.at(string.slice!(0..string.index(' ')-1).to_i)
                             nick.save_changes
                             @cache[nick.nick].raw_push(orig)
-                        whenRFC[:RPL_WHOISOPERATOR][:value]
+                        when RFC[:RPL_WHOISOPERATOR][:value]
                             2.times{string.slice!(0..string.index(' '))}
                             nick = find_model(string.slice!(0..string.index(' ')-1))
                             string.slice!(0)
                             @cache[nick.nick] = Messages::Incoming::Whois.new(nick) unless @cache[nick.nick]
                             @cache[nick.nick].raw_push(orig)
-                        whenRFC[:RPL_ENDOFWHOIS][:value]
+                        when RFC[:RPL_ENDOFWHOIS][:value]
                             2.times{string.slice!(0..string.index(' '))}
                             nick = find_model(string.slice!(0..string.index(' ')-1))
                             @cache[nick.nick] = Messages::Incoming::Whois.new(nick) unless @cache[nick.nick]
