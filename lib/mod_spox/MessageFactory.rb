@@ -21,6 +21,13 @@ module ModSpox
             @sync = [:RPL_MOTDSTART, :RPL_MOTD, :RPL_ENDOFMOTD, :RPL_WHOREPLY, :RPL_ENDOFWHO,
                      :RPL_NAMREPLY, :RPL_ENDOFNAMES, :RPL_WHOISUSER, :RPL_WHOISSERVER, :RPL_WHOISOPERATOR,
                      :RPL_WHOISIDLE, :RPL_WHOISCHANNELS, :RPL_WHOISIDENTIFIED, :RPL_ENDOFWHOIS].map{|s| RFC[s][:value]}
+            @pipeline.hook(self, :proc_internal, :Internal_Incoming)
+        end
+
+        # m:: ModSpox::Messages::Internal::Incoming
+        # Process internal raw message
+        def proc_internal(m)
+            self << m.message
         end
 
         # string:: server message to be parsed
@@ -76,10 +83,10 @@ module ModSpox
                         end
                     end
                 else
-                    Logger.error("No handler was found to process message of type: #{key} Message: #{message}")
+                    Logger.warn("No handler was found to process message of type: #{key} Message: #{message}")
                     raise Exceptions::HandlerNotFound.new(key)
                 end
-            rescue Exceptions::HandlerNotFound => boom
+            rescue ModSpox::Exceptions::HandlerNotFound => boom
                 unless(loaded)
                     if(@available[boom.message_type])
                         @available[boom.message_type].each do|f|
@@ -96,6 +103,7 @@ module ModSpox
                         retry
                     end
                 end
+                Logger.error("Failed to find a handler for: #{boom.message_type}")
                 raise boom
             rescue Object => boom
                 if(boom.class.to_s == 'SQLite3::BusyException' || boom.class.to_s == 'PGError')
