@@ -4,6 +4,7 @@ require 'openssl'
 
 class Bouncer < ModSpox::Plugin
 
+    # Setup our plugin
     def initialize(pipeline)
         super
         bounce = Group.find_or_create(:name => 'bouncer')
@@ -17,11 +18,21 @@ class Bouncer < ModSpox::Plugin
         @spockets = Spockets::Spockets.new
         @listener_thread = nil
         @listener_socket = nil
-        @clients = []
+        @clients = {}
         Helpers.load_message(:outgoing, :Raw)
+        Helpers.load_message(:internal, :Incoming)
         start_listener unless port.nil?
     end
 
+    # Clean up our socket stuffs
+    def destroy
+        stop_listener
+        disconnect
+    end
+
+    # m:: message
+    # params:: parameters
+    # Set/show current listening port
     def set_port(m, params)
         begin
             if(params[:port])
@@ -41,7 +52,8 @@ class Bouncer < ModSpox::Plugin
         end
     end
     
-    
+    # message:: ModSpox::Messages::Incoming types
+    # Get all incoming messages to pass on to clients
     def get_msgs(message)
         unless(@clients.empty?)
             Logger.info("Bouncer has #{@clients.size} clients to send a message to")
@@ -56,7 +68,10 @@ class Bouncer < ModSpox::Plugin
             end
         end
     end
-    
+
+    # m:: message
+    # params:: parameters
+    # Start/stop/restart bouncer
     def do_service(m, params)
         begin
             case params[:action]
@@ -84,6 +99,10 @@ class Bouncer < ModSpox::Plugin
         end
     end
 
+    # m:: message
+    # params:: parameters
+    # Disconnect all clients from bouncer
+    # TODO: add individual disconnects
     def do_disconnect(m, params)
         unless(@clients.empty?)
             disconnect
@@ -92,11 +111,17 @@ class Bouncer < ModSpox::Plugin
             warning m.replyto, 'No clients are connected to bouncer'
         end
     end
-    
+
+    # m:: message
+    # params:: parameters
+    # Display current bot status
     def status(m, params)
         information m.replyto, "Status: #{running? ? 'listening' : 'stopped'}"
     end
     
+    # m:: message
+    # params:: parameters
+    # Generate a new certificate
     def certgen(m, params)
         begin
             create_certs
@@ -107,15 +132,16 @@ class Bouncer < ModSpox::Plugin
     end
 
     private
-    
+
+    # Generates an OpenSSL::SSL::SSLContext
     def generate_ctx
         c = Models::Setting.filter(:name => 'bouncer_ssl').first
         sc = nil
         if(c)
             cert = c.value
             sc = OpenSSL::SSL::SSLContext.new
-            sc.key = cert[:key]
-            sc.cert = cert[:cert]
+            sc.key = OpenSSL::PKey::RSA.new(cert[:key])
+            sc.cert = OpenSSL::X509::Certificate.new(cert[:cert])
         else
             create_certs
             sc = generate_ctx
@@ -123,21 +149,21 @@ class Bouncer < ModSpox::Plugin
         return sc
     end
 
+    # Generates and stores new key and certificate
     def create_certs
         Logger.info('Generating key/cert pair for bouncer SSL')
         key = OpenSSL::PKey::RSA.new(2048)
         cert = OpenSSL::X509::Certificate.new
         cert.not_before = Time.now
-        cert.not_after = Time.now + 9999999
+        cert.not_after = Time.now + 99999999
         cert.public_key = key.public_key
         cert.sign(key, OpenSSL::Digest::SHA1.new)
-        
-        #TODO: Dump cert to be read and parsed. This will fail 
         c = Models::Setting.find_or_create(:name => 'bouncer_ssl')
-        c.value = {:cert => cert, :key => key}
+        c.value = {:cert => cert.to_s, :key => key.to_s}
         c.save
     end
 
+    # Starts the listener for new connections
     def start_listener
         raise 'Port has not been set' if port.nil?
         begin
@@ -159,7 +185,9 @@ class Bouncer < ModSpox::Plugin
             raise boom
         end
     end
-    
+
+    # socket:: SSLSocket
+    # Adds a new client to the bouncer
     def add_client(socket)
         @clients[socket] = {:nick => false, :user => false, :init => false}
         @spockets.add(socket) do |string|
@@ -167,21 +195,33 @@ class Bouncer < ModSpox::Plugin
         end
     end
 
+    # string:: outgoing string
+    # socket:: SSLSocket that sent the string
+    # Delivers messages from clients to the IRC
+    # server
     def deliver_message(string, socket)
         Logger.info("Processing bouncer message: #{string} for socket: #{socket}")
-        unless(@clients[socket][:init])
-            part = string.slice(0,5)
-            @clients[socket][:nick] = true if part == 'NICK '
-            @clients[socket][:user] = true if part == 'USER '
-            if(@client[socket][:nick] && @client[socket][:user])
-                initialize_connection(socket)
-                @clients[socket][:init] = true 
+        begin
+            unless(@clients[socket][:init])
+                part = string.slice(0,5)
+                Logger.info "Part we extracted: #{part}|"
+                @clients[socket][:nick] = true if part == 'NICK '
+                @clients[socket][:user] = true if part == 'USER '
+                if(@clients[socket][:nick] && @clients[socket][:user])
+                    initialize_connection(socket)
+                    @clients[socket][:init] = true
+                else
+                    Logger.warn("Got part: #{part}. Not init yet")
+                end
+            else
+                filter(string, socket)
             end
-        else
-            @pipeline << Messages::Outgoing::Raw.new(string)
+        rescue Object => boom
+            Logger.error("Bouncer received message but failed to pass it on. Error: #{boom} Message: #{string}")
         end
     end
-    
+
+    # Stops the listener
     def stop_listener
         @socket.close
         @listener.kill unless @listener.nil?
@@ -189,6 +229,8 @@ class Bouncer < ModSpox::Plugin
         @socket = nil
     end
 
+    # socket:: SSLSocket
+    # Disconnect given socket or all sockets
     def disconnect(socket=nil)
         sockets = socket.nil? ? @clients.keys : [socket]
         sockets.each do |sock|
@@ -197,19 +239,25 @@ class Bouncer < ModSpox::Plugin
             @clients.delete(sock)
         end
     end
-    
+
+    # Returns if the listener is running
     def running?
         return !@listener.nil?
     end
     
+    # connection:: SSLSocket
+    # Sends initialization information to client. Basically a
+    # 001 welcome message and JOINs for any channels the bot is in
     def initialize_connection(connection)
         # send channel info and such to client
         connection.puts(":localhost 001 #{me.nick} :Welcome to the network #{me.source}\n")
-        Models::Channel.filter(:parked => true).each do |channel|
+        me.channels.each do |channel|
             connection.puts(":#{me.source} JOIN :#{channel.name}\n")
         end
     end
 
+    # num:: integer
+    # Set/show port number for listener
     def port(num=nil)
         if(num.nil?)
             conf = Models::Config.filter(:name => 'bouncer_port').first
@@ -223,6 +271,30 @@ class Bouncer < ModSpox::Plugin
                 conf.value = num
                 conf.save
             end
+        end
+    end
+
+    # string:: Outgoing string
+    # socket:: SSLSocket
+    # Filter outgoing string to be delivered to IRC server. This
+    # is used to stop excessive WHO/PING type messages from flooding
+    # the server and getting the bot kicked.
+    def filter(string, socket)
+        @pipeline << Messages::Outgoing::Raw.new(string)
+        @pipeline << Messages::Internal::Incoming.new(":#{me.source} #{string}")
+    end
+
+    class Filter
+        def Filter.all(string, socket)
+        end
+
+        def Filter.who(string, socket)
+        end
+
+        def Filter.quit(string, socket)
+        end
+
+        def Filter.ping(string, socket)
         end
     end
     
