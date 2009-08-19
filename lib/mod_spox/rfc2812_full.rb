@@ -20,7 +20,7 @@ module ModSpox
         :RPL_MYINFO => {:value => '004', :handlers => ['MyInfo']},
         :RPL_BOUNCE => {:value => '005', :handlers => ['Bounce']},
         #response replies#
-        :RPL_USERHOST => {:value => '302'},
+        :RPL_USERHOST => {:value => '302', :handlers => ['UserHost']},
         :RPL_ISON => {:value => '303'},
         :RPL_AWAY => {:value => '301'},
         :RPL_UNAWAY => {:value => '305'},
