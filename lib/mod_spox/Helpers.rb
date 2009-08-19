@@ -136,8 +136,6 @@ module ModSpox
         #   Helpers.type_of?(a, Foo) -> true
         def Helpers.type_of?(a, b, symbolize=false)
             return true if a.is_a?(b) # if only it were always this easy
-            # strip the front stuffs
-            ['ModSpox::', 'ModSpox::Messages::']
             # first, we strip the front down
             t = a.class.to_s
             unless(t.index('ModSpox::Messages::').nil?)
