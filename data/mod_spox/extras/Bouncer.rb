@@ -21,6 +21,12 @@ class Bouncer < ModSpox::Plugin
         @clients = {}
         Helpers.load_message(:outgoing, :Raw)
         Helpers.load_message(:internal, :Incoming)
+        @filters = {}
+        methods.each do |f|
+            f = f.to_s
+            z = f.slice!(0..6)
+            @filters[f.to_sym] = (z+f).to_sym if z == 'filter_'
+        end
         start_listener unless port.nil?
     end
 
@@ -234,7 +240,11 @@ class Bouncer < ModSpox::Plugin
     def disconnect(socket=nil)
         sockets = socket.nil? ? @clients.keys : [socket]
         sockets.each do |sock|
-            @spockets.remove(sock)
+            begin
+                @spockets.remove(sock)
+            rescue Spockets::UnknownSocket => boom
+                Logger.warn('Socket was already removed automatically from spockets')
+            end
             sock.close
             @clients.delete(sock)
         end
@@ -252,7 +262,7 @@ class Bouncer < ModSpox::Plugin
         # send channel info and such to client
         connection.puts(":localhost 001 #{me.nick} :Welcome to the network #{me.source}\n")
         me.channels.each do |channel|
-            connection.puts(":#{me.source} JOIN :#{channel.name}\n")
+            connection.puts(":#{me.source} JOIN :#{channel.name}")
         end
     end
 
@@ -276,25 +286,46 @@ class Bouncer < ModSpox::Plugin
 
     # string:: Outgoing string
     # socket:: SSLSocket
+    # f:: filter to call. Defaults to running all filters
     # Filter outgoing string to be delivered to IRC server. This
     # is used to stop excessive WHO/PING type messages from flooding
     # the server and getting the bot kicked.
-    def filter(string, socket)
-        @pipeline << Messages::Outgoing::Raw.new(string)
-        @pipeline << Messages::Internal::Incoming.new(":#{me.source} #{string}")
+    def filter(string, socket, f=:all)
+        if(f == :all)
+            @filters.each{|f| send(@filters[f], string, socket)}
+        else
+            raise NoMethodError.new unless @filters[f]
+            send(@filters[f], string, socket)
+        end
+        unless(string.empty?)
+            @pipeline << Messages::Outgoing::Raw.new(string)
+            Logger.warn("Modifying message-> :#{me.source} #{string}")
+            @pipeline << Messages::Internal::Incoming.new(":#{me.source} #{string}") if string.slice(0, 7).downcase == 'privmsg'
+        end
     end
 
-    class Filter
-        def Filter.all(string, socket)
-        end
+    ## Filters are here ##
 
-        def Filter.who(string, socket)
+    def filter_who(string, socket)
+        if(string.slice(0..2).downcase == 'who')
+            nick = string.slice(4, string.size-3)
+            if(nick.downcase == m.nick.downcase)
+                #send who info
+                string.delete!(string)
+            end
         end
+    end
 
-        def Filter.quit(string, socket)
+    def filter_quit(string, socket)
+        if(string.slice(0..3).downcase == 'quit')
+            string.delete!(string)
         end
+    end
 
-        def Filter.ping(string, socket)
+    def filter_ping(string, socket)
+        if(string.slice(0..3).downcase == 'ping')
+            socket.puts(":mod_spox.bouncer PONG mod_spox.bouncer :#{string.slice(5, string.size - 4)}")
+            string.delete!(string)
         end
     end
     
