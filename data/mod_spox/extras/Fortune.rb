@@ -54,7 +54,11 @@ class Fortune < ModSpox::Plugin
                 f = @db[:fortunes].filter(:id => rand(@ids[:all])).first
             end
             if(f)
-                reply m.replyto, f[:fortune]
+                if(f[:fortune].size > 350)
+                    fortune(m, params)
+                else
+                    reply m.replyto, f[:fortune]
+                end
             else
                 error m.replyto, "Failed to locate fortune"
             end
