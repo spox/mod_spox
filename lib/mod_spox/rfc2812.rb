@@ -20,6 +20,7 @@ module ModSpox
         :RPL_MYINFO => {:value => '004', :handlers => ['MyInfo']},
         :RPL_BOUNCE => {:value => '005', :handlers => ['Bounce']},
         #response replies#
+        :RPL_USERHOST => {:value => '302', :handlers => ['UserHost']},
         :RPL_WHOISIDENTIFIED => {:value => '307', :handlers => ['Whois']},
         :RPL_WHOISUSER => {:value => '311', :handlers => ['Whois']},
         :RPL_WHOISSERVER => {:value => '312', :handlers => ['Whois']},
