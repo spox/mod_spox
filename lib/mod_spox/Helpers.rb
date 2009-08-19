@@ -123,7 +123,22 @@ module ModSpox
         # type:: message type (Example: :Privmsg)
         # Easy loader for messages
         def Helpers.load_message(kind, type)
+            raise ArgumentError.new('Valid kind types: :internal, :incoming, :outgoing') unless [:internal, :incoming, :outgoing].include?(kind)
             require "mod_spox/messages/#{kind}/#{type}"
+        end
+
+        # a:: object
+        # b:: type constant
+        # Determines if a is a type of b. For example:
+        # 
+        #   a = Foo::Bar.new
+        #   Helpers.type_of?(a, Foo) -> true
+        def Helpers.type_of?(a, b)
+            return true if a.is_a?(b) # if only it were always this easy
+            # first, we strip the front down
+            t = a.to_s
+            ['ModSpox::', 'Messages::'].each{|c|t.slice!(t.index(c), c.length) unless.t.index(c).nil?}
+            
         end
     end
 end
