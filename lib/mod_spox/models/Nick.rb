@@ -96,6 +96,17 @@ module ModSpox
                 super(val)
             end
 
+            # override the default here and build the source
+            # from parts if they exist but the source is empty
+            def source
+                unless(values[:source])
+                    if(values[:host] && values[:username])
+                        update :source => "#{values[:nick]}!#{values[:username]}@#{values[:host]}"
+                    end
+                end
+                super
+            end
+
             # Auth model associated with nick
             def auth
                 if(auths.empty?)
