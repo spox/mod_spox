@@ -2,7 +2,8 @@
  'mod_spox/Logger',
  'mod_spox/Exceptions',
  'mod_spox/messages/incoming/Privmsg',
- 'mod_spox/messages/incoming/Notice'].each{|f|require f}
+ 'mod_spox/messages/incoming/Notice',
+ 'mod_spox/FilterManager'].each{|f|require f}
 module ModSpox
 
     class Pipeline
@@ -53,7 +54,7 @@ module ModSpox
         # Hooks a plugin into the pipeline for a specific type of message
         def hook(object, method, type)
             Logger.info("Object #{object.class.to_s} hooking into messages of type: #{type}")
-            type = Helpers.find_const(type, true)
+            type = Helpers.find_const(type)
             method = method.to_sym unless method.is_a?(Symbol)
             name = object.class
             @hooks[type] ||= Hash.new
@@ -66,7 +67,7 @@ module ModSpox
         # This will remove the hook a plugin has for a specific message type
         def unhook(object, method, type)
             Logger.info("Object #{object.class.to_s} unhooking from messages of type: #{type}")
-            type = Helpers.find_const(type, true)
+            type = Helpers.find_const(type)
             name = object.class
             raise Exceptions::InvalidValue.new("Unknown hook type given: #{type.to_s}") unless @hooks.has_key?(type)
             raise Exceptions::InvalidValue.new("Unknown object hooked: #{name.to_s}") unless @hooks[type].has_key?(name)
