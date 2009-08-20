@@ -1,6 +1,6 @@
 module ModSpox
     module Migrations
-        class Ignore < Sequel::Migrations
+        class Ignore < Sequel::Migration
             def up
                 Database.db.create_table(:ignored_nicks) do
                     foreign_key :nick_id, :null => false, :table => :nicks, :unique => true
