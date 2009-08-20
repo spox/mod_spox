@@ -135,7 +135,8 @@ module ModSpox
         #   a = Foo::Bar.new
         #   Helpers.type_of?(a, Foo) -> true
         def Helpers.type_of?(a, b, symbolize=false)
-            return true if a.is_a?(b) # if only it were always this easy
+            return true if (b.is_a?(Class) || b.is_a?(Module)) && a.is_a?(b) # if only it were always this easy
+            checks = []
             # first, we strip the front down
             t = a.class.to_s
             unless(t.index('ModSpox::Messages::').nil?)
@@ -143,12 +144,12 @@ module ModSpox
                 checks << t
             end
             t = a.class.to_s
-            unless(t.slice(0) == '<')
+            if(t.slice(0) == '<')
                 t.slice!(0, t.rindex('>'))
                 checks << t
             end
             checks << a.class.to_s
-            checks.each |s|
+            checks.each do |s|
                 until(s.index('::').nil?) do
                     s.slice!(s.rindex('::'), s.length - s.rindex('::'))
                     return true if s =~ /#{b}.*/
