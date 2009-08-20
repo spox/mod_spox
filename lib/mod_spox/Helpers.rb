@@ -171,22 +171,16 @@ module ModSpox
         def Helpers.find_const(c)
             return c unless c.is_a?(String)
             const = nil
-            base = Kernel
-            second = false
-            begin
-                c.split('::').each do |part|
-                    const = const.nil? ? base.const_get(part) : const.const_get(part)
-                end
-            rescue NameError
-                unless(second)
-                    second = true
-                    base = ModSpox::Messages
+            [Kernel, ModSpox, Messages].each do |base|
+                begin
+                    c.split('::').each do |part|
+                        const = const.nil? ? base.const_get(part) : const.const_get(part)
+                    end
+                rescue NameError
                     const = nil
-                    retry
                 end
-                return c
             end
-            return const
+            return const.nil? ? c : const
         end
     end
 end
