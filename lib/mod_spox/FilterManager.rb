@@ -4,9 +4,9 @@ module ModSpox
         def initialize(pipeline)
             @pipeline = pipeline
             @filters = {}
-            @pipeline.hook(self, :add_filter, Internal::FilterAdd)
-            @pipeline.hook(self, :remove_filter, Internal::FilterRemove)
-            @pipeline.hook(self, :list_filter, Internal::FilterList)
+            @pipeline.hook(self, :add_filter, ModSpox::Messages::Internal::FilterAdd)
+            @pipeline.hook(self, :remove_filter, ModSpox::Messages::Internal::FilterRemove)
+            @pipeline.hook(self, :list_filter, ModSpox::Messages::Internal::FilterList)
         end
         
         # filter:: ModSpox::Filter object
