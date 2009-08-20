@@ -124,7 +124,7 @@ module ModSpox
             @filters.apply_filters(message)
             # can we modify the message to nil?
             @hooks.keys.each do |type|
-                next unless Helper.type_of?(message, type)
+                next unless Helpers.type_of?(message, type)
                 @hooks[type].each_value do |objects|
                     objects.each do |v|
                         @pool.process do
