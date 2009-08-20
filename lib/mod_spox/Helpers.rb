@@ -157,5 +157,21 @@ module ModSpox
             end
             return false
         end
+        
+        # c:: constant name (String)
+        # Finds a constant if it exists
+        # Example:: Foo::Bar
+        def Helpers.find_const(c)
+            return c unless c.is_a?(String)
+            const = nil
+            begin
+                c.split('::').each do |part|
+                    const = const.nil? ? Kernel.const_get(part) : const.const_get(part)
+                end
+            rescue NameError
+                return c
+            end
+            return const
+        end
     end
 end
