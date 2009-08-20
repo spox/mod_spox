@@ -155,6 +155,13 @@ module ModSpox
                     return true if s =~ /#{b}.*/
                 end
             end
+            if(symbolize && b.is_a?(Symbol))
+                sym = a.class.to_s
+                sym.gsub!('::', '_')
+                return true if sym == b || b =~ /#{sym}.*/
+                sym.slice!(0, 19) if t.index('ModSpox::Messages') == 0
+                return true if sym == b || b =~ /#{sym}.*/
+            end
             return false
         end
         
@@ -164,11 +171,19 @@ module ModSpox
         def Helpers.find_const(c)
             return c unless c.is_a?(String)
             const = nil
+            base = Kernel
+            second = false
             begin
                 c.split('::').each do |part|
-                    const = const.nil? ? Kernel.const_get(part) : const.const_get(part)
+                    const = const.nil? ? base.const_get(part) : const.const_get(part)
                 end
             rescue NameError
+                unless(second)
+                    second = true
+                    base = ModSpox::Messages
+                    const = nil
+                    retry
+                end
                 return c
             end
             return const
