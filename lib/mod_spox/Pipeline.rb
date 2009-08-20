@@ -132,7 +132,6 @@ module ModSpox
                             rescue Object => boom
                                 if(boom.class.to_s == 'SQLite3::BusyException')
                                     Database.reset_connections
-                                    retry
                                 end
                                 raise boom
                             end
@@ -148,47 +147,64 @@ module ModSpox
         # trigger signatures. If matches are found, they will be sent
         # to the proper plugin for processing
         def parse(message)
-            return unless message.kind_of?(Messages::Incoming::Privmsg) || message.kind_of?(Messages::Incoming::Notice)
+            return unless message.is_a?(Messages::Incoming::Privmsg) || message.is_a?(Messages::Incoming::Notice)
             trigger = nil
             @triggers.each{|t| trigger = t if message.message[0..t.size-1] == t}
-            if(!trigger.nil? || message.addressed?)
-                return if !trigger.nil? && message.message.length == trigger.length
-                Logger.info("Message has matched against a known trigger")
-                c = (message.addressed? && trigger.nil?) ? message.message[0].chr.downcase : message.message[trigger.length].chr.downcase
-                if(c =~ /^[a-z]$/)
-                    type = c.to_sym
-                elsif(c =~ /^[0-9]$/)
-                    type = :digit
-                else
-                    type = :other
+            unless(trigger.nil? && !message.addressed?)
+                return if trigger && message.message.length == trigger.length
+                Logger.info('Messages has matched a known trigger')
+                # okay, so now that we know we are being asked to do something, lets find
+                # a signature that might match. Signatures are sorted by first character
+                # so once we have that we can get rolling
+                c = (message.addressed? && trigger.nil?) ? message.message[0].chr : message.message[trigger.length].chr
+                case c
+                    when /[A-Za-z]/
+                        type = c.to_sym
+                    when /\d/
+                        type = :digit
+                    else
+                        type = :other
                 end
-                sig_check = @signatures.has_key?(type) ? @signatures[type] : []
-                sig_check = sig_check + @signatures[:other] if type != :other && @signatures.has_key?(:other)
+                sig_check = @signatures[type] ? @signatures[type] : []
+                sig_check += @signatures[:other] if @signatures[:other] && type != :other # others are always checked because they are fickle shells of what they once were
                 sig_check.each do |sig|
                     Logger.info("Matching against: #{trigger}#{sig.signature}")
                     esc_trig = trigger.nil? ? '' : Regexp.escape(trigger)
-                    res = message.message.scan(/^#{esc_trig}#{sig.signature}$/)
-                    if(res.size > 0)
-                        next unless message.source.in_group?(sig.group) || message.source.in_group?(@admin) || sig.group.nil?
-                        next if sig.requirement == 'private' && message.is_public?
-                        next if sig.requirement == 'public' && message.is_private?
+                    result = message.message.scan(/^#{esc_trig}#{sig.signature}$/)
+                    if(result.size > 0 && @plugins[sig.plugin.to_sym])
+                        next unless allowed?(message, sig)
                         params = Hash.new
+                        # symbolize up the parameters for symbolic symbolism
                         sig.params.size.times do |i|
                             params[sig.params[i].to_sym] = res[0][i]
-                            Logger.info("Signature params: #{sig.params[i].to_sym} = #{res[0][i]}")
+                            Logger.info("Signature params: #{sig.params[i]} = #{res[0][i]}")
                         end
-                        if(@plugins.has_key?(sig.plugin.to_sym))
+                        # throw it in the pool for processing
+                        @pool.process do
                             begin
-                                @pool.process{ @plugins[sig.plugin.to_sym].send(sig.values[:method], message, params) }
+                                @plugins[sig.plugin.to_sym].send(sig.values[:method], message, params)
                             rescue Object => boom
-                                Logger.warn("Plugin threw exception while attempting to process message: #{boom}\n#{boom.backtrace.join("\n")}")
+                                if(boom.class.to_s == 'SQLite3::BusyException')
+                                    Database.reset_connections
+                                end
+                                raise boom
                             end
                         end
                     end
                 end
             else
-                Logger.info("Message failed to match any known trigger")
+                Logger.info('Message failed to match any known trigger')
             end
+        end
+
+        # message:: ModSpox::Messages::Incoming
+        # sig:: ModSpox::Models::Signature
+        # Check if the given message is allowed to be processed
+        def allowed?(message, sig)
+            return false if message.source.in_group?(sig.group) || message.source.in_group?(@admin) || sig.group.nil?
+            return false if sig.requirement == 'private' && message.is_public?
+            return false if sig.requirement == 'public' && message.is_private?
+            return true
         end
 
     end
