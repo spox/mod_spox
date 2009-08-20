@@ -16,8 +16,9 @@ module ModSpox
             @populate_lock = Mutex.new
             populate_triggers
             populate_signatures
-            hook(self, :populate_triggers, :Internal_TriggersUpdate)
-            hook(self, :populate_signatures, :Internal_SignaturesUpdate)
+            hook(self, :populate_triggers, ModSpox::Messages::Internal::TriggersUpdate)
+            hook(self, :populate_signatures, ModSpox::Messages::Internal::SignaturesUpdate)
+            @filters = FilterManager.new(self)
         end
 
         # message:: Message to send down pipeline
@@ -52,12 +53,12 @@ module ModSpox
         # Hooks a plugin into the pipeline for a specific type of message
         def hook(object, method, type)
             Logger.info("Object #{object.class.to_s} hooking into messages of type: #{type}")
-            type = type.gsub(/::/, '_').to_sym unless type.is_a?(Symbol)
+            type = Helpers.find_const(type, true)
             method = method.to_sym unless method.is_a?(Symbol)
-            name = object.class.to_s.gsub(/^.+:/, '')
-            @hooks[type] = Hash.new unless @hooks.has_key?(type)
-            @hooks[type][name.to_sym] = Array.new unless @hooks[type][name.to_sym].is_a?(Array)
-            @hooks[type][name.to_sym] << {:object => object, :method => method}
+            name = object.class
+            @hooks[type] ||= Hash.new
+            @hooks[type][name] ||= Array.new
+            @hooks[type][name] << {:object => object, :method => method}
         end
 
         # plugin:: Plugin to unhook from pipeline
@@ -65,8 +66,8 @@ module ModSpox
         # This will remove the hook a plugin has for a specific message type
         def unhook(object, method, type)
             Logger.info("Object #{object.class.to_s} unhooking from messages of type: #{type}")
-            type = type.gsub(/::/, '_').to_sym unless type.is_a?(Symbol)
-            name = object.class.to_s.gsub(/^.+:/, '').to_sym
+            type = Helpers.find_const(type, true)
+            name = object.class
             raise Exceptions::InvalidValue.new("Unknown hook type given: #{type.to_s}") unless @hooks.has_key?(type)
             raise Exceptions::InvalidValue.new("Unknown object hooked: #{name.to_s}") unless @hooks[type].has_key?(name)
             @hooks[type][name].each{|hook|
@@ -100,7 +101,7 @@ module ModSpox
                 a.destroy
                 Models::Signature.all.each do |s|
                     c = s.signature[0].chr.downcase
-                    if(c =~ /^[a-z]$/)
+                    if(c =~ /^[A-Za-z]$/)
                         type = c.to_sym
                     elsif(c =~ /^[0-9]$/)
                         type = :digit
@@ -119,39 +120,27 @@ module ModSpox
 
         # Processes messages
         def message_processor(message)
-            begin
-                Logger.info("Pipeline is processing a message: #{message}")
-                parse(message)
-                type = message.class.to_s.gsub(/^(ModSpox::Messages::|#<.+?>::)/, '').gsub('::', '_').to_sym
-                mod = type.to_s.gsub(/_.+$/, '').to_sym
-                Logger.info("Pipeline determines that #{message} is of type: #{type}")
-                [type, mod, :all].each do |type|
-                    if(@hooks.has_key?(type))
-                        @hooks[type].each_value do |objects|
+            @filters.apply_filters(message)
+            # can we modify the message to nil?
+            @hooks.keys.each do |type|
+                next unless Helper.type_of?(message, type)
+                @hooks[type].each_value do |objects|
+                    objects.each do |v|
+                        @pool.process do
                             begin
-                                objects.each do |v|
-                                    @pool.process do
-                                        begin
-                                            v[:object].send(v[:method].to_s, message)
-                                        rescue Object => boom
-                                            if(boom.class.to_s == 'SQLite3::BusyException')
-                                                Database.reset_connections
-                                                retry
-                                            else
-                                                raise boom
-                                            end
-                                        end
-                                    end
-                                end
+                                v[:object].send(v[:method], message)
                             rescue Object => boom
-                                Logger.warn("Plugin threw exception while attempting to process message: #{boom}\n#{boom.backtrace.join("\n")}")
+                                if(boom.class.to_s == 'SQLite3::BusyException')
+                                    Database.reset_connections
+                                    retry
+                                end
+                                raise boom
                             end
                         end
                     end
                 end
-            rescue Object => boom
-                Logger.warn("Pipeline encountered an exception while processing a message: #{boom}\n#{boom.backtrace.join("\n")}")
             end
+            parse(message)
         end
 
         # message:: Message to parse
