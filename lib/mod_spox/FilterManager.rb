@@ -4,6 +4,7 @@ module ModSpox
         def initialize(pipeline)
             @pipeline = pipeline
             @filters = {}
+            [:FilterAdd, :FilterRemove, :FilterList, :FilterListing].each{|f| Helpers.load_message(:internal, f)}
             @pipeline.hook(self, :add_filter, ModSpox::Messages::Internal::FilterAdd)
             @pipeline.hook(self, :remove_filter, ModSpox::Messages::Internal::FilterRemove)
             @pipeline.hook(self, :list_filter, ModSpox::Messages::Internal::FilterList)
