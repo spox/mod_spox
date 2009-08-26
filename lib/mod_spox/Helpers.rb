@@ -155,11 +155,13 @@ module ModSpox
                     return true if s =~ /#{b}.*/
                 end
             end
+            # one last check if we are allowed to symbolize
             if(symbolize && b.is_a?(Symbol))
                 sym = a.class.to_s
                 sym.gsub!('::', '_')
                 return true if sym == b || b =~ /#{sym}.*/
-                sym.slice!(0, 19) if t.index('ModSpox::Messages') == 0
+                sym.slice!(0, 17) if sym.index('ModSpox_Messages') == 0
+                sym.slice!(0, sym.index('>')+1) if sym.index('<') == 0 # this is for dynamic objects from plugins
                 return true if sym == b || b =~ /#{sym}.*/
             end
             return false
