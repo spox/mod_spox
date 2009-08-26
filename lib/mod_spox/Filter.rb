@@ -18,6 +18,10 @@ module ModSpox
         # message:: Message to be filtered
         # This is where the actual filtering takes place. This
         # is the method to overload!
+        # NOTE: Messages can be filtered in any way. For a filter to
+        # basically "throw away" a message, simply set the message to
+        # nil and it will not be processed or added to the pipeline:
+        #   *message = nil
         def do_filter(message)
             raise Exceptions::NotImplemented.new
         end
