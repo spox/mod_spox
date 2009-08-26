@@ -4,10 +4,11 @@ class AutoRejoin < ModSpox::Plugin
 
     def initialize(pipeline)
         super
-        @pipeline.hook(self, :check_kick, :Incoming_Kick)
-        @pipeline.hook(self, :check_join, :Incoming_Join)
-        @pipeline.hook(self, :check_part, :Incoming_Part)
-        @pipeline.hook(self, :do_joins, :Incoming_Welcome)
+        [:Kick, :Join,, :Part, :Welcome].each{|t| Helpers.load_message(:incoming, t)}
+        @pipeline.hook(self, :check_kick, ModSpox::Messages::Incoming::Kick)
+        @pipeline.hook(self, :check_join, ModSpox::Messages::Incoming::Join)
+        @pipeline.hook(self, :check_part, ModSpox::Messages::Incoming::Part)
+        @pipeline.hook(self, :do_joins, ModSpox::Messages::Incoming::Welcome)
     end
     
     def check_kick(message)

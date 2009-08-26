@@ -20,7 +20,8 @@ class Karma < ModSpox::Plugin
         add_sig(:sig => 'antikarma fight (\S+|\(.+?\)) (\S+|\(.+?\))', :method => :antifight, :desc => 'Make two antikarma objects fight', :params => [:thing, :thang])
         add_sig(:sig => 'karma topten', :method => :topten, :desc => 'Show top ten highest karma objects')
         add_sig(:sig => 'karma bottomten', :method => :bottomten, :desc => 'Show bottom ten lowest karma objects')
-        @pipeline.hook(self, :check, :Incoming_Privmsg)
+        Helpers.load_message(:incoming, :Privmsg)
+        @pipeline.hook(self, :check, ModSpox::Messages::Incoming::Privmsg)
         @thing_maxlen = 32
         @karma_regex = /(\(.{1,#@thing_maxlen}?\)|\S{1,#@thing_maxlen})([+-]{2})(?:\s|$)/
         @eggs = {}

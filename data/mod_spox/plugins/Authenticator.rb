@@ -1,6 +1,3 @@
-require 'mod_spox/messages/outgoing/Raw'
-require 'mod_spox/messages/internal/TimerAdd'
-
 class Authenticator < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)
@@ -24,10 +21,13 @@ class Authenticator < ModSpox::Plugin
         @nickserv_nicks = []
         @nickserv_cache = []
         populate_nickserv
-        @pipeline.hook(self, :check_join, :Incoming_Join)
-        @pipeline.hook(self, :check_nicks, :Incoming_Who)
-        @pipeline.hook(self, :check_nicks, :Incoming_Names)
-        @pipeline.hook(self, :check_notice, :Incoming_Notice)
+        [:Join, :Who, :Names, :Notice].each{|t| Helpers.load_message(:incoming, t)}
+        Helpers.load_message(:outgoing, :Raw)
+        Helpers.load_message(:internal, :TimerAdd)
+        @pipeline.hook(self, :check_join, ModSpox::Messages::Incoming::Join)
+        @pipeline.hook(self, :check_nicks, ModSpox::Messages::Incoming::Who)
+        @pipeline.hook(self, :check_nicks, ModSpox::Messages::Incoming::Names)
+        @pipeline.hook(self, :check_notice, ModSpox::Messages::Incoming::Notice)
     end
 
     # message:: ModSpox::Messages::Incoming::Privmsg

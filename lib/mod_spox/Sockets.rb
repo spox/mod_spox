@@ -27,12 +27,12 @@ module ModSpox
             @dcc_wait = 30
             @pipeline = bot.pipeline
             @factory = bot.factory
-            @pipeline.hook(self, :check_dcc, :Incoming_Privmsg)
-            @pipeline.hook(self, :return_socket, :Internal_DCCRequest)
-            @pipeline.hook(self, :dcc_listener, :Internal_DCCListener)
-            @pipeline.hook(self, :disconnect_irc, :Internal_Disconnected)
-            @pipeline.hook(self, :queue_messages, :Internal_QueueSocket)
-            @pipeline.hook(self, :unqueue_messages, :Internal_UnqueueSocket)
+            @pipeline.hook(self, :check_dcc, ModSpox::Messages::Incoming::Privmsg)
+            @pipeline.hook(self, :return_socket, ModSpox::Messages::Internal::DCCRequest)
+            @pipeline.hook(self, :dcc_listener, ModSpox::Messages::Internal::DCCListener)
+            @pipeline.hook(self, :disconnect_irc, ModSpox::Messages::Internal::Disconnected)
+            @pipeline.hook(self, :queue_messages, ModSpox::Messages::Internal::QueueSocket)
+            @pipeline.hook(self, :unqueue_messages, ModSpox::Messages::Internal::UnqueueSocket)
             @queues = {:irc => Queue.new, :dcc => Queue.new}
             @queue_messages = false
         end

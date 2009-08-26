@@ -1,4 +1,5 @@
 require 'mod_spox/messages/internal/PluginRequest'
+require 'mod_spox/messages/internal/PluginResponse'
 
 class Roulette < ModSpox::Plugin
 
@@ -15,7 +16,7 @@ class Roulette < ModSpox::Plugin
         Game.create_table unless Game.table_exists?
         Info.create_table unless Info.table_exists?
         @banner = nil
-        @pipeline.hook(self, :get_banner, :Internal_PluginResponse)
+        @pipeline.hook(self, :get_banner, ModSpox::Messages::Internal::PluginResponse)
     end
 
     # message:: ModSpox::Messages::Incoming::Privmsg

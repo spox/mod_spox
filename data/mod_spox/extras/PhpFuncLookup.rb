@@ -71,7 +71,8 @@ class PhpFuncLookup < ModSpox::Plugin
         add_sig(:sig => 'pfunc show trigger', :method => :show_trigger, :desc => 'Show current trigger')
         add_sig(:sig => 'pfunc (add|remove) (\S+)', :method => :set_channels, :group => admin, :desc => 'Add or remove channels from auto-lookups', :params => [:action, :channel])
         add_sig(:sig => 'pfunc show channels', :method => :list_channels, :desc => 'Show channels with auto lookup enabled')
-        @pipeline.hook(self, :listen, :Incoming_Privmsg)
+        Helpers.load_message(:incoming, :Privmsg)
+        @pipeline.hook(self, :listen, ModSpox::Messages::Incoming::Privmsg)
         populate_classes
     end
         

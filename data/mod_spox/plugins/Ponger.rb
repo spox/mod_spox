@@ -1,8 +1,3 @@
-require 'mod_spox/messages/outgoing/Pong'
-require 'mod_spox/messages/outgoing/Ping'
-require 'mod_spox/messages/internal/Reconnect'
-require 'mod_spox/messages/internal/TimerAdd'
-
 class Ponger < ModSpox::Plugin
 
     def initialize(pipeline)
@@ -11,10 +6,15 @@ class Ponger < ModSpox::Plugin
         @last = nil
         @attempts = 0
         add_sig(:sig => 'lag', :method => :print_lag, :desc => 'Shows bot\'s current lag to server')
-        @pipeline.hook(self, :ping, :Incoming_Ping)
-        @pipeline.hook(self, :get_lag_pong, :Incoming_Pong)
+        Helpers.load_message(:incoming, :Ping)
+        Helpers.load_message(:incoming, :Pong)
+        Helpers.load_message(:internal, :PluginsReady)
+        Helpers.load_message(:internal, :Reconnect)
+        Helpers.load_message(:internal, :TimerAdd)
+        @pipeline.hook(self, :ping, ModSpox::Messages::Incoming::Ping)
+        @pipeline.hook(self, :get_lag_pong, ModSpox::Messages::Incoming::Pong)
         @lock = Mutex.new
-        @pipeline.hook(self, :check_start_ponger, :Internal_PluginsReady)
+        @pipeline.hook(self, :check_start_ponger, ModSpox::Messages::Internal::PluginsReady)
         @running = false
         send_lag_ping
     end

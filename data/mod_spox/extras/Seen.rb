@@ -2,14 +2,16 @@ class Seen < ModSpox::Plugin
     def initialize(pipe)
         super
         SeenLog.create_table unless SeenLog.table_exists?
-        @pipeline.hook(self, :log_privmsg, :Incoming_Privmsg)
-        @pipeline.hook(self, :log_join, :Incoming_Join)
-        @pipeline.hook(self, :log_part, :Incoming_Part)
-        @pipeline.hook(self, :log_quit, :Incoming_Quit)
-        @pipeline.hook(self, :log_kick, :Incoming_Kick)
-        @pipeline.hook(self, :log_privmsg, :Incoming_Notice)
-        @pipeline.hook(self, :log_outpriv, :Outgoing_Privmsg)
-        @pipeline.hook(self, :log_outpriv, :Outgoing_Notice)
+        [:Privmsg, :Join, :Part, :Quit, :Kick, :Notice].each{|t| Helpers.load_message(:incoming, t)}
+        [:Privmsg, :Notice].each{|t|Helpers.load_message(:outgoing, t)}
+        @pipeline.hook(self, :log_privmsg, ModSpox::Messages::Incoming::Privmsg)
+        @pipeline.hook(self, :log_join, ModSpox::Messages::Incoming::Join)
+        @pipeline.hook(self, :log_part, ModSpox::Messages::Incoming::Part)
+        @pipeline.hook(self, :log_quit, ModSpox::Messages::Incoming::Quit)
+        @pipeline.hook(self, :log_kick, ModSpox::Messages::Incoming::Kick)
+        @pipeline.hook(self, :log_privmsg, ModSpox::Messages::Incoming::Notice)
+        @pipeline.hook(self, :log_outpriv, ModSpox::Messages::Outgoing::Privmsg)
+        @pipeline.hook(self, :log_outpriv, ModSpox::Messages::Outgoing::Notice)
         add_sig(:sig => 'seen (\S+)', :method => :seen, :desc => 'Report last sighting of nick', :params => [:nick])
     end
 

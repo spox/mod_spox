@@ -4,6 +4,7 @@ class AutoKick < ModSpox::Plugin
 
     def initialize(pipeline)
         super
+        Helpers.load_message(:incoming, :Privmsg)
         group = Group.find_or_create(:name => 'autokick')
         add_sig(:sig => 'autokick list', :method => :list, :group => group, :desc => 'List active autokick rules')
         add_sig(:sig => 'autokick add (#\S+) (\d+) (\S+) (.+)', :method => :add, :group => group, :desc => 'Add new autokick rule for current channel', :req => 'public', :params => [:channel, :time, :regex, :message])
@@ -108,7 +109,7 @@ class AutoKick < ModSpox::Plugin
     def do_listen
         @map = nil
         begin
-            @pipeline.unhook(self, :listener, :Incoming_Privmsg)
+            @pipeline.unhook(self, :listener, ModSpox::Messages::Incoming::Privmsg)
         rescue Object => boom
             #ignore
         end
@@ -119,7 +120,7 @@ class AutoKick < ModSpox::Plugin
                 @map[record.channel_id] = [] unless @map[record.channel_id]
                 @map[record.channel_id] << record.pattern
             end
-            @pipeline.hook(self, :listener, :Incoming_Privmsg)
+            @pipeline.hook(self, :listener, ModSpox::Messages::Incoming::Privmsg)
         end
     end
 

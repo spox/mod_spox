@@ -7,7 +7,7 @@ class Status < ModSpox::Plugin
         add_sig(:sig => 'status', :method => :status, :desc => 'Show current status')
         add_sig(:sig => 'version', :method => :version, :desc => 'Show version information')
         add_sig(:sig => 'VERSION', :method => :version, :desc => 'Show version information')
-        @pipeline.hook(self, :get_status, :Internal_StatusResponse)
+        @pipeline.hook(self, :get_status, ModSpox::Messages::Internal::StatusResponse)
         @resp = []
     end
     

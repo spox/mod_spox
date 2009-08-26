@@ -21,7 +21,7 @@ module ModSpox
             @sync = [:RPL_MOTDSTART, :RPL_MOTD, :RPL_ENDOFMOTD, :RPL_WHOREPLY, :RPL_ENDOFWHO,
                      :RPL_NAMREPLY, :RPL_ENDOFNAMES, :RPL_WHOISUSER, :RPL_WHOISSERVER, :RPL_WHOISOPERATOR,
                      :RPL_WHOISIDLE, :RPL_WHOISCHANNELS, :RPL_WHOISIDENTIFIED, :RPL_ENDOFWHOIS].map{|s| RFC[s][:value]}
-            @pipeline.hook(self, :proc_internal, :Internal_Incoming)
+            @pipeline.hook(self, :proc_internal, ModSpox::Messages::Internal::Incoming)
         end
 
         # m:: ModSpox::Messages::Internal::Incoming

@@ -14,7 +14,7 @@ class Bouncer < ModSpox::Plugin
         add_sig(:sig => 'bouncer disconnect', :method => :do_disconnect, :group => bounce, :desc => 'Disconnect all connected clients')
         add_sig(:sig => 'bouncer clients', :method => :clients, :group => bounce, :desc => 'List clients connected to bouncer')
         add_sig(:sig => 'bouncer generate cert', :method => :certgen, :group => bounce, :desc => 'Generate new certification')
-        @pipeline.hook(self, :get_msgs, :Incoming)
+        @pipeline.hook(self, :get_msgs, ModSpox::Messages::Incoming)
         @spockets = Spockets::Spockets.new
         @listener_thread = nil
         @listener_socket = nil

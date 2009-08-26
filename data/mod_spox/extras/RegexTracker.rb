@@ -13,7 +13,8 @@ class RegexTracker < ModSpox::Plugin
                 :params => [:id], :group => track)
         add_sig(:sig => 'track modify (\d+) (.+)', :method => :modify, :desc => 'Modify regex',
                 :params => [:id, :regex], :group => track)
-        @pipeline.hook(self, :check, :Incoming_Privmsg)
+        Helpers.load_message(:incoming, :Privmsg)
+        @pipeline.hook(self, :check, ModSpox::Messages::Incoming::Privmsg)
         TrackInfo.create_table unless TrackInfo.table_exists?
         @cache = {}
         build_cache

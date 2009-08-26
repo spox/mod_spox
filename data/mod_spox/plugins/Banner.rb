@@ -24,10 +24,10 @@ class Banner < ModSpox::Plugin
         add_sig(:sig => 'exempt source (\S+)', :method => :exempt_source, :group => admin, :desc => 'Exempt a source from kicks globally or per channel', :params => [:source, :channel])
         add_sig(:sig => 'exempt list (nick|mode|source)', :method => :exempt_list, :group => admin, :desc => 'List current exemptions of given type', :params => [:type])
         add_sig(:sig => 'exempt remove (nick|mode|source) (\d+)', :method => :exempt_remove, :group => admin, :desc => 'Remove exemption from given type', :params => [:type, :id])
-        @pipeline.hook(self, :mode_check, :Incoming_Mode)
-        @pipeline.hook(self, :join_check, :Incoming_Join)
-        @pipeline.hook(self, :who_check, :Incoming_Who)
-        @pipeline.hook(self, :process_ban, :Banner_Ban)
+        @pipeline.hook(self, :mode_check, ModSpox::Messages::Incoming::Mode)
+        @pipeline.hook(self, :join_check, ModSpox::Messages::Incoming::Join)
+        @pipeline.hook(self, :who_check, ModSpox::Messages::Incoming::Who)
+        @pipeline.hook(self, :process_ban, 'Banner::Ban')
         BanRecord.create_table unless BanRecord.table_exists?
         BanMask.create_table unless BanMask.table_exists?
         BanNickExempt.create_table unless BanNickExempt.table_exists?

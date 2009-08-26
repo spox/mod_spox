@@ -9,7 +9,8 @@ class FloodKicker
             @watched << c[:channel]
         end
         @data = {}
-        @pipeline.hook(self, :listener, :Incoming_Privmsg)
+        Helpers.load_message(:incoming, :Privmsg)
+        @pipeline.hook(self, :listener, ModSpox::Messages::Incoming::Privmsg)
         add_sig(:sig => 'floodkick enable(\s \S+)?', :method => :add_channel, :group => flood,
                 :desc => 'Add channel to flood kicker', :params => [:channel])
         add_sig(:sig => 'floodkick disable(\s \S+)?', :method => :remove_channel, :group => flood,

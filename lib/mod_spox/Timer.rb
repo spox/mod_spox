@@ -13,9 +13,9 @@ module ModSpox
         def initialize(timer, pipeline)
             @pipeline = pipeline
             @timer = timer
-            {:Internal_TimerAdd => :add_message,
-             :Internal_TimerRemove => :remove_message,
-             :Internal_TimerClear => :clear}.each_pair do |type,method|
+            {ModSpox::Messages::Internal::TimerAdd => :add_message,
+             ModSpox::Messages::Internal::TimerRemove => :remove_message,
+             ModSpox::Messages::Internal::TimerClear => :clear}.each_pair do |type,method|
                 @pipeline.hook(self, method, type)
             end
         end

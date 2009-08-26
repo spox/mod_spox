@@ -30,11 +30,11 @@ module ModSpox
         def initialize(pipeline)
             @plugins = Hash.new
             @pipeline = pipeline
-            @pipeline.hook(self, :load_plugin, :Internal_PluginLoadRequest)
-            @pipeline.hook(self, :unload_plugin, :Internal_PluginUnloadRequest)
-            @pipeline.hook(self, :reload_plugins, :Internal_PluginReload)
-            @pipeline.hook(self, :send_modules, :Internal_PluginModuleRequest)
-            @pipeline.hook(self, :plugin_request, :Internal_PluginRequest)
+            @pipeline.hook(self, :load_plugin, ModSpox::Messages::Internal::PluginLoadRequest)
+            @pipeline.hook(self, :unload_plugin, ModSpox::Messages::Internal::PluginUnloadRequest)
+            @pipeline.hook(self, :reload_plugins, ModSpox::Messages::Internal::PluginReload)
+            @pipeline.hook(self, :send_modules, ModSpox::Messages::Internal::PluginModuleRequest)
+            @pipeline.hook(self, :plugin_request, ModSpox::Messages::Internal::PluginRequest)
             @plugins_module = Module.new
             @plugin_lock = Mutex.new
             load_plugins

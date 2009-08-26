@@ -9,7 +9,8 @@ class Topten < ModSpox::Plugin
         add_sig(:sig => 'topten ([0-9]{4}\/[0-9]{2}\/[0-9]{2})', :method => :archive, :desc => 'Show topten from given date', :req => 'public', :params => [:date])
         add_sig(:sig => 'stats ?(\S+)?', :method => :stats, :desc => 'Show stats on nick', :req => 'public', :params => [:nick])
         add_sig(:sig => 'stats lifetime (\S+)?', :method => :life_stats, :desc => 'Show stat totals for given nick', :req => 'public', :params => [:nick])
-        @pipeline.hook(self, :log_stats, :Incoming_Privmsg)
+        Helpers.load_message(:incoming, :Privmsg)
+        @pipeline.hook(self, :log_stats, ModSpox::Messages::Incoming::Privmsg)
     end
     
     def topten(m, p)

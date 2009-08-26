@@ -8,7 +8,8 @@ class Translate < ModSpox::Plugin
         add_sig(:sig => 'autotranslate add ([a-z]{2}) (\S+)', :method => :auto_add, :desc => 'Add a nick to the autotranslate service', :params => [:lang, :nick])
         add_sig(:sig => 'autotranslate remove (\S+)', :method => :auto_remove, :desc => 'Remove a nick from the autotranslate service', :params => [:nick])
         add_sig(:sig => 'translate languages', :method => :langs, :desc => 'Show available languages')
-        @pipeline.hook(self, :listener, :Incoming_Privmsg)
+        Helpers.load_message(:incoming, :Privmsg)
+        @pipeline.hook(self, :listener, ModSpox::Messages::Incoming::Privmsg)
         @watchers = {}
         @cache = {}
         @allowed = {'zh'=>'Chinese-simplified','zt'=>'Chinese-traditional','en'=>'English','nl'=>'Dutch',

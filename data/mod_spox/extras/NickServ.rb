@@ -18,7 +18,8 @@ class NickServ < ModSpox::Plugin
         unless(@nickserv.is_a?(Hash) && @nickserv.has_key?(:address) && @nickserv.has_key?(:combos))
             @nickserv = {:address => nil, :combos => {}}
         end
-        @pipeline.hook(self, :send_nickserv, :Incoming_Welcome)
+        Helpers.load_message(:incoming, :Welcome)
+        @pipeline.hook(self, :send_nickserv, ModSpox::Messages::Incoming::Welcome)
     end
     
     # @nickserv = {:address => 'nickserv@blah', :combos => {'nick' => 'pass'}}

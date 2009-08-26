@@ -6,10 +6,10 @@ class Initializer < ModSpox::Plugin
 
     def initialize(pipeline)
         super(pipeline)
-        @pipeline.hook(self, :connect, :Internal_BotInitialized)
-        @pipeline.hook(self, :send_info, :Internal_Connected)
-        @pipeline.hook(self, :reconnect, :Internal_ConnectionFailed)
-        @pipeline.hook(self, :reconnect, :Internal_Disconnected)
+        @pipeline.hook(self, :connect, ModSpox::Messages::Internal::BotInitialized)
+        @pipeline.hook(self, :send_info, ModSpox::Messages::Internal::Connected)
+        @pipeline.hook(self, :reconnect, ModSpox::Messages::Internal::ConnectionFailed)
+        @pipeline.hook(self, :reconnect, ModSpox::Messages::Internal::Disconnected)
         @servers = Array.new
     end
     

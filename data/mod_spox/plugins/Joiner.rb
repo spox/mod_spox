@@ -6,7 +6,7 @@ class Joiner < ModSpox::Plugin
         super(pipeline)
         admin = Models::Group.filter(:name => 'admin').first
         add_sig(:sig => 'join (\S+)', :method => :join, :group => admin, :params => [:channel])
-        @pipeline.hook(self, :send_who, :Incoming_Join)
+        @pipeline.hook(self, :send_who, ModSpox::Messages::Incoming::Join)
     end
     
     # message:: ModSpox::Messages::Incoming::Privmsg

@@ -13,7 +13,7 @@ class PluginLoader < ModSpox::Plugin
         add_sig(:sig => 'plugins load (\S+)', :method => :load_plugin, :group => admin, :desc => 'Load the given plugin', :params => [:plugin])
         add_sig(:sig => 'plugins unload (\S+)', :method => :unload_plugin, :group => admin, :desc => 'Unload given plugin', :params => [:plugin])
         add_sig(:sig => 'plugins reload ?(\S+)?', :method => :reload_plugin, :group => admin, :desc => 'Reload single plugin or all plugins if names not provided', :params => [:plugin])
-        @pipeline.hook(self, :get_module, :Internal_PluginModuleResponse)
+        @pipeline.hook(self, :get_module, ModSpox::Messages::Internal::PluginModuleResponse)
         @plugins_mod = nil
     end
 

@@ -14,7 +14,8 @@ class AutoMode < ModSpox::Plugin
         add_sig(:sig => 'automode list (\S+)', :method => :list, :group => @admin, :desc => 'Show list of current auto-modes for channel', :params => [:channel])
         add_sig(:sig => 'delmode (\S+)', :method => :remove, :group => @admin, :desc => 'Remove nick from any auto-modes in channel', :req => 'public', :params => [:nick])
         ModeRecord.create_table unless ModeRecord.table_exists?
-        @pipeline.hook(self, :check_join, :Incoming_Join)
+        Helpers.load_message(:incoming, :Join)
+        @pipeline.hook(self, :check_join, ModSpox::Messages::Incoming::Join)
     end
     
     def addop(m, p)

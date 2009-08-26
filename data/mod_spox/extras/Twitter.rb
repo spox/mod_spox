@@ -70,7 +70,7 @@ class Twitter < ModSpox::Plugin
         add_sig(:sig => 'twitter alias (\S+) (\S+)', :method => :alias_user, :desc => 'Set alias for twitter account', :group => twitter, :params => [:twit, :irc])
         add_sig(:sig => 'twitter aliases (\S+)', :method => :show_aliases, :desc => 'Show alias for twit', :params => [:twit])
         add_sig(:sig => 'twitter dealias (\S+)', :method => :remove_alias, :desc => 'Remove alias for twit', :params => [:twit], :group => twitter)
-        @pipeline.hook(self, :get_timer, :Internal_TimerResponse)
+        @pipeline.hook(self, :get_timer, ModSpox::Messages::Internal::TimerResponse)
         @auth_info = Models::Setting.find_or_create(:name => 'twitter').value
         @twitter = ModClient.new
         @search_url = 'http://search.twitter.com/search.json'

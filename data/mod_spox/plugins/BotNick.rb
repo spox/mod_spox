@@ -2,7 +2,8 @@ class BotNick < ModSpox::Plugin
 
     def initialize(pipeline)
         super(pipeline)
-        @pipeline.hook(self, :shutdown, :Internal_Shutdown)
+        Helpers.load_message(:internal, :Shutdown)
+        @pipeline.hook(self, :shutdown, ModSpox::Messages::Internal::Shutdown)
     end
     
     def shutdown(message)
