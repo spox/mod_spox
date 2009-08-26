@@ -122,9 +122,9 @@ module ModSpox
         # Processes messages
         def message_processor(message)
             @filters.apply_filters(message)
-            # can we modify the message to nil?
+            return if message.nil?
             @hooks.keys.each do |type|
-                next unless Helpers.type_of?(message, type)
+                next unless Helpers.type_of?(message, type, true)
                 @hooks[type].each_value do |objects|
                     objects.each do |v|
                         @pool.process do
@@ -177,8 +177,8 @@ module ModSpox
                         params = Hash.new
                         # symbolize up the parameters for symbolic symbolism
                         sig.params.size.times do |i|
-                            params[sig.params[i].to_sym] = res[0][i]
-                            Logger.info("Signature params: #{sig.params[i]} = #{res[0][i]}")
+                            params[sig.params[i].to_sym] = result[0][i]
+                            Logger.info("Signature params: #{sig.params[i]} = #{result[0][i]}")
                         end
                         # throw it in the pool for processing
                         @pool.process do
@@ -202,10 +202,9 @@ module ModSpox
         # sig:: ModSpox::Models::Signature
         # Check if the given message is allowed to be processed
         def allowed?(message, sig)
-            return false if message.source.in_group?(sig.group) || message.source.in_group?(@admin) || sig.group.nil?
             return false if sig.requirement == 'private' && message.is_public?
             return false if sig.requirement == 'public' && message.is_private?
-            return true
+            return (message.source.in_group?(sig.group) || message.source.in_group?(@admin) || sig.group.nil?)
         end
 
     end
