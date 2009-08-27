@@ -10,31 +10,44 @@ class TestQuitHandler < Test::Unit::TestCase
                  :wo_message => ':spox!~spox@host QUIT :',
                  :bad => ':not.configured QUIT fail whale'
                 }
+        @queue = Queue.new
+        @bot.pipeline.hook(self, :gather, 'ModSpox::Messages::Incoming::Quit')
+        require 'mod_spox/handlers/Quit'
+        @handler = ModSpox::Handlers::Quit.new({})
     end
 
-    def test_wo_message
-        assert_equal(:QUIT, @bot.factory.find_key(@test[:wo_message]))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:wo_message])].process(@test[:wo_message])
-        assert_kind_of(ModSpox::Messages::Incoming::Quit, result)
-        assert_equal(@test[:wo_message], result.raw_content)
-        assert_kind_of(ModSpox::Models::Nick, result.nick)
-        assert_equal('spox', result.nick.nick)
-        assert_kind_of(String, result.message)
-        assert_equal('', result.message)
+    def gather(m)
+        @queue << m
     end
-
-    def test_w_message
-        assert_equal(:QUIT, @bot.factory.find_key(@test[:w_message]))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:w_message])].process(@test[:w_message])
-        assert_kind_of(ModSpox::Messages::Incoming::Quit, result)
-        assert_equal(@test[:w_message], result.raw_content)
-        assert_kind_of(ModSpox::Models::Nick, result.nick)
-        assert_equal('spox', result.nick.nick)
-        assert_kind_of(String, result.message)
-        assert_equal('Ping timeout', result.message)
+    
+    def test_indirect
+        @bot.factory << @test[:wo_message]
+        sleep(0.1)
+        assert_equal(1, @queue.size)
+        m = @queue.pop
+        check_result(m)
+        assert_equal(@test[:wo_message], m.raw_content)
+        assert_equal('', m.message)
     end
-
+    
+    def test_direct
+        m = @handler.process(@test[:w_message])
+        check_result(m)
+        assert_equal('Ping timeout', m.message)
+        assert_equal(@test[:w_message], m.raw_content)
+    end
+    
     def test_unexpected
-        assert_raise(ModSpox::Exceptions::GeneralException){@bot.factory.handlers[@bot.factory.find_key(@test[:bad])].process(@test[:bad])}
+        assert_raise(ModSpox::Exceptions::GeneralException) do
+            @handler.process(@test[:bad])
+        end
     end
+
+    def check_result(result)
+        assert_kind_of(ModSpox::Messages::Incoming::Quit, result)
+        assert_kind_of(ModSpox::Models::Nick, result.nick)
+        assert_equal('spox', result.nick.nick)
+        assert_kind_of(String, result.message)
+    end
+
 end

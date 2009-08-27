@@ -10,13 +10,37 @@ class TestNamesHandler < Test::Unit::TestCase
                  :names_end => ':swiftco.wa.us.dal.net 366 spox #mod_spox :End of /NAMES list.',
                  :bad => ':fubared 353 fail whale'
                 }
+        @queue = Queue.new
+        @bot.pipeline.hook(self, :gather, 'ModSpox::Messages::Incoming::Names')
+        require 'mod_spox/handlers/Names'
+        @handler = ModSpox::Handlers::Names.new({})
     end
 
-    def test_expected
-        assert_equal('353', @bot.factory.find_key(@test[:names_start]))
-        assert_nil(@bot.factory.handlers[@bot.factory.find_key(@test[:names_start])].process(@test[:names_start]))
-        assert_equal('366', @bot.factory.find_key(@test[:names_end]))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:names_end])].process(@test[:names_end])
+    def gather(m)
+        @queue << m
+    end
+    
+    def test_indirect
+        @bot.factory << @test[:names_start]
+        @bot.factory << @test[:names_end]
+        sleep(0.1)
+        assert_equal(1, @queue.size)
+        m = @queue.pop
+        check_result(m)
+    end
+    
+    def test_direct
+        assert_nil(@handler.process(@test[:names_start]))
+        check_result(@handler.process(@test[:names_end]))
+    end
+    
+    def test_unexpected
+        assert_raise(ModSpox::Exceptions::GeneralException) do
+            @handler.process(@test[:bad])
+        end
+    end
+
+    def check_result(result)
         assert_kind_of(ModSpox::Messages::Incoming::Names, result)
         assert_equal('#mod_spox', result.channel.name)
         assert_equal(5, result.nicks.size)
@@ -27,9 +51,5 @@ class TestNamesHandler < Test::Unit::TestCase
         assert(ModSpox::Models::Nick.find_or_create(:nick => 'spox').is_op?(result.channel))
         assert(!ModSpox::Models::Nick.find_or_create(:nick => 'pizza__').is_op?(result.channel))
         assert(ModSpox::Models::Nick.find_or_create(:nick => 'spex').is_voice?(result.channel))
-    end
-
-    def test_unexpected
-        assert_raise(ModSpox::Exceptions::GeneralException){@bot.factory.handlers[@bot.factory.find_key(@test[:bad])].process(@test[:bad])}
     end
 end

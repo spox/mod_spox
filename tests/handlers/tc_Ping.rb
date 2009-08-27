@@ -10,31 +10,44 @@ class TestPingHandler < Test::Unit::TestCase
                  :w_server => ':not.configured PING :test',
                  :bad => 'PING fail whale'
                 }
+        @queue = Queue.new
+        @bot.pipeline.hook(self, :gather, 'ModSpox::Messages::Incoming::Ping')
+        require 'mod_spox/handlers/Ping'
+        @handler = ModSpox::Handlers::Ping.new({})
     end
 
-    def test_wo_server
-        assert_equal(:PING, @bot.factory.find_key(@test[:wo_server]))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:wo_server])].process(@test[:wo_server])
-        assert_kind_of(ModSpox::Messages::Incoming::Ping, result)
-        assert_equal(@test[:wo_server], result.raw_content)
-        assert_kind_of(String, result.string)
-        assert_kind_of(String, result.server)
-        assert_equal('not.configured', result.server)
-        assert_equal('not.configured', result.string)
+    def gather(m)
+        @queue << m
     end
-
-    def test_w_server
-        assert_equal(:PING, @bot.factory.find_key(@test[:w_server]))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:w_server])].process(@test[:w_server])
-        assert_kind_of(ModSpox::Messages::Incoming::Ping, result)
-        assert_equal(@test[:w_server], result.raw_content)
-        assert_kind_of(String, result.string)
-        assert_kind_of(String, result.server)
-        assert_equal('not.configured', result.server)
-        assert_equal('test', result.string)
+    
+    def test_indirect
+        @bot.factory << @test[:wo_server]
+        sleep(0.1)
+        assert_equal(1, @queue.size)
+        m = @queue.pop
+        check_result(m)
+        assert_equal(m.raw_content, @test[:wo_server])
+        assert_equal('not.configured', m.server)
+        assert_equal('not.configured', m.string)
     end
-
+    
+    def test_direct
+        m = @handler.process(@test[:w_server])
+        check_result(m)
+        assert_equal(m.raw_content, @test[:w_server])
+        assert_equal('not.configured', m.server)
+        assert_equal('test', m.string)
+    end
+    
     def test_unexpected
-        assert_raise(ModSpox::Exceptions::GeneralException){@bot.factory.handlers[@bot.factory.find_key(@test[:bad])].process(@test[:bad])}
+        assert_raise(ModSpox::Exceptions::GeneralException) do
+            @handler.process(@test[:bad])
+        end
+    end
+
+    def check_result(result)
+        assert_kind_of(ModSpox::Messages::Incoming::Ping, result)
+        assert_kind_of(String, result.string)
+        assert_kind_of(String, result.server)
     end
 end

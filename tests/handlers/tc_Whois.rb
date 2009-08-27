@@ -16,13 +16,15 @@ class TestWhoHandler < Test::Unit::TestCase
         @test[:good] << ':swiftco.wa.us.dal.net 317 spox spox 176 1242140666 :seconds idle, signon time'
         @test[:good] << ':swiftco.wa.us.dal.net 318 spox spox :End of /WHOIS list.'
         @queue = Queue.new
-        @bot.pipeline.hook(self, :gather, :Incoming_Whois)
+        @bot.pipeline.hook(self, :gather, 'ModSpox::Messages::Incoming::Whois')
         @voice = ['#ruby', '#!php']
         @ops = ['#php', '#mod_spox']
         nick = ModSpox::Models::Nick.find_or_create(:nick => 'spox')
         nick.auth.services = true
         nick.auth.save
         @con = Time.at(1242140666)
+        require 'mod_spox/handlers/Whois'
+        @handler = ModSpox::Handlers::Whois.new({})
     end
     
     def gather(m)
@@ -54,8 +56,10 @@ class TestWhoHandler < Test::Unit::TestCase
         assert_equal('myhost.com', m.nick.host)
         assert_equal('spox', m.nick.real_name)
     end
-
+    
     def test_unexpected
-        assert_raise(ModSpox::Exceptions::GeneralException){@bot.factory.handlers[@bot.factory.find_key(@test[:bad].dup)].process(@test[:bad].dup)}
+        assert_raise(ModSpox::Exceptions::GeneralException) do
+            @handler.process(@test[:bad])
+        end
     end
 end

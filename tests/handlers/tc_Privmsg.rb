@@ -11,11 +11,39 @@ class TestPrivmsgHandler < Test::Unit::TestCase
                  :nick_to_channel_addressed => ':spox!~spox@host PRIVMSG #m :mod_spox: foobar',
                  :bad => ':fubared PRIVMSG fail whale'
                 }
+        @queue = Queue.new
+        @bot.pipeline.hook(self, :gather, 'ModSpox::Messages::Incoming::Privmsg')
+        require 'mod_spox/handlers/Privmsg'
+        @handler = ModSpox::Handlers::Privmsg.new({})
     end
 
-    def test_nick_to_channel
-        assert_equal(:PRIVMSG, @bot.factory.find_key(@test[:nick_to_channel]))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:nick_to_channel])].process(@test[:nick_to_channel])
+    def gather(m)
+        @queue << m
+    end
+    
+    def test_indirect
+        @bot.factory << @test[:nick_to_channel]
+        sleep(0.1)
+        assert_equal(1, @queue.size)
+        m = @queue.pop
+        check_nick2chan(m)
+    end
+    
+    def test_nick
+        check_nick2nick(@handler.process(@test[:nick_to_nick]))
+    end
+    
+    def test_chan_ad
+        check_nick2chanad(@handler.process(@test[:nick_to_channel_addressed]))
+    end
+    
+    def test_unexpected
+        assert_raise(ModSpox::Exceptions::GeneralException) do
+            @handler.process(@test[:bad])
+        end
+    end
+
+    def check_nick2chan(result)
         assert_kind_of(ModSpox::Messages::Incoming::Privmsg, result)
         assert_equal(@test[:nick_to_channel], result.raw_content)
         assert_kind_of(ModSpox::Models::Channel, result.target)
@@ -35,9 +63,7 @@ class TestPrivmsgHandler < Test::Unit::TestCase
         assert_equal(result.target, result.replyto)
     end
 
-    def test_nick_to_channel_addressed
-        assert_equal(:PRIVMSG, @bot.factory.find_key(@test[:nick_to_channel_addressed]))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:nick_to_channel_addressed])].process(@test[:nick_to_channel_addressed])
+    def check_nick2chanad(result)
         assert_kind_of(ModSpox::Messages::Incoming::Privmsg, result)
         assert_equal(@test[:nick_to_channel_addressed], result.raw_content)
         assert_kind_of(ModSpox::Models::Channel, result.target)
@@ -57,9 +83,7 @@ class TestPrivmsgHandler < Test::Unit::TestCase
         assert_equal(result.target, result.replyto)
     end
 
-    def test_nick_to_nick
-        assert_equal(:PRIVMSG, @bot.factory.find_key(@test[:nick_to_nick]))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:nick_to_nick])].process(@test[:nick_to_nick])
+    def check_nick2nick(result)
         assert_kind_of(ModSpox::Messages::Incoming::Privmsg, result)
         assert_equal(@test[:nick_to_nick], result.raw_content)
         assert_kind_of(ModSpox::Models::Nick, result.target)
@@ -77,9 +101,5 @@ class TestPrivmsgHandler < Test::Unit::TestCase
         assert(!result.is_dcc?)
         assert_equal(result.message_nocolor, result.message)
         assert_equal(result.source, result.replyto)
-    end
-
-    def test_unexpected
-        assert_raise(ModSpox::Exceptions::GeneralException){@bot.factory.handlers[@bot.factory.find_key(@test[:bad])].process(@test[:bad])}
     end
 end

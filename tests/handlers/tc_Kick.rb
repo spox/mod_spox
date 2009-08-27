@@ -9,11 +9,35 @@ class TestKickHandler < Test::Unit::TestCase
                  :good => ':spax!~spox@host KICK #m spox :foo',
                  :bad => ':fubared KICK fail whale'
                 }
+        @queue = Queue.new
+        @bot.pipeline.hook(self, :gather, 'ModSpox::Messages::Incoming::Kick')
+        require 'mod_spox/handlers/Kick'
+        @handler = ModSpox::Handlers::Kick.new({})
     end
 
-    def test_expected
-        assert_equal(:KICK, @bot.factory.find_key(@test[:good]))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:good])].process(@test[:good])
+    def gather(m)
+        @queue << m
+    end
+    
+    def test_indirect
+        @bot.factory << @test[:good]
+        sleep(0.1)
+        assert_equal(1, @queue.size)
+        m = @queue.pop
+        check_result(m)
+    end
+    
+    def test_direct
+        check_result(@handler.process(@test[:good]))
+    end
+    
+    def test_unexpected
+        assert_raise(ModSpox::Exceptions::GeneralException) do
+            @handler.process(@test[:bad])
+        end
+    end
+
+    def check_result(result)
         assert_kind_of(ModSpox::Messages::Incoming::Kick, result)
         assert_equal(@test[:good], result.raw_content)
         assert_kind_of(ModSpox::Models::Channel, result.channel)
@@ -26,7 +50,4 @@ class TestKickHandler < Test::Unit::TestCase
         assert_equal('foo', result.reason)
     end
 
-    def test_unexpected
-        assert_raise(ModSpox::Exceptions::GeneralException){@bot.factory.handlers[@bot.factory.find_key(@test[:bad])].process(@test[:bad])}
-    end
 end

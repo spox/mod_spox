@@ -9,25 +9,45 @@ class TestJoinHandler < Test::Unit::TestCase
                  :good => ':mod_spox!~mod_spox@host JOIN :#m',
                  :bad => ':fubared JOIN fail whale'
                 }
+        @queue = Queue.new
+        @bot.pipeline.hook(self, :gather, 'ModSpox::Messages::Incoming::Join')
+        require 'mod_spox/handlers/Join'
+        @handler = ModSpox::Handlers::Join.new({})
     end
 
-    def test_expected
-        assert_equal(:JOIN, @bot.factory.find_key(@test[:good]))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:good])].process(@test[:good])
-        assert_kind_of(ModSpox::Messages::Incoming::Join, result)
-        assert_equal(@test[:good], result.raw_content)
-        assert_kind_of(ModSpox::Models::Channel, result.channel)
-        assert_kind_of(ModSpox::Models::Nick, result.nick)
-        assert_equal('#m', result.channel.name)
-        assert_equal('mod_spox', result.nick.nick)
-        assert_equal('host', result.nick.host)
-        assert_equal('host', result.nick.address)
-        assert_equal('~mod_spox', result.nick.username)
-        assert_equal('mod_spox!~mod_spox@host', result.nick.source)
-        assert(result.nick.visible)
+    def gather(m)
+        @queue << m
     end
-
+    
+    def test_indirect
+        @bot.factory << @test[:good]
+        sleep(0.1)
+        assert_equal(1, @queue.size)
+        m = @queue.pop
+        check_result(m)
+    end
+    
+    def test_direct
+        check_result(@handler.process(@test[:good]))
+    end
+    
     def test_unexpected
-        assert_raise(ModSpox::Exceptions::GeneralException){@bot.factory.handlers[@bot.factory.find_key(@test[:bad])].process(@test[:bad])}
+        assert_raise(ModSpox::Exceptions::GeneralException) do
+            @handler.process(@test[:bad])
+        end
+    end
+
+    def check_result(m)
+        assert_kind_of(ModSpox::Messages::Incoming::Join, m)
+        assert_equal(m.raw_content, @test[:good])
+        assert_kind_of(ModSpox::Models::Channel, m.channel)
+        assert_kind_of(ModSpox::Models::Nick, m.nick)
+        assert_equal('#m', m.channel.name)
+        assert_equal('mod_spox', m.nick.nick)
+        assert_equal('host', m.nick.host)
+        assert_equal('host', m.nick.address)
+        assert_equal('~mod_spox', m.nick.username)
+        assert_equal('mod_spox!~mod_spox@host', m.nick.source)
+        assert(m.nick.visible)
     end
 end

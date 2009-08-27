@@ -4,13 +4,15 @@ class TestInviteHandler < Test::Unit::TestCase
 
     def setup
         h = BotHolder.instance
-        @bot = h.bot    
+        @bot = h.bot
         @test = {
                     :good => ':spox!~spox@host INVITE spex :#m',
                     :bad => ':fail INVITE whale'
                 }
         @queue = Queue.new
         @bot.pipeline.hook(self, :gather, 'ModSpox::Messages::Incoming::Invite')
+        require 'mod_spox/handlers/Invite'
+        @handler = ModSpox::Handlers::Invite.new({})
     end
     
     def gather(m)
@@ -25,8 +27,14 @@ class TestInviteHandler < Test::Unit::TestCase
         check_result(m)
     end
     
+    def test_direct
+        check_result(@handler.process(@test[:good]))
+    end
+    
     def test_unexpected
-        assert_raise(ModSpox::Exceptions::GeneralException){@bot.factory.handlers[@bot.factory.find_key(@test[:bad])].process(@test[:bad])}
+        assert_raise(ModSpox::Exceptions::GeneralException) do
+            @handler.process(@test[:bad])
+        end
     end
     
     private

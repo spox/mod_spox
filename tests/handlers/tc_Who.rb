@@ -15,9 +15,11 @@ class TestWhoHandler < Test::Unit::TestCase
         @test[:good] << ':host 352 spox #mod_spox ~spox host.4 swiftco.wa.us.dal.net spox H@ :0 spox'
         @test[:good] << ':host 315 spox #mod_spox :End of /WHO list.'
         @queue = Queue.new
-        @bot.pipeline.hook(self, :gather, :Incoming_Who)
+        @bot.pipeline.hook(self, :gather, 'ModSpox::Messages::Incoming::Who')
         @nicks = ['pizza_', 'pizza__', 'spox', 'mod_spox']
         @ops = ['pizza_', 'spox', 'mod_spox']
+        require 'mod_spox/handlers/Who'
+        @handler = ModSpox::Handlers::Who.new({})
     end
     
     def gather(m)
@@ -43,8 +45,11 @@ class TestWhoHandler < Test::Unit::TestCase
             assert_equal(@ops.include?(nick.nick), nick.is_op?(m.location))
         end
     end
-
+    
     def test_unexpected
-        assert_raise(ModSpox::Exceptions::GeneralException){@bot.factory.handlers[@bot.factory.find_key(@test[:bad].dup)].process(@test[:bad].dup)}
+        assert_raise(ModSpox::Exceptions::GeneralException) do
+            @handler.process(@test[:bad])
+        end
     end
+
 end
