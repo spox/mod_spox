@@ -10,17 +10,11 @@ class TestInviteHandler < Test::Unit::TestCase
                     :bad => ':fail INVITE whale'
                 }
         @queue = Queue.new
-        @bot.pipeline.hook(self, :gather, :Incoming_Invite)
+        @bot.pipeline.hook(self, :gather, 'ModSpox::Messages::Incoming::Invite')
     end
     
     def gather(m)
         @queue << m
-    end
-
-    def test_direct
-        assert_equal(:INVITE, @bot.factory.find_key(@test[:good]))
-        result = @bot.factory.handlers[@bot.factory.find_key(@test[:good])].process(@test[:good])
-        check_result(result)
     end
     
     def test_indirect
