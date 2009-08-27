@@ -110,7 +110,7 @@ class Banner < ModSpox::Plugin
                 record.remaining = record.remaining + time.to_i
                 record.save
             else
-                record = BanRecord.new(:nick_id => nick.pk, :bantime => time.to_i, :remaining => time.to_i,
+                record = BanRecord.new(:nick_id => nick.pk, :bantime => time.to_i, :remaining => time.to_i, :stamp => ::Time.now,
                     :invite => invite, :channel_id => channel.pk, :mask => mask)
                 record.save
             end
