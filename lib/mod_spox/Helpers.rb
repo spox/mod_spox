@@ -55,25 +55,50 @@ module ModSpox
         # maxbytes:: maximum number of result bytes to accept
         # Execute a system command (use with care)
         def Helpers.safe_exec(command, timeout=10, maxbytes=500)
-            output = []
-            begin
-                Timeout::timeout(timeout) do
+            rd,wr = IO.pipe
+            result = nil
+            cid = Kernel.fork do
+                rd.close
+                output = []
+                pro = nil
+                Kernel.trap('HUP'){ Process.kill('KILL', pro.pid) unless pro.nil? } # stop those god awful dance parties
+                begin
                     pro = IO.popen(command)
                     until(pro.closed? || pro.eof?)
                         output << pro.getc
-                        raise IOError.new("Maximum allowed output bytes exceeded. (#{maxbytes} bytes)") unless output.count <= maxbytes
+                        raise IOError.new("Maximum allowed output bytes exceeded. (#{maxbytes} bytes") unless output.count <= maxbytes
                     end
-                    return output.join('')
+                    output = output.join('')
+                rescue Object => boom
+                    output = boom
+                ensure
+                    output = [Marshal.dump(output)].pack('m')
+                    wr.write output
+                    wr.close
+                    exit
                 end
-            rescue Timeout::Error => boom
-                Logger.warn("Command execution exceeded allowed time (command: #{command} | timeout: #{timeout})")
-                raise boom
-            rescue Object => boom
-                Logger.warn("Command generated an exception (command: #{command} | error: #{boom})")
-                raise boom
+            end
+            if(cid)
+                wr.close
+                begin
+                    Timeout::timeout(timeout) do
+                        result = rd.read
+                    end
+                    result = result.size > 0 ? Marshal.load(result.unpack('m')[0]) : ''
+                rescue Timeout::Error => boom
+                    Process.kill('HUP', cid)
+                    raise boom
+                rescue Object => boom
+                    Process.kill('HUP', cid) unless Process.wait2(cid, WUNTRACED).stopped?
+                    raise boom
+                ensure
+                    Process.wait(cid, Process::WNOHANG)
+                end
+                raise result if result.is_a?(Exception)
+                return result
             end
         end
-
+        
         # url:: URL to shorten
         # Gets a tinyurl for given URL
         def Helpers.tinyurl(url)
