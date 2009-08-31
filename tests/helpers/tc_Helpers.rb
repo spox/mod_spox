@@ -3,6 +3,7 @@ require "#{File.dirname(__FILE__)}/../BotHolder.rb"
 class TestHelpers < Test::Unit::TestCase
     def setup
         h = BotHolder.instance
+        ModSpox::Models::Server.find_or_create(:host => 'some.irc.server.com', :connected => true)
     end
     
     def test_format_seconds
@@ -25,28 +26,35 @@ class TestHelpers < Test::Unit::TestCase
     
      def test_safe_exec
          assert_raise(IOError) do
-             ModSpox::Helpers.safe_exec('echo test', 1, 1)
+             ModSpox::Helpers.safe_exec('echo test', 10, 1)
          end
          assert_raise(Timeout::Error) do
              ModSpox::Helpers.safe_exec('while [ true ]; do true; done;', 1)
          end
-         assert_equal('test' ModSpox::Helpers.safe_exec('echo test'))
+         assert_equal("test\n", ModSpox::Helpers.safe_exec('echo test'))
      end
 
-#     def test_tinyurl
-#     end
-#     
-#     def test_find_model
-#     end
-#     
-#     def test_convert_entities
-#     end
-#     
+     def test_tinyurl
+         assert_equal('http://tinyurl.com/1c2', ModSpox::Helpers.tinyurl('http://www.google.com'))
+     end
+
+     def test_find_model
+         assert_kind_of(ModSpox::Models::Nick, ModSpox::Helpers.find_model('nick'))
+         assert_kind_of(ModSpox::Models::Channel, ModSpox::Helpers.find_model('#channel'))
+         assert_kind_of(ModSpox::Models::Server, ModSpox::Helpers.find_model('some.irc.server.com'))
+         assert_nil(ModSpox::Helpers.find_model('not.a.real.server'))
+         assert_kind_of(String, '*!*@some.host')
+     end
+    
+    def test_convert_entities
+        assert_equal('<p>', ModSpox::Helpers.convert_entities('&lt;p&gt;'))
+    end
+    
 #     def test_load_message
 #     end
 #     
-#     def test_type_of?
-#     end
+#      def test_type_of?
+#      end
 #     
 #     def test_find_const
 #     end
