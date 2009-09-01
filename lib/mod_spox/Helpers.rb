@@ -55,48 +55,23 @@ module ModSpox
         # maxbytes:: maximum number of result bytes to accept
         # Execute a system command (use with care)
         def Helpers.safe_exec(command, timeout=10, maxbytes=500)
-            rd,wr = IO.pipe
-            result = nil
-            cid = Kernel.fork do
-                rd.close
-                output = []
-                pro = nil
-                Kernel.trap('HUP'){ Process.kill('KILL', pro.pid) unless pro.nil? } # stop those god awful dance parties
-                begin
+            output = []
+            pro = nil
+            begin
+                Timeout::timeout(timeout) do
                     pro = IO.popen(command)
                     until(pro.closed? || pro.eof?)
                         output << pro.getc
-                        raise IOError.new("Maximum allowed output bytes exceeded. (#{maxbytes} bytes") unless output.count <= maxbytes
+                        raise IOError.new("Maximum allowed output bytes exceeded. (#{maxbytes} bytes)") unless output.count <= maxbytes
                     end
-                    output = output.join('')
-                rescue Object => boom
-                    output = boom
-                ensure
-                    output = [Marshal.dump(output)].pack('m')
-                    wr.write output
-                    wr.close
-                    exit
                 end
+                output = output.join('')
+            rescue Object => boom
+                raise boom
+            ensure
+                Process.kill('KILL', pro.pid) unless pro.nil? # make sure the process is dead
             end
-            if(cid)
-                wr.close
-                begin
-                    Timeout::timeout(timeout) do
-                        result = rd.read
-                    end
-                    result = result.size > 0 ? Marshal.load(result.unpack('m')[0]) : ''
-                rescue Timeout::Error => boom
-                    Process.kill('HUP', cid)
-                    raise boom
-                rescue Object => boom
-                    Process.kill('HUP', cid) unless Process.wait2(cid, WUNTRACED).stopped?
-                    raise boom
-                ensure
-                    Process.wait(cid, Process::WNOHANG)
-                end
-                raise result if result.is_a?(Exception)
-                return result
-            end
+            return output
         end
         
         # url:: URL to shorten
