@@ -50,14 +50,53 @@ class TestHelpers < Test::Unit::TestCase
         assert_equal('<p>', ModSpox::Helpers.convert_entities('&lt;p&gt;'))
     end
     
-#     def test_load_message
-#     end
-#     
-#      def test_type_of?
-#      end
-#     
-#     def test_find_const
-#     end
-#     
-    # Add tests here for randomizer #
+    def test_load_message
+        ModSpox::Helpers.load_message(:internal, :TimerAdd)
+        assert(ModSpox::Messages::Internal::TimerAdd)
+    end
+     
+     def test_type_of?
+        ModSpox::Helpers.load_message(:internal, :HaltBot)
+        m = ModSpox::Messages::Internal::HaltBot.new
+        assert(ModSpox::Helpers.type_of?(m, Object))
+        assert(ModSpox::Helpers.type_of?(m, ModSpox))
+        assert(ModSpox::Helpers.type_of?(m, ModSpox::Messages))
+        assert(ModSpox::Helpers.type_of?(m, ModSpox::Messages::Internal))
+        assert(ModSpox::Helpers.type_of?(m, ModSpox::Messages::Internal::HaltBot))
+        assert(ModSpox::Helpers.type_of?(m, :ModSpox_Messages_Internal_HaltBot, true))
+        assert(ModSpox::Helpers.type_of?(m, :Internal_HaltBot, true))
+        assert(ModSpox::Helpers.type_of?(m, :Internal, true))
+        assert(!ModSpox::Helpers.type_of?(m, String))
+     end
+     
+    def test_find_const
+        ModSpox::Helpers.load_message(:internal, :HaltBot)
+        assert(ModSpox::Messages::Internal::HaltBot)
+        assert_equal(ModSpox::Messages::Internal::HaltBot, ModSpox::Helpers.find_const('ModSpox::Messages::Internal::HaltBot'))
+        assert_equal(ModSpox::Messages::Internal::HaltBot, ModSpox::Helpers.find_const('Internal::HaltBot'))
+        assert_equal('Incoming::UnknownType', ModSpox::Helpers.find_const('Incoming::UnknownType'))
+    end
+    
+    # these tests lifted from the unit tests in the source
+    # provided by Ryan "pizza_" Flynn
+    # Class and tests found in: http://github.com/pizza/algodict
+
+    def test_random
+        assert_raise(ModSpox::Exceptions::GeneralException) do
+            100.times do
+                results = []
+                pool = (0..rand(1000)).to_a
+                ideal = ModSpox::Helpers::IdealHumanRandomIterator.new(pool)
+                (pool.size / 2).times do
+                    n = ideal.next()
+                    if(results.include?(n))
+                        raise Exception.new("Duplicated result")
+                    else
+                        results << n
+                    end
+                end
+            end
+            raise ModSpox::Exceptions::GeneralException.new("OK")
+        end
+    end
 end
