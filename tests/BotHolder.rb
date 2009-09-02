@@ -15,6 +15,7 @@ class BotHolder
     def initialize
         ModSpox::Database.db = nil
         begin
+            File.unlink('test.db') if File.exists?('test.db')
             ModSpox.initialize_bot(Sequel.sqlite('test.db'))
         rescue SQLite3::BusyException
             ModSpox::Database.reconnect
