@@ -44,10 +44,11 @@ module ModSpox
         "Yotta"   # 1024^8
         ]
         def Helpers.format_size(bytes)
+            return "0 bytes" if bytes == 0
             mag = (Math.log(bytes) / Math.log(1024)).floor
             mag = [ Suff.length - 1, mag ].min
             val = bytes.to_f / (1024 ** mag)
-            "%7.3f %sbyte%s" % [ val, Suff[mag], val == 1 ? "" : "s" ]
+            ("%.3f %sbyte%s" % [ val, Suff[mag], val == 1 ? "" : "s" ]).strip
         end
 
         # command:: command to execute
