@@ -19,27 +19,22 @@ module ModSpox
         # :userpluginpath => path to user's plugin directory
         # :userconfigpath => path to the user configuration file        
         def BotConfig.populate(createdir=true)
-            gemname, gem = Gem.source_index.find{|name, spec|
-                spec.name == 'mod_spox' && spec.version.version = ModSpox.botversion
-            }
-            if(gem)
-                p = gem.full_gem_path
-                up = ModSpox.mod_spox_path.nil? ? Etc.getpwnam(Etc.getlogin).dir : ModSpox.mod_spox.path
-                @@config = {:basepath => p,
-                           :libpath => "#{p}/lib/mod_spox",
-                           :datapath => "#{p}/data/mod_spox",
-                           :pluginpath => "#{p}/data/mod_spox/plugins",
-                           :pluginextraspath => "#{p}/data/mod_spox/extras",
-                           :userpath => "#{up}/.mod_spox",
-                           :userpluginpath => "#{up}/.mod_spox/plugins",
-                           :userconfigpath => "#{up}/.mod_spox/config"}
-                if(createdir)
-                    [@@config[:userpath], @@config[:userpluginpath]].each do |path|
-                        Dir.mkdir(path) unless File.exists?(path)
-                    end
+            path = __FILE__.split(File::Separator)
+            3.times{ path.pop }
+            path = path.join(File::Separator)
+            upath = ModSpox.mod_spox_path.nil? ? Etc.getpwnam(Etc.getlogin).dir : ModSpox.mod_spox_path
+            @@config = {:basepath => path,
+                        :libpath => "#{path}/lib/mod_spox",
+                        :datapath => "#{path}/data/mod_spox",
+                        :pluginpath => "#{path}/data/mod_spox/plugins",
+                        :pluginextraspath => "#{path}/data/mod_spox/extras",
+                        :userpath => "#{upath}/.mod_spox",
+                        :userpluginpath => "#{upath}/.mod_spox/plugins",
+                        :userconfigpath => "#{upath}/.mod_spox/config"}
+            if(createdir)
+                [@@config[:userpath], @@config[:userpluginpath]].each do |mpath|
+                    Dir.mkdir(mpath) unless File.exists?(mpath)
                 end
-            else
-                raise Exceptions::InstallationError.new('Failed to find mod_spox gem')
             end
         end
         
@@ -47,7 +42,8 @@ module ModSpox
         # Provides access to important path values
         def BotConfig.[](name)
             BotConfig.populate unless @@config
-            name = name.to_sym unless name.is_a?(Symbol)
+            raise ArgumentError.new('Parameter must have a to_s method') unless name.respond_to?(:to_s)
+            name = name.to_s.to_sym unless name.is_a?(Symbol)
             raise Exceptions::UnknownKey.new("Failed to find given key: #{name}") unless @@config.has_key?(name)
             return @@config[name]
         end
