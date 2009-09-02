@@ -70,7 +70,7 @@ module ModSpox
             rescue Object => boom
                 raise boom
             ensure
-                Process.kill('KILL', pro.pid) unless pro.nil? # make sure the process is dead
+                Process.kill('KILL', pro.pid) if Process.waitpid2(pro.pid, Process::WNOHANG).nil? # make sure the process is dead
             end
             return output
         end
@@ -95,12 +95,12 @@ module ModSpox
         # or channel name. If the string given does not match the required
         # pattern for a channel or nick, the string is returned.
         def Helpers.find_model(string, create=true)
-            result = nil
+            result = string
             if(string =~ /^[A-Za-z\|\\\{\}\[\]\^\`~\_\-]+[A-Za-z0-9\|\\\{\}\[\]\^\`~\_\-]*$/)
                 result = Models::Nick.find_or_create(:nick => string.downcase)
             elsif(['&', '#', '+', '!'].include?(string[0]))
                 result = Models::Channel.find_or_create(:name => string.downcase)
-            elsif(Models::Server.filter(:host => string, :connected => true).count > 0)
+            elsif(Models::Server.filter(:host => string).count > 0)
                 result = Models::Server.filter(:host => string, :connected => true).first
             else
                 Logger.warn("Failed to match string to model: #{string} -> No match")
@@ -201,7 +201,7 @@ module ModSpox
         class IdealHumanRandomIterator
 
             def initialize(list)
-                raise ArgumentError.new("Object must have length method") unless list.respond_to?(:length)
+                raise ArgumentError.new("Array type required") unless list.is_a?(Array)
                 @items = list
             end
 
