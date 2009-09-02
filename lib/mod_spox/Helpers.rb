@@ -101,7 +101,7 @@ module ModSpox
             elsif(['&', '#', '+', '!'].include?(string[0]))
                 result = Models::Channel.find_or_create(:name => string.downcase)
             elsif(Models::Server.filter(:host => string).count > 0)
-                result = Models::Server.filter(:host => string, :connected => true).first
+                result = Models::Server.filter(:host => string).first
             else
                 Logger.warn("Failed to match string to model: #{string} -> No match")
             end
