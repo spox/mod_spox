@@ -199,9 +199,9 @@ module ModSpox
         # to "encourage" subsequent selections to not repeat.
         #
         class IdealHumanRandomIterator
-            @items = []
 
             def initialize(list)
+                raise ArgumentError.new("Object must have length method") unless list.respond_to?(:length)
                 @items = list
             end
 
