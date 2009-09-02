@@ -185,31 +185,40 @@ module ModSpox
             return const.nil? ? c : const
         end
         
-        # IdealizedHumanRandom - select "random" members of a population, favoring
+        # IdealHumanRandomIterator - select "random" members of a population, favoring
         # those least-recently selected, to appease silly humans who hate repeats
-        # Author: Ryan "pizza_" Flynn
-        class IdealizedHumanRandom
+        #
+        # Abstract:
+        # given a decently-sized set of items (say, 100 famous quotes), an
+        # average persons's idea of N "random" entries is not actually random.
+        # people don't want items to appear twice in a row, or too frequently
+        # (even though true randomness means this is just as likely as any other order).
+        #
+        # instead, design a scheme whereby LRU items are weighted more heavily,
+        # to "encourage" subsequent selections to not repeat.
+        #
+        class IdealHumanRandomIterator
+            @items = []
 
             def initialize(list)
-                raise ArgumentError.new("Expecting Array type. Received: #{list.class}") unless list.is_a?(Array)
-                @next = list
+                @items = list
             end
-        
-            # NOTE: corrupted method for generating weighted random number over
-            # Gaussian distribution folded in on itself; heavily favors 0
-            def self.gauss()
-                x = rand() / 1.0
-                y = rand() / 1.0
-                z = (Math.sqrt(-2.0 * Math.log(x)) * Math.cos(2.0 * Math::PI * y)).abs
-                return z
+
+            # Given length L, generate a random number in the range [0,len-1), heavily
+            # weighted towards the low end.
+            def self.nexti(len)
+                len += 1 if len % 2 == 1
+                index = len > 2 ? rand(len/2) : 0
+                return index
             end
-            
+
+            # return a psuedo-random member of items. subsequent calls should never
+            # return the same item.
             def next()
-                i = (IdealizedHumanRandom.gauss() * (@next.size / 5.0)).floor
-                @next.push(@next.delete_at(i))  # selected to end, unlikely spot
-                return @next.last
+                index = IdealHumanRandomIterator.nexti(@items.length)
+                @items.push @items.delete_at(index)
+                return @items.last
             end
-            
         end
     end
 end
