@@ -3,7 +3,7 @@ require "#{File.dirname(__FILE__)}/../BotHolder.rb"
 class TestHelpers < Test::Unit::TestCase
     def setup
         h = BotHolder.instance
-        ModSpox::Models::Server.find_or_create(:host => 'some.irc.server.com', :connected => true)
+        ModSpox::Models::Server.find_or_create(:host => 'some.irc.server.com')
     end
     def test_format_seconds
         inc = {:year => 60 * 60 * 24 * 365,
@@ -73,7 +73,7 @@ class TestHelpers < Test::Unit::TestCase
          assert_kind_of(ModSpox::Models::Nick, ModSpox::Helpers.find_model('nick'))
          assert_kind_of(ModSpox::Models::Channel, ModSpox::Helpers.find_model('#channel'))
          assert_kind_of(ModSpox::Models::Server, ModSpox::Helpers.find_model('some.irc.server.com'))
-         assert_nil(ModSpox::Helpers.find_model('not.a.real.server'))
+         assert_equal('not.a.real.server', ModSpox::Helpers.find_model('not.a.real.server'))
          assert_kind_of(String, '*!*@some.host')
      end
     
@@ -133,5 +133,7 @@ class TestHelpers < Test::Unit::TestCase
             raise ModSpox::Exceptions::GeneralException.new("OK")
         end
         assert_raise(ArgumentError){ ModSpox::Helpers::IdealHumanRandomIterator.new(1) }
+        assert_nil(ModSpox::Helpers::IdealHumanRandomIterator.new([]).next)
+        assert_equal(0, ModSpox::Helpers::IdealHumanRandomIterator.new([0]).next)
     end
 end
