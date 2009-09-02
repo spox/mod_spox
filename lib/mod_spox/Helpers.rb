@@ -11,8 +11,8 @@ module ModSpox
         # secs:: number of seconds
         # Converts seconds into a human readable string
         def Helpers.format_seconds(secs)
-            arg = {:year => 29030400,
-                   :month => 2419200,
+            arg = {:year => 31536000,
+                   :month => 2678400,
                    :week => 604800,
                    :day => 86400,
                    :hour => 3600,
