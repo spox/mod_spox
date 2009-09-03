@@ -198,6 +198,9 @@ module ModSpox
         # instead, design a scheme whereby LRU items are weighted more heavily,
         # to "encourage" subsequent selections to not repeat.
         #
+        # Author: Ryan "pizza_" Flynn
+        # - pulled from the algodict project
+        # - - http://github.com/pizza/algodict
         class IdealHumanRandomIterator
 
             def initialize(list)
