@@ -65,12 +65,6 @@ opts.each do |opt, arg|
             exit
         when '--jdbc'
             ModSpox.jdbc = true
-            begin
-                require 'jdbc/postgres'
-            rescue Object => boom
-                puts 'Failed to load JDBC Postgres gem'
-                exit 1
-            end
         when '--debug'
             if(arg && arg.gsub(' ', '').size > 0)
                 ModSpox.logto = arg
