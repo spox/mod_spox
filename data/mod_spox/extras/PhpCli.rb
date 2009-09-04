@@ -232,7 +232,7 @@ class PhpCli < ModSpox::Plugin
             foreign_key :nick_id, :null => false
             primary_key :id
         end
-        
+        Sequel::Model.plugin :lazy_attributes, :php_function
         Sequel::Model.plugin :serialization, :marshal, :php_function
 #         serialize(:php_function, :format => :marshal)
         
