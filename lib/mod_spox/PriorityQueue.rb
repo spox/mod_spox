@@ -10,11 +10,11 @@ module ModSpox
         # Create a priority queue
         def initialize
             @target_queues = {}
-            @queues = {:PRIORITY => Queue.new, :NEW => Queue.new, :NORMAL => Queue.new, :WHOCARES => Queue.new}
+            @queues = {:PRIORITY => Array.new, :NEW => Array.new, :NORMAL => Array.new, :WHOCARES => Array.new}
             @lock = Mutex.new
         end
         
-        # target:: message target (targets starting with * will be labelled WHOCARES
+        # target:: message target (targets starting with * will be given lowest priority)
         # message:: message to send
         # This prioritizes output to help reduce lag when lots of output
         # is being sent to another target. This will automatically decide
@@ -26,13 +26,13 @@ module ModSpox
                 @target_queues[target] = Queue.new unless @target_queues[target]
                 if(target[0].chr == '*')
                     @target_queues[target] << message
-                    @queues[:WHOCARES] << @target_queues[target]
+                    add_queue(:WHOCARES, @target_queues[target])
                 else
                     @target_queues[target] << message
                     if(@target_queues[target].size < 2)
-                        @queues[:NEW] << @target_queues[target]
+                        add_queue(:NEW, @target_queues[target])
                     else
-                        @queues[:NORMAL] << @target_queues[target]
+                        add_queue(:NORMAL, @target_queues[target])
                     end
                 end
             end
@@ -45,7 +45,7 @@ module ModSpox
             @lock.synchronize do
                 @target_queues[:general] = Queue.new unless @target_queues[:general]
                 @target_queues[:general] << message
-                @queues[:PRIORITY] << @target_queues[:general]
+                add_queue(:PRIORITY, @target_queues[:general])
             end
         end
         
@@ -58,13 +58,25 @@ module ModSpox
             @lock.synchronize do
                 [:PRIORITY, :NEW, :NORMAL, :WHOCARES].each do |k|
                     unless(@queues[k].empty?)
-                        m = @queues[k].pop.pop
-                        break
+                        q = @queues[k].shift
+                        unless(q.empty?)
+                            m = q.pop
+                            add_queue(k, q) unless(q.empty?)
+                            break
+                        end
                     end
                 end
             end
             raise Exceptions::EmptyQueue.new if m.nil?
             return m
+        end
+        
+        private
+        
+        def add_queue(name, queue)
+            unless(@queues[name].include?(queue))
+                @queues[name] << queue
+            end
         end
     end
 end
