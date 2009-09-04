@@ -16,10 +16,16 @@ class TestBotConfig < Test::Unit::TestCase
 
     def test_prioritizer
         # load the queue up
-        5.times{|i| @queue.priority_queue('slot1', "test#{i}") }
-        5.times{|i| @queue.priority_queue('slot2', "fubar#{i}") }
+        @queue.priority_queue('*slot0', 'last')
+        5.times{ @queue.priority_queue('slot1', "test") }
+        5.times{ @queue.priority_queue('slot2', "fubar") }
         @queue.direct_queue('first')
         assert_equal('first', @queue.pop)
+        5.times do
+            assert_equal('test', @queue.pop)
+            assert_equal('fubar', @queue.pop)
+        end
+        assert_equal('last', @queue.pop)
     end
 
 end
