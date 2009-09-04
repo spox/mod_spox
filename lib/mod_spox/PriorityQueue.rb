@@ -20,6 +20,7 @@ module ModSpox
         # is being sent to another target. This will automatically decide
         # how to queue the message based on the target
         def priority_queue(target, message)
+            target = target.to_s
             @lock.synchronize do
                 target.downcase!
                 @target_queues[target] = Queue.new unless @target_queues[target]
