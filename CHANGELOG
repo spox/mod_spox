@@ -1,3 +1,8 @@
+0.3.2 (Alpha status)
+    Core:
+    * New tests resulting in lots of bug fixing
+    * New and untested/documented message filtering
+    
 0.3.1 Release (Alpha status)
     Core:
     * As needed class loading
