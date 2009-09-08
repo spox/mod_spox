@@ -557,7 +557,7 @@ module ModSpox
         # and raises an exception (and logs) if the bot
         # is not in the given channel
         def okay_to_send(channel)
-            if(channel.is_a?(String) && ['&', '#', '+', '!'].include?(channel[0]))
+            if(channel.is_a?(String) && ['&', '#', '+', '!'].include?(channel[0].chr))
                 channel = Helpers.find_model(channel)
             end
             return unless channel.is_a?(Models::Channel)
