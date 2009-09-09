@@ -24,7 +24,7 @@ module ModSpox
             @lock.synchronize do
                 target.downcase!
                 @target_queues[target] = Queue.new unless @target_queues[target]
-                if(target[0].chr == '*')
+                if(target.slice(0,1) == '*')
                     @target_queues[target] << message
                     add_queue(:WHOCARES, @target_queues[target])
                 else

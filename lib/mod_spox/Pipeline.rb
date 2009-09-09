@@ -101,7 +101,7 @@ module ModSpox
                 Logger.warn("Killing #{a.count} signatures")
                 a.destroy
                 Models::Signature.all.each do |s|
-                    c = s.signature[0].chr.downcase
+                    c = s.signature.slice(0, 1).downcase
                     if(c =~ /^[A-Za-z]$/)
                         type = c.to_sym
                     elsif(c =~ /^[0-9]$/)
@@ -157,7 +157,7 @@ module ModSpox
                 # okay, so now that we know we are being asked to do something, lets find
                 # a signature that might match. Signatures are sorted by first character
                 # so once we have that we can get rolling
-                c = (message.addressed? && trigger.nil?) ? message.message[0].chr : message.message[trigger.length].chr
+                c = (message.addressed? && trigger.nil?) ? message.message.slice(0, 1) : message.message[trigger.length].slice(0, 1)
                 case c
                     when /[A-Za-z]/
                         type = c.to_sym

@@ -80,7 +80,7 @@ class Karma < ModSpox::Plugin
         if(set.count > 0)
             output = []
             set.each do |thing|
-                output << "#{thing.thing} (#{thing.score.to_s.slice(0) == '-' ? '' : '+'}#{thing.score})"
+                output << "#{thing.thing} (#{thing.score.to_s.slice(0, 1) == '-' ? '' : '+'}#{thing.score})"
             end
             reply m.replyto, "\2Karma bottom ten:\2 #{output.join(', ')}"
         else
@@ -93,7 +93,7 @@ class Karma < ModSpox::Plugin
         if(set.count > 0)
             output = []
             set.each do |thing|
-                output << "#{thing.thing} (#{thing.score.to_s.slice(0) == '-' ? '' : '+'}#{thing.score})"
+                output << "#{thing.thing} (#{thing.score.to_s.slice(0, 1) == '-' ? '' : '+'}#{thing.score})"
             end
             reply m.replyto, "\2Karma topten:\2 #{output.join(', ')}"
         else

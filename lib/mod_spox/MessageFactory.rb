@@ -44,7 +44,7 @@ module ModSpox
             s = s.dup
             begin
                 key = nil
-                if(s[0].chr == ':')
+                if(s.slice(0, 1) == ':')
                     s.slice!(0..s.index(' '))
                     key = s.slice!(0..s.index(' ')-1)
                 else

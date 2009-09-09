@@ -48,13 +48,13 @@ module ModSpox
                             @cache[nick.nick] = Messages::Incoming::Whois.new(nick) unless @cache[nick.nick]
                             string.slice!(0..string.index(':'))
                             string.split.each do |c|
-                                channel = find_model(['@','+'].include?(c.slice(0)) ? c.slice(1..c.size) : c)
+                                channel = find_model(['@','+'].include?(c.slice(0, 1)) ? c.slice(1..c.size) : c)
                                 channel.add_nick(nick)
                                 @cache[nick.nick].channels_push(channel)
-                                if(c[0].chr == '@')
+                                if(c.slice(0, 1) == '@')
                                     m = Models::NickMode.find_or_create(:nick_id => nick.pk, :channel_id => channel.pk)
                                     m.set_mode('o')
-                                elsif(c[0].chr == '+')
+                                elsif(c.slice(0, 1) == '+')
                                     m = Models::NickMode.find_or_create(:nick_id => nick.pk, :channel_id => channel.pk)
                                     m.set_mode('v')
                                 else
