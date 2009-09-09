@@ -39,7 +39,7 @@ module ModSpox
             config[:socket_burst_delay] = get_input('Socket burst delay: ', '\d+', '2')
             config[:admin_nick] = get_input('Administator nick: ', '[a-zA-Z].*', nil)
             config[:admin_password] = get_input('Administrator password: ', '.+', nil)
-            config[:plugin_directory] = get_input('Plugin temp data driectory (bot needs write permission): ', '.+', '/tmp')
+            config[:plugin_directory] = get_input('Plugin temp data directory (bot needs write permission): ', '.+', '/tmp')
             config[:trigger] = get_input('Default trigger: ', '.+', '!')
             config[:memcache] = get_input('Use memcache (EXPERIMENTAL): ', '(yes|no)', 'no')
             valid_connection = false
