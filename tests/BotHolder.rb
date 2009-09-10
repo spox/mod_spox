@@ -16,10 +16,12 @@ class BotHolder
         ModSpox::Database.db = nil
         begin
             File.unlink('test.db') if File.exists?('test.db')
-            ModSpox.initialize_bot(Sequel.sqlite('test.db'))
-        rescue SQLite3::BusyException
-            ModSpox::Database.reconnect
-            retry
+            ModSpox.initialize_bot(Sequel.connect("#{RUBY_PLATFORM == 'java' ? 'jdbc:' : ''}sqlite://test.db"))
+        rescue Object => boom
+            if(boom.to_s == 'SQLite3::BusyException')
+                ModSpox::Database.reconnect
+                retry
+            end
         end
         require 'mod_spox/Bot'
         @bot = ModSpox::Bot.new
