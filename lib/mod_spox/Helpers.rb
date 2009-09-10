@@ -62,15 +62,19 @@ module ModSpox
                 Timeout::timeout(timeout) do
                     pro = IO.popen(command)
                     until(pro.closed? || pro.eof?)
-                        output << pro.getc
-                        raise IOError.new("Maximum allowed output bytes exceeded. (#{maxbytes} bytes)") unless output.count <= maxbytes
+                        if(RUBY_VERSION >= '1.9.0')
+                            output << pro.getc
+                        else
+                            output << pro.getc.chr
+                        end
+                        raise IOError.new("Maximum allowed output bytes exceeded. (#{maxbytes} bytes)") unless output.size <= maxbytes
                     end
                 end
                 output = output.join('')
             rescue Object => boom
                 raise boom
             ensure
-                Process.kill('KILL', pro.pid) if Process.waitpid2(pro.pid, Process::WNOHANG).nil? # make sure the process is dead
+                Process.kill('KILL', pro.pid) if RUBY_ENGINE == 'jruby' || Process.waitpid2(pro.pid, Process::WNOHANG).nil? # make sure the process is dead
             end
             return output
         end
