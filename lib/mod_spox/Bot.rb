@@ -561,10 +561,11 @@ module ModSpox
                 channel = Helpers.find_model(channel)
             end
             return unless channel.is_a?(Models::Channel)
-            if(channel.quiet)
-                Logger.error("Attempted to send to channel where bot is not allowed to speak: #{channel.name}")
-                raise Exceptions::QuietChannel.new(channel)
-            end
+            # not really needed with filters now enabled
+#             if(channel.quiet)
+#                 Logger.error("Attempted to send to channel where bot is not allowed to speak: #{channel.name}")
+#                 raise Exceptions::QuietChannel.new(channel)
+#             end
             unless(in_channel?(channel))
                 Logger.error("Attempted to send to channel where bot is not parked: #{channel.name}.")
                 raise Exceptions::NotInChannel.new(channel)
