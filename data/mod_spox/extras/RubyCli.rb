@@ -81,13 +81,19 @@ class RubyCli < ModSpox::Plugin
         return unless @channels.include?(message.target.pk)
         filepath = @path + "/#{rand(99999)}.bot.rb"
         file = File.open(filepath, 'w')
-        file.write("$SAFE=4; #{params[:code]}")
+        file.write("puts lambda{$SAFE=4; #{params[:code]}}.call")
         file.close
         begin
             output = Helpers.safe_exec("#{@exec} #{filepath} 2>&1 | head -n 4")
-            if(output.length > 300)
+            if(output.slice(0, filepath.length) == filepath)
+                output.slice!(0, filepath.length)
+                output = output.slice!(0, output.index("\n").nil? ? output.length : output.index("\n"))
+                error message.replyto, output
+            elsif(output.length > 300)
                 reply message.replyto, "#{message.source.nick}: Your result has been truncated. Don't print so much."
                 output = output.slice(0, 300)
+            else
+                reply message.replyto, "Result: #{output}"
             end
             File.delete(filepath)
         rescue Timeout::Error => boom
