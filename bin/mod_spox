@@ -47,6 +47,7 @@ opts = GetoptLong.new(
 )
 verbose = 0
 config = false
+ModSpox.jdbc = true if RUBY_PLATFORM == 'java'
 opts.each do |opt, arg|
     case opt
         when '--help'
