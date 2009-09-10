@@ -157,7 +157,7 @@ module ModSpox
                 # okay, so now that we know we are being asked to do something, lets find
                 # a signature that might match. Signatures are sorted by first character
                 # so once we have that we can get rolling
-                c = (message.addressed? && trigger.nil?) ? message.message.slice(0, 1) : message.message[trigger.length].slice(0, 1)
+                c = (message.addressed? && trigger.nil?) ? message.message.slice(0, 1) : message.message.slice(0, trigger.length+1).slice(trigger.length, 1)
                 case c
                     when /[A-Za-z]/
                         type = c.to_sym
