@@ -74,7 +74,11 @@ module ModSpox
             rescue Object => boom
                 raise boom
             ensure
-                Process.kill('KILL', pro.pid) if RUBY_ENGINE == 'jruby' || Process.waitpid2(pro.pid, Process::WNOHANG).nil? # make sure the process is dead
+                if(RUBY_PLATFORM == 'java')
+                    Process.kill('KILL', pro.pid) unless pro.nil?
+                else
+                    Process.kill('KILL', pro.pid) if Process.waitpid2(pro.pid, Process::WNOHANG).nil? # make sure the process is dead
+                end
             end
             return output
         end
