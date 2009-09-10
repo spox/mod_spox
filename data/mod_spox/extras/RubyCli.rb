@@ -7,13 +7,45 @@ class RubyCli < ModSpox::Plugin
 
     def initialize(pipeline)
         super(pipeline)
+        @path = Config.val(:plugin_directory) + '/rubycli'
+        unless(File.directory?(@path))
+            FileUtils.mkdir_p(@path)
+        end
+        @exec = Config.val(:rbexec)
+        if(@exec.nil?)
+            result = Helpers.safe_exec('which ruby')
+            raise NoInterpreter.new if result.empty?
+            @exec = 'ruby'
+        end
         ruby = Group.find_or_create(:name => 'ruby')
         admin = Group.filter(:name => 'admin').first
         add_sig(:sig => 'ruby (on|off)', :method => :set_channel, :group => admin, :desc => 'Add or remove channel from allowing ruby command', :params => [:action])
         add_sig(:sig => 'ruby (?!on|off)(.+)', :method => :execute_ruby, :group => ruby, :desc => 'Execute ruby code', :params => [:code])
         add_sig(:sig => 'rubyq (?!on|off)(.+)', :method => :quiet_ruby, :group => ruby, :params => [:code], :desc => 'Execute ruby quietly')
+        add_sig(:sig => 'rubyexec( (\S+))?', :method => :set_exec, :params => [:exec], :group => admin, :desc => 'Set custom ruby executable')
         @channels = Setting.filter(:name => 'rubycli').first
         @channels = @channels.nil? ? [] : @channels.value
+    end
+
+    def set_exec(m, params)
+        if(params[:exec])
+            path = params[:exec].strip
+            unless(path == 'none')
+                if(File.executable?(path))
+                    Config.set(:rbexec, path)
+                    @exec = path
+                    information m.replyto, "Ruby executable path has been updated: #{@exec}"
+                else
+                    error m.replyto, 'Path given is not a valid executable path'
+                end
+            else
+                Config.filter(:name => 'rbexec').destroy
+                @exec = 'ruby'
+                information m.replyto, 'Bot is now using default ruby executable'
+            end
+        else
+            information m.replyto, "Executable path is: #{@exec}"
+        end
     end
 
     def set_channel(message, params)
@@ -47,46 +79,22 @@ class RubyCli < ModSpox::Plugin
     # over untrusted code
     def execute_ruby(message, params, shh=false)
         return unless @channels.include?(message.target.pk)
-        rd, wr = IO.pipe
-        cid = Kernel.fork do
-            rd.close
-            result = nil
-            begin
-                result = lambda{$SAFE=4; eval(params[:code])}.call
-            rescue Object => boom
-                result = boom
-            ensure
-                wr.write [Marshal.dump(result)].pack('m')
+        filepath = @path + "/#{rand(99999)}.bot.rb"
+        file = File.open(filepath, 'w')
+        file.write("$SAFE=4; #{params[:code]}")
+        file.close
+        begin
+            output = Helpers.safe_exec("#{@exec} #{filepath} 2>&1 | head -n 4")
+            if(output.length > 300)
+                reply message.replyto, "#{message.source.nick}: Your result has been truncated. Don't print so much."
+                output = output.slice(0, 300)
             end
-        end
-        if(cid)
-            Database.reset_connections
-            begin
-                result = nil
-                Timeout::timeout(5) do
-                    wr.close
-                    result = rd.read
-                    rd.close
-                end
-                result = result.size > 0 ? Marshal.load(result.unpack('m')[0]) : ''
-                if(result.is_a?(Exception))
-                    error message.replyto, "Exception generated: #{result.to_s.index(' for ').nil? ? result.to_s : result.to_s.slice(0..result.to_s.index(' for '))}"
-                else
-                    result = result.to_s
-                    reply message.replyto, "#{message.source.nick}: Your result has been truncated. Don't print so much." if result.size > 300
-                    reply message.replyto, "#{shh ? '' : 'Result: '}#{result.slice(0..300)}"
-                end
-            rescue Timeout::Error
-                error message.replyto, 'Execution timeout reached.'
-                Logger.warn("Child process #{cid} to be killed")
-                Process.kill('KILL', cid)
-                Logger.warn("Child process #{cid} has been killed")
-            rescue Object => boom
-                error message.replyto, "Unknown error encountered: #{boom}"
-            ensure
-                Process.wait(cid, Process::WNOHANG)
-                Logger.info("RubyCli process has exited.")
-            end
+            File.delete(filepath)
+        rescue Timeout::Error => boom
+            reply message.replyto, "\2Error:\2 Timeout reached: #{boom}"
+        rescue Object => boom
+            reply message.replyto, "\2Error:\2 Script execution terminated. (#{boom})"
+            File.delete(filepath)
         end
     end
 
