@@ -46,6 +46,7 @@ opts = GetoptLong.new(
     ['--daemon', '-D', GetoptLong::NO_ARGUMENT]
 )
 verbose = 0
+config = false
 opts.each do |opt, arg|
     case opt
         when '--help'
@@ -72,10 +73,7 @@ opts.each do |opt, arg|
                 ModSpox.logto = $stdout
             end
         when '--config'
-            require 'mod_spox/ConfigurationWizard'
-            wizard = ConfigurationWizard.new
-            BotConfig.configured? ? wizard.update : wizard.run
-            exit
+            config = true
         when '--path'
             ModSpox.mod_spox_path = arg
         when '--daemon'
@@ -85,6 +83,13 @@ opts.each do |opt, arg|
                 ModSpox.loglevel = arg.to_sym
             end
     end
+end
+
+if(config)
+    require 'mod_spox/ConfigurationWizard'
+    wizard = ConfigurationWizard.new
+    BotConfig.configured? ? wizard.update : wizard.run
+    exit
 end
 
 ModSpox.initialize_bot
