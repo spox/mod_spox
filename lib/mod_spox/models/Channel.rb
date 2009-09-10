@@ -9,8 +9,6 @@ module ModSpox
         # password:: Channel password
         # autojoin:: Set bot to autojoin this channel
         # topic:: Channel topic
-        # quiet:: Silence the bot in this channel
-        # parked:: Bot is currently in this channel
         class Channel < Sequel::Model
 
             many_to_many :nicks, :join_table => :nick_channels, :class => 'ModSpox::Models::Nick'
