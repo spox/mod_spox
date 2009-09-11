@@ -1,6 +1,6 @@
 module ModSpox
     module Migrations
-        class Ignore < Sequel::Migration
+        class RemoveQuiet < Sequel::Migration
             def up
                 Database.db.drop_column :channels, :quiet
             end
