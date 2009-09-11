@@ -129,16 +129,6 @@ class RegexTracker < ModSpox::Plugin
     end
     
     class TrackInfo < Sequel::Model
-        set_schema do
-            primary_key :id, :null => false
-            varchar :regex, :null => false
-            integer :score_total, :null => false, :default => 0
-            integer :score_today, :null => false, :default => 0
-            timestamp :last_score, :null => false
-            foreign_key :channel_id, :table => :channels, :null => false
-            index [:regex, :channel_id], :unique => true
-        end
-
         many_to_one :channel, :class => ModSpox::Models::Channel
         
         def channel=(chan)

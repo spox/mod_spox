@@ -231,14 +231,6 @@ class Roulette < ModSpox::Plugin
     end
 
     class Game < Sequel::Model
-        set_schema do
-            primary_key :id
-            timestamp :stamp, :null => false
-            integer :shots, :null => false, :default => 6
-            integer :chamber, :null => false, :default => 1
-            foreign_key :channel_id, :null => false, :table => :channels
-        end
-
         many_to_one :channel, :class => ModSpox::Models::Channel
 
         def before_create
@@ -247,14 +239,6 @@ class Roulette < ModSpox::Plugin
     end
 
     class Info < Sequel::Model
-        set_schema do
-            primary_key :id
-            integer :shots, :null => false, :default => 0
-            boolean :win, :null => false, :default => false
-            foreign_key :nick_id, :null => false, :table => :nicks
-            foreign_key :game_id, :null => false, :table => :games
-        end
-        
         many_to_one :nick, :class => ModSpox::Models::Nick
         many_to_one :game, :class => Game
     end

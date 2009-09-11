@@ -88,15 +88,6 @@ class Topten < ModSpox::Plugin
     end
     
     class ChatStat < Sequel::Model
-        set_schema do
-            primary_key :id
-            integer :words, :null => false, :default => 0
-            integer :bytes, :null => false, :default => 0
-            integer :questions, :null => false, :default => 0
-            varchar :daykey, :null => false
-            foreign_key :channel_id, :table => :channels
-            foreign_key :nick_id, :table => :nicks
-        end
         many_to_one :channel, :class => ModSpox::Models::Channel
         many_to_one :nick, :class => ModSpox::Models::Nick
     end

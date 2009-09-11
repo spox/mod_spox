@@ -125,27 +125,10 @@ class AutoKick < ModSpox::Plugin
     end
 
     class AutoKickRecord < Sequel::Model
-        set_schema do
-            primary_key :id
-            text :pattern, :null => false
-            integer :bantime, :null => false, :default => 60
-            text :message, :null => false
-            foreign_key :channel_id, :table => :channels
-        end
-
         many_to_one :channel, :class => ModSpox::Models::Channel
     end
     
     class AutoKickPersonal < Sequel::Model
-        set_schema do
-            primary_key :id
-            varchar :pattern, :default => nil
-            integer :bantime, :null => false, :default => 60
-            varchar :message, :null => false
-            foreign_key :nick_id, :table => :nicks
-            foreign_key :channel_id, :table => :channels
-        end
-
         many_to_one :nick, :class => ModSpox::Models::Nick
         many_to_one :channel, :class => ModSpox::Models::Channel
     end

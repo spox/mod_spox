@@ -141,16 +141,6 @@ class ChatLogger < ModSpox::Plugin
     end
     
     class PrivateLog < Sequel::Model
-        set_schema do
-            primary_key :id
-            text :message, :null => false
-            text :type, :null => false, :default => 'privmsg'
-            boolean :action, :null => false, :default => false
-            timestamp :received, :null => false
-            foreign_key :sender_id, :table => :nicks
-            foreign_key :receiver_id, :table => :nicks
-        end
-        
         def sender
             Models::Nick[sender_id]
         end
@@ -161,16 +151,6 @@ class ChatLogger < ModSpox::Plugin
     end
     
     class PublicLog < Sequel::Model
-        set_schema do
-            primary_key :id
-            text :message
-            text :type, :null => false, :default => 'privmsg'
-            boolean :action, :null => false, :default => false
-            timestamp :received, :null => false
-            foreign_key :sender_id, :table => :nicks
-            foreign_key :channel_id, :table => :channels
-        end
-        
         def sender
             Models::Nick[sender_id]
         end

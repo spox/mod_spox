@@ -137,15 +137,6 @@ class Seen < ModSpox::Plugin
     end
 
     class SeenLog < Sequel::Model
-        set_schema do
-            foreign_key :nick_id, :table => :nicks, :null => false
-            foreign_key :channel_id, :table => :channels
-            varchar :type, :default => 'privmsg'
-            timestamp :received, :null => false
-            boolean :action, :null => false, :default => true
-            text :message
-            primary_key :nick_id
-        end
         many_to_one :nick, :class => ModSpox::Models::Nick
         many_to_one :channel, :class => ModSpox::Models::Channel
     end

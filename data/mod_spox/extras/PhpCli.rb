@@ -225,13 +225,6 @@ class PhpCli < ModSpox::Plugin
     end
     
     class PhpFunction < Sequel::Model
-        set_schema do
-            text :php_function, :null => false
-            varchar :name, :null => false, :unique => true
-            timestamp :added, :null => false
-            foreign_key :nick_id, :null => false
-            primary_key :id
-        end
         Sequel::Model.plugin :lazy_attributes, :php_function
         Sequel::Model.plugin :serialization, :marshal, :php_function
 #         serialize(:php_function, :format => :marshal)

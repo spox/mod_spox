@@ -456,18 +456,6 @@ class Banner < ModSpox::Plugin
     end
 
     class BanRecord < Sequel::Model
-        set_schema do
-            primary_key :id
-            timestamp :stamp, :null => false
-            integer :bantime, :null => false, :default => 1
-            integer :remaining, :null => false, :default => 1
-            varchar :mask, :null => false
-            boolean :invite, :null => false, :default => false
-            boolean :removed, :null => false, :default => false
-            foreign_key :channel_id, :null => false, :table => :channels, :key => :id
-            foreign_key :nick_id, :null => false, :table => :nicks, :key => :id
-        end
-
         many_to_one :channel, :class => ModSpox::Models::Channel
         many_to_one :nick, :class => ModSpox::Models::Nick
 
@@ -477,15 +465,6 @@ class Banner < ModSpox::Plugin
     end
 
     class BanMask < Sequel::Model
-        set_schema do
-            primary_key :id
-            varchar :mask, :unique => true, :null => false
-            timestamp :stamp, :null => false
-            integer :bantime, :null => false, :default => 1
-            text :message
-            foreign_key :channel_id, :null => false, :table => :channels, :key => :id
-        end
-
         many_to_one :channel, :class => ModSpox::Models::Channel
 
         def self.map_masks
@@ -500,23 +479,11 @@ class Banner < ModSpox::Plugin
     end
 
     class BanNickExempt < Sequel::Model
-        set_schema do
-            primary_key :id
-            foreign_key :nick_id, :table => :nicks, :null => false, :key => :id
-            foreign_key :channel_id, :table => :channels, :key => :id
-        end
-        
         many_to_one :nick, :class => ModSpox::Models::Nick
         many_to_one :channel, :class => ModSpox::Models::Channel
     end
 
     class BanSourceExempt < Sequel::Model
-        set_schema do
-            primary_key :id
-            varchar :source, :null => false
-            foreign_key :channel_id, :table => :channels, :key => :id
-        end
-
         many_to_one :channel, :class => ModSpox::Models::Channel
 
         def mask
@@ -530,13 +497,6 @@ class Banner < ModSpox::Plugin
     end
 
     class BanModeExempt < Sequel::Model
-        set_schema do
-            primary_key :id
-            varchar :mode, :null => false
-            foreign_key :channel_id, :table => :channels, :key => :id
-            index [:channel_id, :mode]
-        end
-        
         many_to_one :channel, :class => ModSpox::Models::Channel
     end
 

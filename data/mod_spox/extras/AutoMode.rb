@@ -108,14 +108,6 @@ class AutoMode < ModSpox::Plugin
     end
     
     class ModeRecord < Sequel::Model
-        set_schema do
-            primary_key :id
-            boolean :voice, :null => false, :default => true
-            foreign_key :nick_id, :table => :nicks, :null => false
-            foreign_key :channel_id, :table => :channels, :null => false
-            index [:nick_id, :channel_id, :voice], :unique => true
-        end
-
         many_to_one :channel, :class => ModSpox::Models::Channel
         many_to_one :nick, :class => ModSpox::Models::Nick
     end

@@ -236,23 +236,9 @@ class Karma < ModSpox::Plugin
 
     module Datatype
         class Karma < Sequel::Model
-            set_schema do
-                primary_key :id
-                text :thing, :null => false
-                integer :score, :null => false, :default => 0
-                foreign_key :channel_id, :table => :channels
-                index [:thing, :channel_id], :unique => true
-            end
-
             many_to_one :channel, :class => ModSpox::Models::Channel
         end
         class Alias < Sequel::Model
-            set_schema do
-                primary_key :id
-                foreign_key :thing_id, :null => false
-                foreign_key :aka_id, :null => false
-            end
-
             def thing
                 Karma[thing_id]
             end
