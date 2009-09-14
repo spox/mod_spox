@@ -53,11 +53,17 @@ module ModSpox
         # m:: message from pipeline
         # Applies filters to messages from pipeline
         def apply_filters(m)
+            clear if m.is_a?(ModSpox::Messages::Internal::PluginReload)
             @filters.keys.each do |type|
                 if(Helpers.type_of?(m, type))
                     @filters[type].each{|f| f.filter(m)}
                 end
             end
+        end
+        
+        # Remove all filters
+        def clear
+            @filters = {}
         end
     end
 end
