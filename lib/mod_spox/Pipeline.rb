@@ -20,6 +20,22 @@ module ModSpox
             hook(self, :populate_triggers, ModSpox::Messages::Internal::TriggersUpdate)
             hook(self, :populate_signatures, ModSpox::Messages::Internal::SignaturesUpdate)
             @filters = FilterManager.new(self)
+            [:FilterAdd, :FilterRemove, :FilterList, :FilterListing].each{|f| Helpers.load_message(:internal, f)}
+            hook(self, :add_filter, ModSpox::Messages::Internal::FilterAdd)
+            hook(self, :remove_filter, ModSpox::Messages::Internal::FilterRemove)
+            hook(self, :list_filter, ModSpox::Messages::Internal::FilterList)
+        end
+        
+        def add_filter(m)
+            @filters.add(m.filter, m.type)
+        end
+        
+        def remove_filter(m)
+            @filters.remove(m.filter, m.type)
+        end
+        
+        def list_filter(m)
+            self << ModSpox::Messages::Internal::FilterListing.new(m.type, @filters.filters(m.type))
         end
 
         # message:: Message to send down pipeline

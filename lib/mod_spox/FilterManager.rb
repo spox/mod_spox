@@ -4,10 +4,6 @@ module ModSpox
         def initialize(pipeline)
             @pipeline = pipeline
             @filters = {}
-            [:FilterAdd, :FilterRemove, :FilterList, :FilterListing].each{|f| Helpers.load_message(:internal, f)}
-            @pipeline.hook(self, :add_filter, ModSpox::Messages::Internal::FilterAdd)
-            @pipeline.hook(self, :remove_filter, ModSpox::Messages::Internal::FilterRemove)
-            @pipeline.hook(self, :list_filter, ModSpox::Messages::Internal::FilterList)
         end
         
         # filter:: ModSpox::Filter object
@@ -56,7 +52,11 @@ module ModSpox
             clear if m.is_a?(ModSpox::Messages::Internal::PluginReload)
             @filters.keys.each do |type|
                 if(Helpers.type_of?(m, type))
-                    @filters[type].each{|f| f.filter(m)}
+                    begin
+                        @filters[type].each{|f| f.filter(m)}
+                    rescue Object => boom
+                        Logger.warn("Failed to apply filter: #{boom}")
+                    end
                 end
             end
         end
