@@ -36,7 +36,7 @@ module ModSpox
             if(nick)
                 return nick
             else
-                raise Exception.new("Fatal Error: I don't know who I am.")
+                raise Exception.new("I don't know who I am. Hold me, I'm scared!")
             end
         end
 
