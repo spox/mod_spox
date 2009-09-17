@@ -1,5 +1,4 @@
 class Filters < ModSpox::Plugin
-    
     def initialize(pipeline)
         super
         group = Models::Group.filter(:name => 'admin').first
@@ -11,8 +10,8 @@ class Filters < ModSpox::Plugin
         @filters[:in] = RubyFilter.new(Messages::Incoming::Privmsg)
         @filters[:out] = RubyFilter.new(Messages::Outgoing::Privmsg)
         load_strings
-        @filters[:in] = @filter_strings[:in]
-        @filters[:out] = @filter_strings[:out]
+        @filters[:in].filters = @filter_strings[:in].values if @filter_strings[:in].size > 0
+        @filters[:out].filters = @filter_strings[:out].values if @filter_strings[:out].size > 0
         @pipeline << ModSpox::Messages::Internal::FilterAdd.new(@filters[:out], ModSpox::Messages::Incoming::Privmsg)
         @pipeline << ModSpox::Messages::Internal::FilterAdd.new(@filters[:out], ModSpox::Messages::Outgoing::Privmsg)
     end
@@ -23,7 +22,7 @@ class Filters < ModSpox::Plugin
             direction = params[:direction].to_sym
             raise "Key is already in use. Please choose another name (#{name})" if @filter_strings[direction][name]
             @filter_strings[direction][name] = params[:code]
-            @filters[direction].filters = @filter_strings[direction]
+            @filters[direction].filters = @filter_strings[direction].values
             save_strings
             information m.replyto, "New filter has been applied under name: #{name}"
         rescue Object => boom
@@ -84,7 +83,6 @@ class Filters < ModSpox::Plugin
         v.value = @filter_strings
         v.save
     end
-    
     class RubyFilter < ModSpox::Filter
         def initialize(args)
             super
@@ -107,5 +105,4 @@ class Filters < ModSpox::Plugin
             end
         end
     end
-    
 end

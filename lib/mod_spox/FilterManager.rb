@@ -1,3 +1,5 @@
+require 'mod_spox/Filter'
+
 module ModSpox
     class FilterManager
         
