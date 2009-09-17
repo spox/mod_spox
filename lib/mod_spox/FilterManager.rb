@@ -51,16 +51,20 @@ module ModSpox
         # m:: message from pipeline
         # Applies filters to messages from pipeline
         def apply_filters(m)
-            clear if m.is_a?(ModSpox::Messages::Internal::PluginReload)
             @filters.keys.each do |type|
                 if(Helpers.type_of?(m, type))
-                    begin
-                        @filters[type].each{|f| f.filter(m)}
-                    rescue Object => boom
-                        Logger.warn("Failed to apply filter: #{boom}")
+                    @filters[type].each do |f|
+                        begin
+                            m = f.filter(m)
+                            break if m.nil?
+                        rescue Object => boom
+                            Logger.warn("Failed to apply filter: #{boom}")
+                        end
                     end
+                    break if m.nil?
                 end
             end
+            return m
         end
         
         # Remove all filters

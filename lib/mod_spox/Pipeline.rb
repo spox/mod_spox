@@ -137,7 +137,7 @@ module ModSpox
 
         # Processes messages
         def message_processor(message)
-            @filters.apply_filters(message)
+            message = @filters.apply_filters(message)
             return if message.nil?
             @hooks.keys.each do |type|
                 next unless Helpers.type_of?(message, type, true)

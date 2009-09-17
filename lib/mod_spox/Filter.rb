@@ -10,7 +10,7 @@ module ModSpox
         # Applies filters to message
         def filter(message)
             raise ArgumentError.new("Wrong type supplied (Expected: #{@type})") unless Helpers.type_of?(message, @type)
-            do_filter(message)
+            return do_filter(message)
         end
         
         protected
@@ -21,7 +21,7 @@ module ModSpox
         # NOTE: Messages can be filtered in any way. For a filter to
         # basically "throw away" a message, simply set the message to
         # nil and it will not be processed or added to the pipeline:
-        #   *message = nil
+        # return nil
         def do_filter(message)
             raise Exceptions::NotImplemented.new
         end

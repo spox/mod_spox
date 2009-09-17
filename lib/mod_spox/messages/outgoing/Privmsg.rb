@@ -5,7 +5,7 @@ module ModSpox
                 # target for the message
                 attr_reader :target
                 # the message
-                attr_reader :message
+                attr_accessor :message
                 # type of CTCP message
                 attr_reader :ctcp_type
                 # target:: target for the message

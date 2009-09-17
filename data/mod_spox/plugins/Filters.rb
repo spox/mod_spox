@@ -12,7 +12,7 @@ class Filters < ModSpox::Plugin
         load_strings
         @filters[:in].filters = @filter_strings[:in].values if @filter_strings[:in].size > 0
         @filters[:out].filters = @filter_strings[:out].values if @filter_strings[:out].size > 0
-        @pipeline << ModSpox::Messages::Internal::FilterAdd.new(@filters[:out], ModSpox::Messages::Incoming::Privmsg)
+        @pipeline << ModSpox::Messages::Internal::FilterAdd.new(@filters[:in], ModSpox::Messages::Incoming::Privmsg)
         @pipeline << ModSpox::Messages::Internal::FilterAdd.new(@filters[:out], ModSpox::Messages::Outgoing::Privmsg)
     end
     
@@ -89,7 +89,7 @@ class Filters < ModSpox::Plugin
             @filters = []
         end
         def filters
-            @filters
+            @filters.dup
         end
         def filters=(f)
             raise ArgumentError.new('Array of filter strings required') unless f.is_a?(Array)
@@ -99,10 +99,11 @@ class Filters < ModSpox::Plugin
             @filters.each do |f|
                 begin
                     Kernel.eval(f)
-                rescue Object
-                    # ignore failures
+                rescue Object => boom
+                    Logger.error("Failed to apply filter string: #{boom}")
                 end
             end
+            return m
         end
     end
 end

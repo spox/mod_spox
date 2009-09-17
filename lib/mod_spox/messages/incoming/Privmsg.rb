@@ -33,6 +33,7 @@ module ModSpox
                     else
                         @addressed = false
                     end
+                    @orginal_message = @message.dup
                 end
 
                 # Is message addressing the bot
@@ -61,13 +62,26 @@ module ModSpox
                 end
 
                 # Message with coloring stripped
-                def message_nocolor
-                    return @message.gsub(/\cC\d\d?(?:,\d\d?)?/, '').tr("\x00-\x1f", '')
+                def message_nocolor(m=nil)
+                    m = @message if m.nil?
+                    return m.gsub(/\cC\d\d?(?:,\d\d?)?/, '').tr("\x00-\x1f", '')
                 end
 
                 # the message sent
                 def message(color=false)
                     return color ? @message : message_nocolor
+                end
+
+                # Set the message
+                def message=(m)
+                    raise ArgumentError.new("Expecting a String type. Instead received: #{m.class}") unless m.is_a?(String)
+                    @message = m.dup
+                end
+
+                # Original version of message received. Any filters
+                # that have been applied will not be shown.
+                def original_message(color=false)
+                    return color ? @original_message : message_nocolor(@original_message)
                 end
 
                 # Is this message an action message
