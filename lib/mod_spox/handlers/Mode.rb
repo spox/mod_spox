@@ -38,7 +38,9 @@ module ModSpox
                                 nicks << ni
                             end
                             i = 0
-                            modes.each_char do |m|
+                            
+                            modes.each_byte do |m|
+                                m = m.chr
                                 nm = Models::NickMode.find_or_create(:channel_id => channel.pk, :nick_id => nicks[i].pk)
                                 action == '+' ? nm.set_mode(m) : nm.unset_mode(m)
                                 i += 1
@@ -46,7 +48,8 @@ module ModSpox
                             nicks = nicks[0] if nicks.size == 1
                             return Messages::Incoming::Mode.new(orig, "#{action}#{modes}", source, nicks, channel)
                         else #channel modes
-                            modes.each_char do |m|
+                            modes.each_byte do |m|
+                                m = m.chr
                                 action == '+' ? channel.set_mode(m) : channel.unset_mode(c)
                             end
                             return Messages::Incoming::Mode.new(orig, "#{action}#{modes}", source, nil, channel)

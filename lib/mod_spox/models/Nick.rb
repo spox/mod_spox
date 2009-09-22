@@ -169,13 +169,15 @@ module ModSpox
             end
             
             def set_mode(m)
-                m.each_char do |c|
+                m.each_byte do |c|
+                    c = c.chr
                     update(:mode => "#{mode}#{c}") if mode.index(c).nil?
                 end
             end
             
             def unset_mode(m)
-                m.each_char do |c|
+                m.each_byte do |c|
+                    c = c.chr
                     update(:mode => mode.gsub(c,'')) unless mode.index(c).nil?
                 end
             end
