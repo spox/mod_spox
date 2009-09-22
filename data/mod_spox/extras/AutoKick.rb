@@ -15,7 +15,8 @@ class AutoKick < ModSpox::Plugin
         @colors = Setting.val(:colorkick)
         @colors = Array.new unless @colors.is_a?(Array)
         AutoKickRecord.create_table unless AutoKickRecord.table_exists?
-        do_listen
+        setup_listen
+        @pipeline.hook(self, :listener, ModSpox::Messages::Incoming::Privmsg)
     end
 
     def colors(message, params)
@@ -63,7 +64,7 @@ class AutoKick < ModSpox::Plugin
         if(channel)
             record = AutoKickRecord.find_or_create(:pattern => params[:regex], :message => params[:message], :bantime => params[:time].to_i, :channel_id => channel.pk)
             reply message.replyto, "New autokick rule has been created"
-            do_listen
+            setup_listen
         else
             reply message.replyto, "\2Error:\2 I have no record of #{params[:channel]}. Failed to add autokick rule."
         end
@@ -74,7 +75,7 @@ class AutoKick < ModSpox::Plugin
         if(record)
             record.destroy
             reply message.replyto, "Autokick rule \2#{params[:id]}\2 has been removed"
-            do_listen
+            setup_listen
         else
             reply message.replyto, "\2Error:\2 Failed to find an autokick rule with ID: #{params[:id]}"
         end
@@ -106,21 +107,15 @@ class AutoKick < ModSpox::Plugin
 
     private
 
-    def do_listen
-        @map = nil
-        begin
-            @pipeline.unhook(self, :listener, ModSpox::Messages::Incoming::Privmsg)
-        rescue Object => boom
-            #ignore
-        end
+    def setup_listen
+        @map = {}
         records = AutoKickRecord.all
         if(records.size > 0)
-            @map = {}
             records.each do |record|
                 @map[record.channel_id] = [] unless @map[record.channel_id]
                 @map[record.channel_id] << record.pattern
             end
-            @pipeline.hook(self, :listener, ModSpox::Messages::Incoming::Privmsg)
+            
         end
     end
 
