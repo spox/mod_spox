@@ -150,15 +150,16 @@ module ModSpox
             t = a.class.to_s
             unless(t.index('ModSpox::Messages::').nil?)
                 t.slice!(t.index('ModSpox::Messages::'), 19)
-                checks << t
+                checks << t.dup
             end
             t = a.class.to_s
-            if(t.slice(0, 1) == '<')
-                t.slice!(0, t.rindex('>'))
-                checks << t
+            checks << t.dup
+            if(t.slice(0, 1) == '#')
+                t.slice!(0, t.rindex('>')+3)
+                checks << t.dup
             end
-            checks << a.class.to_s
             checks.each do |s|
+                return true if s =~ /#{b}.*/
                 until(s.index('::').nil?) do
                     s.slice!(s.rindex('::'), s.length - s.rindex('::'))
                     return true if s =~ /#{b}.*/
@@ -170,7 +171,7 @@ module ModSpox
                 sym.gsub!('::', '_')
                 return true if sym == b || b =~ /#{sym}.*/
                 sym.slice!(0, 17) if sym.index('ModSpox_Messages') == 0
-                sym.slice!(0, sym.index('>')+1) if sym.index('<') == 0 # this is for dynamic objects from plugins
+                sym.slice!(0, sym.index('>')+3) if sym.index('#') == 0 # this is for dynamic objects from plugins
                 return true if sym == b || b =~ /#{sym}.*/
             end
             return false
