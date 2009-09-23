@@ -106,4 +106,28 @@ class Filters < ModSpox::Plugin
             return m
         end
     end
+    class IgnoreFilter < ModSpox::Filter
+        def initialize(args)
+            super
+            @ignores = {:all => []}
+        end
+        def ignore(nick, channel=nil)
+        end
+        def unignore(nick, channel=nil)
+        end
+    end
+    class QuietFilter < ModSpox::Filter
+        def initialize(args)
+            @quiet = []
+        end
+        def quiet(channel)
+            @quiet << channel.pk unless @quiet.include?(channel.pk)
+        end
+        def unquiet(channel)
+            @quiet.delete(channel.pk) if @quiet.include?(channel.pk)
+        end
+        def do_filter(m)
+            return @quiet.include?(m.channel.pk) ? nil : m
+        end
+    end
 end
