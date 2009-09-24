@@ -32,14 +32,17 @@ class Filters < ModSpox::Plugin
     
     def ignore(m, params)
         begin
+            nick = Helpers.find_model(params[:nick].strip)
+            raise "Failed to find nick: #{params[:nick].strip}" unless nick.is_a?(Models::Nick)
             if(params[:channel])
                 chan = Helpers.find_model(params[:channel].strip)
                 raise "#{params[:channel].strip} is not a valid channel" unless chan.is_a?(Models::Channel)
-                @filters[:ignore].ignore(m.source, chan)
+                @filters[:ignore].ignore(nick, chan)
             else
-                @filters[:ignore].ignore(m.source)
+                @filters[:ignore].ignore(nick)
             end
-            information m.replyto, "#{m.source.nick} is now ignored #{params[:channel] ? "in #{params[:channel].strip}" : 'everywhere'}"
+            save_strings
+            information m.replyto, "#{nick.nick} is now ignored #{params[:channel] ? "in #{params[:channel].strip}" : 'everywhere'}"
         rescue Object => boom
             error m.replyto, "Failed to add ignore: #{boom}"
         end
@@ -64,7 +67,7 @@ class Filters < ModSpox::Plugin
         begin
             if(params[:channel])
                 chan = Helpers.find_model(params[:channel].strip)
-                raise "#{params[:channel.strip} is not a valid channel" unless chan.is_a?(Models::Channel)
+                raise "#{params[:channel].strip} is not a valid channel" unless chan.is_a?(Models::Channel)
                 @filters[:quiet].quiet(chan)
                 information m.replyto, "Now quiet in channel: #{chan.name}"
             elsif(m.is_public?)
@@ -73,6 +76,7 @@ class Filters < ModSpox::Plugin
             else
                 raise "failed to determine where to be quiet"
             end
+            save_strings
         rescue Object => boom
             error m.replyto, "Failed to add quiet: #{boom}"
         end
@@ -82,7 +86,7 @@ class Filters < ModSpox::Plugin
         begin
             if(params[:channel])
                 chan = Helpers.find_model(params[:channel].strip)
-                raise "#{params[:channel.strip} is not a valid channel" unless chan.is_a?(Models::Channel)
+                raise "#{params[:channel].strip} is not a valid channel" unless chan.is_a?(Models::Channel)
                 @filters[:quiet].unquiet(chan)
                 information m.replyto, "Now not quiet in channel: #{chan.name}"
             elsif(m.is_public?)
@@ -93,6 +97,28 @@ class Filters < ModSpox::Plugin
             end
         rescue Object => boom
             error m.replyto, "Failed to remove quiet: #{boom}"
+        end
+    end
+    
+    def ignores(m, params)
+        i = @filters[:ignore].ignores
+        if(i.empty?)
+            information m.replyto, 'No ignores currently applied'
+        else
+            output = []
+            i.each_pair do |chan, nicks|
+                output << "\2#{chan == :all ? 'Everywhere' : chan}\2: #{nicks.join(', ')}"
+            end
+            information m.replyto, "Current ignores: #{output.join(' ')}"
+        end
+    end
+    
+    def quiets(m, params)
+        q = @filters[:quiet].quiets
+        if(q.empty?)
+            information m.replyto, 'Not currently quiet anywhere'
+        else
+            information m.replyto, "Currently quiet in: #{q.join(', ')}"
         end
     end
     
@@ -155,7 +181,7 @@ class Filters < ModSpox::Plugin
 
     def load_strings
         @filter_strings = Models::Setting.find_or_create(:name => 'filters').value
-        @filter_strings = {:in => {}, :out => {}, :quiet => nil, :ignore => nil} unless @filter_strings.is_a?(Hash)
+        @filter_strings = {:in => {}, :out => {}, :quiet => [], :ignore => {}} unless @filter_strings.is_a?(Hash)
     end
 
     def save_strings
@@ -189,7 +215,7 @@ class Filters < ModSpox::Plugin
     class IgnoreFilter < ModSpox::Filter
         def initialize(args)
             super
-            @ignores = {:all => []}
+            @ignores = {}
         end
         def ignores
             @ignores.dup
@@ -198,22 +224,25 @@ class Filters < ModSpox::Plugin
             @ignores = i.dup
         end
         def ignore(nick, channel=nil)
-            key = channel.nil? ? :all : channel.pk
+            key = channel.nil? ? :all : channel.name.downcase
             @ignores[key] = [] unless @ignores[key]
             unless(@ignores.include?(nick.pk))
-                @ignores[key] << nick.pk
+                @ignores[key] << nick.nick.downcase
             else
                 raise "Nick #{nick.nick} is already set to ignore #{channel.nil? ? 'everywhere' : "in #{channel.name}"}"
             end
         end
         def unignore(nick, channel=nil)
-            key = channel.nil? ? :all : channel.pk
-            if(@ignores[key] && @ignores[key].include?(nick.pk))
-                @ignores[key].delete(nick.pk)
+            key = channel.nil? ? :all : channel.name.downcase
+            if(@ignores[key] && @ignores[key].include?(nick.nick.downcase))
+                @ignores[key].delete(nick.nick.downcase)
                 @ignores.delete(key) if @ignores[key].empty?
             else
                 raise "Nick #{nick.nick} is not currently set to ignore #{channel.nil? ? 'everywhere' : "in #{channel.name}"}"
             end
+        end
+        def do_filter(m)
+            return nil if (@ignores[m.target.name.downcase] && @ignores[m.target.name.downcase].include?(m.source.nick.downcase)) || (@ignores[:all] && @ignores[:all].include?(m.source.nick.downcase))
         end
     end
     class QuietFilter < ModSpox::Filter
@@ -227,21 +256,21 @@ class Filters < ModSpox::Plugin
             @quiet = q.dup
         end
         def quiet(channel)
-            unless(@quiet.include?(channel.pk))
-                @quiet << channel.pk
+            unless(@quiet.include?(channel.name.downcase))
+                @quiet << channel.name.downcase
             else
                 raise "Already set to quiet in #{channel.name}"
             end
         end
         def unquiet(channel)
-            if(@quiet.include?(channel.pk))
-                @quiet.delete(channel.pk)
+            if(@quiet.include?(channel.name.downcase))
+                @quiet.delete(channel.name.downcase)
             else
                 raise "Not currently set to quiet in #{channel.name}"
             end
         end
         def do_filter(m)
-            return @quiet.include?(m.channel.pk) ? nil : m
+            return m.is_public? && @quiet.include?(m.target.name.downcase) ? nil : m
         end
     end
 end
