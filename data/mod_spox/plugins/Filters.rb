@@ -18,8 +18,8 @@ class Filters < ModSpox::Plugin
         @filters[:ignore] = IgnoreFilter.new(Messages::Incoming::Privmsg)
         @filters[:quiet] = QuietFilter.new(Messages::Outgoing::Privmsg)
         load_strings
-        @filters[:in].filters = @filter_strings[:in].values if @filter_strings[:in].size > 0
-        @filters[:out].filters = @filter_strings[:out].values if @filter_strings[:out].size > 0
+        @filters[:in].filters = @filter_strings[:in] if @filter_strings[:in].size > 0
+        @filters[:out].filters = @filter_strings[:out] if @filter_strings[:out].size > 0
         @filters[:ignore].ignores = @filter_strings[:ignore]
         @filters[:quiet].quiets = @filter_strings[:quiet]
         [
@@ -41,6 +41,7 @@ class Filters < ModSpox::Plugin
             else
                 @filters[:ignore].ignore(nick)
             end
+            @filter_strings[:ignore] = @filters[:ignore].filters
             save_strings
             information m.replyto, "#{nick.nick} is now ignored #{params[:channel] ? "in #{params[:channel].strip}" : 'everywhere'}"
         rescue Object => boom
@@ -57,6 +58,8 @@ class Filters < ModSpox::Plugin
             else
                 @filters[:ignore].unignore(m.source)
             end
+            @filter_strings[:ignore] = @filters[:ignore].filters
+            save_strings
             information m.replyto, "#{m.source.nick} is no longer ignored #{params[:channel] ? "in #{params[:channel].strip}" : 'everywhere'}"
         rescue Object => boom
             error m.replyto, "Failed to remove ignore: #{boom}"
@@ -76,6 +79,7 @@ class Filters < ModSpox::Plugin
             else
                 raise "failed to determine where to be quiet"
             end
+            @filter_strings[:quiet] = @filters[:quiet].quiets
             save_strings
         rescue Object => boom
             error m.replyto, "Failed to add quiet: #{boom}"
@@ -95,6 +99,8 @@ class Filters < ModSpox::Plugin
             else
                 raise "failed to determine where to not be quiet"
             end
+            @filter_strings[:quiet] = @filters[:quiet].quiets
+            save_strings
         rescue Object => boom
             error m.replyto, "Failed to remove quiet: #{boom}"
         end
@@ -128,7 +134,7 @@ class Filters < ModSpox::Plugin
             direction = params[:direction].to_sym
             raise "Key is already in use. Please choose another name (#{name})" if @filter_strings[direction][name]
             @filter_strings[direction][name] = params[:code]
-            @filters[direction].filters = @filter_strings[direction].values
+            @filters[direction].filters = @filter_strings[direction]
             save_strings
             information m.replyto, "New filter has been applied under name: #{name}"
         rescue Object => boom
@@ -140,8 +146,8 @@ class Filters < ModSpox::Plugin
         begin
             name = params[:name].to_sym
             direction = params[:direction].to_sym
-            raise "Failed to locate filter key: #{name}" unless @filters[direction][name]
-            @filters_strings[direction].delete(name)
+            raise "Failed to locate filter key: #{name}" unless @filter_strings[direction][name]
+            @filter_strings[direction].delete(name)
             @filters[direction].filters = @filter_strings[direction]
             save_strings
             information m.replyto, "Filter #{name} has been removed"
@@ -153,10 +159,10 @@ class Filters < ModSpox::Plugin
     def list(m, params)
         begin
             direction = params[:direction].to_sym
-            if(@filters_strings[direction].empty?)
+            if(@filter_strings[direction].empty?)
                 warning m.replyto, 'There are currently no filters applied'
             else
-                information m.replyto, "Filters for #{direction}: #{@filter_strings[direction].keys.sort}"
+                information m.replyto, "Filters for #{direction}: #{@filter_strings[direction].keys.sort.join(', ')}"
             end
         rescue Object => boom
             error m.replyto, "Failed to generate list. Reason: #{boom}"
@@ -186,23 +192,23 @@ class Filters < ModSpox::Plugin
 
     def save_strings
         v = Models::Setting.find_or_create(:name => 'filters')
-        v.value = {:in => @filters[:in].filters, :out => @filters[:out].filters, :quiet => @filters[:quiet].quiets, :ignore => @filters[:ignore].ignores}
+        v.value = @filter_strings
         v.save
     end
     class RubyFilter < ModSpox::Filter
         def initialize(args)
             super
-            @filters = []
+            @filters = {}
         end
         def filters
             @filters.dup
         end
         def filters=(f)
-            raise ArgumentError.new('Array of filter strings required') unless f.is_a?(Array)
+            raise ArgumentError.new('Hash of filter strings required') unless f.is_a?(Hash)
             @filters = f.dup
         end
         def do_filter(m)
-            @filters.each do |f|
+            @filters.values.each do |f|
                 begin
                     Kernel.eval(f)
                 rescue Object => boom
@@ -242,7 +248,10 @@ class Filters < ModSpox::Plugin
             end
         end
         def do_filter(m)
-            return nil if (@ignores[m.target.name.downcase] && @ignores[m.target.name.downcase].include?(m.source.nick.downcase)) || (@ignores[:all] && @ignores[:all].include?(m.source.nick.downcase))
+            if(m.target.is_a?(Models::Channel))
+                return nil if @ignores[m.target.name.downcase] && @ignores[m.target.name.downcase].include?(m.source.nick.downcase)
+            end
+            return (@ignores[:all] && @ignores[:all].include?(m.source.nick.downcase)) ? nil : m
         end
     end
     class QuietFilter < ModSpox::Filter
@@ -270,7 +279,7 @@ class Filters < ModSpox::Plugin
             end
         end
         def do_filter(m)
-            return m.is_public? && @quiet.include?(m.target.name.downcase) ? nil : m
+            return m.target.is_a?(Models::Channel) && @quiet.include?(m.target.name.downcase) ? nil : m
         end
     end
 end
