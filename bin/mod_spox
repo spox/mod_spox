@@ -57,7 +57,7 @@ opts.each do |opt, arg|
             puts '--jdbc -j                           use jdbc database driver (jruby)'
             puts '--debug -d [logfile]:               turns on debugging and outputs to file (default STDOUT)'
             puts '--verbosity -V [(info|warn|fatal)]: verbosity of debug output (default fatal)'
-            puts '--deamon -D:                        daemonizes the process'
+            puts '--daemon -D:                        daemonizes the process'
             puts '--version -v:                       output bot version information'
             puts '--help -h:                          print this help message'
             exit
