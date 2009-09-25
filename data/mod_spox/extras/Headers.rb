@@ -29,6 +29,7 @@ class Headers < ModSpox::Plugin
         params[:url] = "http://#{params[:url]}" unless params[:url].slice(0..3).downcase == 'http'
         uri = URI.parse(params[:url])
         begin
+            check_private(uri)
             path = uri.path.nil? || uri.path.empty? ? '/' : uri.path
             path += "?#{uri.query}" unless uri.query.nil?
             reply message.replyto, "Connecting to: #{uri.host} on port: #{uri.port} retrieving: #{path}"
@@ -54,6 +55,10 @@ class Headers < ModSpox::Plugin
             reply message.replyto, "Error retrieving headers (#{uri.host}): #{boom}"
             Logger.warn("Headers plugin error: #{boom}")
         end
+    end
+
+    def check_private
+        raise 'This host is within a private network address' if uri.host =~ /^(10\.|172\.(#{(16..31).to_a.join('|')})|192\.168)/
     end
 
 end
