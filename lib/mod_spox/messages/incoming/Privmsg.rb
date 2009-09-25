@@ -34,6 +34,10 @@ module ModSpox
                         @addressed = false
                     end
                     @orginal_message = @message.dup
+                    #clean addressed messages
+                    if(@addressed)
+                        @message.gsub!(/^#{botnick.nick}[,.: ]{0,2}/i, '')
+                    end
                 end
 
                 # Is message addressing the bot
