@@ -99,12 +99,10 @@ if(ModSpox.daemon_bot)
     if(RUBY_VERSION > '1.9.0')
         Process.daemon if ModSpox.daemon_bot
     else
-        begin
-            require 'daemons'
-            Daemons.daemonize
-        rescue Object
-            puts "ERROR: Failed to load daemons gem"
-            exit 1
+        if(pid = fork)
+            Signal.trap('HUP', 'IGNORE')
+            Process.detach(pid)
+            exit
         end
     end
 end
