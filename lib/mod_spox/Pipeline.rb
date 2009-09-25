@@ -19,11 +19,16 @@ module ModSpox
             populate_signatures
             hook(self, :populate_triggers, ModSpox::Messages::Internal::TriggersUpdate)
             hook(self, :populate_signatures, ModSpox::Messages::Internal::SignaturesUpdate)
-            @filters = FilterManager.new(self)
+            @filters = FilterManager.new
             [:FilterAdd, :FilterRemove, :FilterList, :FilterListing].each{|f| Helpers.load_message(:internal, f)}
             hook(self, :add_filter, ModSpox::Messages::Internal::FilterAdd)
             hook(self, :remove_filter, ModSpox::Messages::Internal::FilterRemove)
             hook(self, :list_filter, ModSpox::Messages::Internal::FilterList)
+            hook(self, :clear_filter, ModSpox::Messages::Internal::QueueSocket) # this comes just before a plugin reload
+        end
+        
+        def clear_filters(m)
+            @filters.clear
         end
         
         def add_filter(m)

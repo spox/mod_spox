@@ -3,8 +3,7 @@ require 'mod_spox/Filter'
 module ModSpox
     class FilterManager
         
-        def initialize(pipeline)
-            @pipeline = pipeline
+        def initialize
             @filters = {}
         end
         
@@ -68,7 +67,7 @@ module ModSpox
         end
         
         # Remove all filters
-        def clear
+        def clear(m)
             @filters = {}
         end
     end
