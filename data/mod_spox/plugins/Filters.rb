@@ -41,7 +41,7 @@ class Filters < ModSpox::Plugin
             else
                 @filters[:ignore].ignore(nick)
             end
-            @filter_strings[:ignore] = @filters[:ignore].filters
+            @filter_strings[:ignore] = @filters[:ignore].ignores
             save_strings
             information m.replyto, "#{nick.nick} is now ignored #{params[:channel] ? "in #{params[:channel].strip}" : 'everywhere'}"
         rescue Object => boom
@@ -51,16 +51,18 @@ class Filters < ModSpox::Plugin
     
     def unignore(m, params)
         begin
+            nick = Helpers.find_model(params[:nick].strip)
+            raise "Failed to find nick: #{params[:nick].strip}" unless nick.is_a?(Models::Nick)
             if(params[:channel])
                 chan = Helpers.find_model(params[:channel].strip)
                 raise "#{params[:channel].strip} is not a valid channel" unless chan.is_a?(Models::Channel)
-                @filters[:ignore].unignore(m.source, chan)
+                @filters[:ignore].unignore(nick, chan)
             else
-                @filters[:ignore].unignore(m.source)
+                @filters[:ignore].unignore(nick)
             end
-            @filter_strings[:ignore] = @filters[:ignore].filters
+            @filter_strings[:ignore] = @filters[:ignore].ignores
             save_strings
-            information m.replyto, "#{m.source.nick} is no longer ignored #{params[:channel] ? "in #{params[:channel].strip}" : 'everywhere'}"
+            information m.replyto, "#{params[:nick].strip} is no longer ignored #{params[:channel] ? "in #{params[:channel].strip}" : 'everywhere'}"
         rescue Object => boom
             error m.replyto, "Failed to remove ignore: #{boom}"
         end
