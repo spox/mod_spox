@@ -113,15 +113,6 @@ module ModSpox
                         foreign_key :channel_id, :table => :channels
                     end
                 end
-                unless(Database.db.table_exists?(:php_functions))
-                    Database.db.create_table(:php_functions) do
-                        text :php_function, :null => false
-                        varchar :name, :null => false, :unique => true
-                        timestamp :added, :null => false
-                        foreign_key :nick_id, :null => false
-                        primary_key :id
-                    end
-                end
                 unless(Database.db.table_exists?(:quotes))
                     Database.db.create_table(:quotes) do
                         primary_key :id
