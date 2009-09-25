@@ -24,7 +24,7 @@ module ModSpox
             hook(self, :add_filter, ModSpox::Messages::Internal::FilterAdd)
             hook(self, :remove_filter, ModSpox::Messages::Internal::FilterRemove)
             hook(self, :list_filter, ModSpox::Messages::Internal::FilterList)
-            hook(self, :clear_filter, ModSpox::Messages::Internal::QueueSocket) # this comes just before a plugin reload
+            hook(self, :clear_filters, ModSpox::Messages::Internal::QueueSocket) # this comes just before a plugin reload
         end
         
         def clear_filters(m)
