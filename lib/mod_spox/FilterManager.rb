@@ -67,7 +67,7 @@ module ModSpox
         end
         
         # Remove all filters
-        def clear(m)
+        def clear
             @filters = {}
         end
     end
