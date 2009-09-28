@@ -1,15 +1,6 @@
 Install:
 
 gem install --include-dependencies mod_spox
-
-Requirements include:
-    * sequel
-        * database driver
-    * Ruby >= 1.8.6
     
-Optional:
-    * fastthread
-    * termios
-    
-More detailed information can be found at:
-http://dev.modspox.com/cgi-bin/trac.cgi/wiki/InstallHowto
+More detailed information can be found at in the Aquiring and
+Requirements section of the README.rdoc file

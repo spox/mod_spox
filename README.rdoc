@@ -11,6 +11,7 @@ Included with mod_spox are a variety of plugins to help make the bot a bit more 
 * Authenticator - Authenticate users for running commands
 * Banner - Pattern matching bans. Timed bans. Ban accumulation. 
 * BotNick - Sends nick information to the server
+* Filters - Apply filters to messages
 * Helper - Provide help on various plugins
 * Initializer - Gets the bot all ready on startup
 * Joiner - Join a channel

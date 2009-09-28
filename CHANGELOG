@@ -1,3 +1,15 @@
+0.3.3 (Alpha status)
+    Core:
+    * Working message Filtering
+    * Safer safe_exec method in Helper. Allows proper timeouts and output limiting.
+    * Proper 1.8.6 support (which allows mod_spox to run on JRuby)
+    Plugins:
+    * New plugins:
+        * Filters: Allows quiet in channels and ignore on users
+                   Also allows string of ruby to be eval'd against messages (horribly great idea)
+        * PhpCli: Updated custom PHP function storage to use generic Setting model storage
+        * RubyCli: Modified to use PhpCli structure of writing out to file and executing.
+
 0.3.2 (Alpha status)
     Core:
     * New tests resulting in lots of bug fixing
