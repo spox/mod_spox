@@ -4,7 +4,6 @@ class PhpCli < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)
         @path = Models::Config.val(:plugin_directory) + '/phpcli'
-        @botini = @path + '/bot.ini'
         unless(File.directory?(@path))
             FileUtils.mkdir_p(@path)
         end
@@ -14,10 +13,12 @@ class PhpCli < ModSpox::Plugin
             raise NoInterpreter.new if result.empty?
             @exec = 'php'
         end
-        unless File.exists?(@botini)
-            ini = File.new(@botini, 'w')
-            ini.write($ini)
-            ini.close
+        ['bot.ini', 'setup.php'].each do |name|
+            unless(File.exists?("#{@path}/#{name}"))
+                file = File.new("#{@path}/#{name}", 'w')
+                name =~ /ini/ ? file.write(ini) : file.write(setup)
+                file.close
+            end
         end
         php = Models::Group.find_or_create(:name => 'php')
         phpfunc = Models::Group.find_or_create(:name => 'phpfunc')
@@ -90,7 +91,7 @@ class PhpCli < ModSpox::Plugin
         return unless @channels.include?(message.target.pk)
         filepath = @path + "/#{rand(99999)}.bot.php"
         file = File.open(filepath, 'w')
-        file.write("<? defined(E_DEPRECATED) ? error_reporting(E_ALL & ~E_DEPRECATED) : error_reporting(E_ALL); ini_set('safe_mode', 'On'); ini_set('register_long_arrays', 'On'); ini_set('magic_quotes_gpc', 'On'); ini_set('date.timezone', 'America/Los_Angeles'); ini_set('disable_functions', 'fscanf fputs chown chmod copy delete fflush file flock ftell glob link fseek lstat move_uploaded_file rename realpath set_file_buffer touch fprintf chgrp fgetss readfile dio_close dio_fnctl dio_open dio_read dio_seek dio_stat dio_tcsetattr dio_truncate dio_write chdir chroot dir closedir getcwd opendir readdir rewinddir scandir posix_kill posix_access posix_ctermid posix_get_last_error posix_getcwd posix_getegid posix_geteuid posix_getgid posix_getgrgid posix_getgrnam posix_getgroups posix_getlogin posix_getpgid posix_getpgrp posix_getpid posix_getppid posix_getpwnam posix_getpwuid posix_getwuid posix_getrlimit posix_getsid posix_getuid posix_isatty posix_mkfifo posix_mknod posix_setegid posix_setgid posix_setpgid posix_setsid posix_setuid posix_strerror posix_times posix_ttyname posix_uname expect_expectl expect_popen sleep time_sleep_until usleep pfsockopen fsockopen openlog debugger_on proc_open pclose popen fsockopen fread set_time_limit ini_set ini_alter ini_restore exec system passthru proc_close proc_nice proc_open proc_terminiate shell_exec sleep usleep pcntl_fork pcntl_exec pcntl_alarm pcntl_getpriority pcntl_setpriority pcntl_waitpid pcntl_wexitstatus pcntl_wifexited pcntl_wifsignaled pcntl_wifstopped pcntl_wstopsig pcntl_wtermsig readline_add_history readline_callback_handler_install readline_callback_handler_remove readline_callback_read_char readline_clear_history readline_completion_function readline_info readline_list_history readline_on_new_line readline_read_history readline_redisplay readline_write_history readline dl set_include_path set_magic_quotes_runtime file_put_contents fwrite fputs copy fputcsv tmpfile symlink tempnam mysql_connect unlink putenv ftp_connect socket_create socket_create socket_close socket_accept socket_bind socket_close socket_connect socket_create_listen socket_create_pair socket_get_option socket_listen socket_read socket_recv socket_select socket_send socket_sendto shmop_close shmop_open shmop_delete shmop_read shmop_size shmop_write msg_get_queue msg_receive msg_remove_queue msg_send msg_set_queue msg_stat_queue msg_acquire sem_aquire sem_release sem_get sem_remove mail time_nanosleep usleep include include_once require require_once ftp_alloc ftp_cdup ftp_chdir ftp_chmod ftp_close ftp_connect ftp_delete ftp_exec ftp_fget ftp_fput ftp_get ftp_get_option ftp_login ftp_mdtm ftp_mkdir ftp_nb_continue ftp_nb_fget ftp_nb_fput ftp_nb_get ftp_nb_put'); $_SERVER = $_ENV = $GLOBALS = array(); #{@customfuncs.join(' ')} #{params[:code]} ?>")
+        file.write("<? #{@customfuncs.join(' ')} #{params[:code]} ?>")
         file.close
         begin
             output = Helpers.safe_exec("#{@exec} -c #{@path}/bot.ini -d max_execution_time=10 #{filepath} 2>&1 | head -n 4")
@@ -240,9 +241,22 @@ class PhpCli < ModSpox::Plugin
     class NoInterpreter < Exception
     end
 
-end
+    def setup
+setup_file <<EOF
+<?php
+defined(E_DEPRECATED) ? error_reporting(E_ALL & ~E_DEPRECATED) : error_reporting(E_ALL);
+ini_set('safe_mode', 'On');
+ini_set('register_long_arrays', 'On');
+ini_set('magic_quotes_gpc', 'On');
+ini_set('date.timezone', 'America/Los_Angeles');
+$_SERVER = $_ENV = $GLOBALS = array();
+?>
+EOF
+        return setup_file
+    end
 
-$ini = <<EOF
+    def ini
+ini_file = <<EOF
 [PHP]
 engine = On
 zend.ze1_compatibility_mode = Off
@@ -256,12 +270,13 @@ implicit_flush = Off
 serialize_precision = 100
 allow_call_time_pass_reference = On
 safe_mode_gid = On
-safe_mode_include_dir = /tmp/mod_spox/php
-safe_mode_exec_dir = /tmp/mod_spox/php
+safe_mode_include_dir = #{@path}
+safe_mode_exec_dir = #{@path}
 safe_mode_allowed_env_vars = PHP_
 safe_mode_protected_env_vars = LD_LIBRARY_PATH
-open_basedir = /tmp/mod_spox
+open_basedir = #{@path}
 disable_classes = dir
+disable_functions = fscanf fputs chown chmod copy delete fflush file flock ftell glob link fseek lstat move_uploaded_file rename realpath set_file_buffer touch fprintf chgrp fgetss readfile dio_close dio_fnctl dio_open dio_read dio_seek dio_stat dio_tcsetattr dio_truncate dio_write chdir chroot dir closedir getcwd opendir readdir rewinddir scandir posix_kill posix_access posix_ctermid posix_get_last_error posix_getcwd posix_getegid posix_geteuid posix_getgid posix_getgrgid posix_getgrnam posix_getgroups posix_getlogin posix_getpgid posix_getpgrp posix_getpid posix_getppid posix_getpwnam posix_getpwuid posix_getwuid posix_getrlimit posix_getsid posix_getuid posix_isatty posix_mkfifo posix_mknod posix_setegid posix_setgid posix_setpgid posix_setsid posix_setuid posix_strerror posix_times posix_ttyname posix_uname expect_expectl expect_popen sleep time_sleep_until usleep pfsockopen fsockopen openlog debugger_on proc_open pclose popen fsockopen fread set_time_limit ini_alter ini_restore exec system passthru proc_close proc_nice proc_open proc_terminiate shell_exec sleep usleep pcntl_fork pcntl_exec pcntl_alarm pcntl_getpriority pcntl_setpriority pcntl_waitpid pcntl_wexitstatus pcntl_wifexited pcntl_wifsignaled pcntl_wifstopped pcntl_wstopsig pcntl_wtermsig readline_add_history readline_callback_handler_install readline_callback_handler_remove readline_callback_read_char readline_clear_history readline_completion_function readline_info readline_list_history readline_on_new_line readline_read_history readline_redisplay readline_write_history readline dl set_include_path set_magic_quotes_runtime file_put_contents fwrite fputs copy fputcsv tmpfile symlink tempnam mysql_connect unlink putenv ftp_connect socket_create socket_create socket_close socket_accept socket_bind socket_close socket_connect socket_create_listen socket_create_pair socket_get_option socket_listen socket_read socket_recv socket_select socket_send socket_sendto shmop_close shmop_open shmop_delete shmop_read shmop_size shmop_write msg_get_queue msg_receive msg_remove_queue msg_send msg_set_queue msg_stat_queue msg_acquire sem_aquire sem_release sem_get sem_remove mail time_nanosleep usleep include include_once require require_once ftp_alloc ftp_cdup ftp_chdir ftp_chmod ftp_close ftp_connect ftp_delete ftp_exec ftp_fget ftp_fput ftp_get ftp_get_option ftp_login ftp_mdtm ftp_mkdir ftp_nb_continue ftp_nb_fget ftp_nb_fput ftp_nb_get ftp_nb_put
 expose_php = On
 max_execution_time = 10
 max_input_time = 20
@@ -283,8 +298,9 @@ magic_quotes_runtime = Off
 magic_quotes_sybase = Off
 default_mimetype = "text/html"
 include_path = ".:/usr/share/php"
-doc_root = /tmp/mod_spox/php
-user_dir = /tmp/mod_spox/php
+doc_root = #{@path}
+user_dir = #{@path}
+auto_prepend_file = #{@path}/setup.php
 enable_dl = On
 file_uploads = Off
 allow_url_fopen = Off
@@ -294,3 +310,7 @@ sendmail_path = /dev/null
 [Sockets]
 sockets.use_system_read = On
 EOF
+        return ini_file
+    end
+
+end
