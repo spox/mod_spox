@@ -52,12 +52,12 @@ class Headers < ModSpox::Plugin
             end
             reply message.replyto, output
         rescue Object => boom
-            reply message.replyto, "Error retrieving headers (#{uri.host}): #{boom}"
+            error message.replyto, "Failed to retreive headers (#{uri.host}): #{boom}"
             Logger.warn("Headers plugin error: #{boom}")
         end
     end
 
-    def check_private
+    def check_private(uri)
         raise 'This host is within a private network address' if uri.host =~ /^(10\.|172\.(#{(16..31).to_a.join('|')})|192\.168)/
     end
 
