@@ -164,7 +164,7 @@ module ModSpox
                     holder.plugin.destroy unless holder.plugin.nil?
                     @pipeline.unhook_plugin(holder.plugin)
                 rescue Object => boom
-                    Logger.warn("Plugin destruction error: #{boom}")
+                    Logger.warn("Plugin destruction error: #{boom}\n#{boom.backtrace.join("\n")}")
                 end
             end
             @plugins_module = Module.new
@@ -184,7 +184,8 @@ module ModSpox
                         if(@plugins.has_key?(plugin.to_sym))
                             @plugins[plugin.to_sym].set_plugin(klass.new({:pipeline => @pipeline, :plugin_module => @plugins_module}))
                         else
-                            @plugins[plugin.to_sym] = PluginHolder.new(klass.new({:pipeline => @pipeline, :plugin_module => @plugins_module}))
+                            obj = klass.new({:pipeline => @pipeline, :plugin_module => @plugins_module})
+                            @plugins[plugin.to_sym] = PluginHolder.new(obj)
                         end
                         Logger.info("Properly initialized new plugin: #{plugin}")
                         Database.reset_connections
