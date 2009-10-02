@@ -12,11 +12,15 @@ class PhpFuncLookup < ModSpox::Plugin
     def initialize(pipeline)
         super(pipeline)
         setup_setting
-        @path = Setting.val(:phpfunc)[:directory]
-        @trigger = Setting.val(:phpfunc)[:trigger]
+        @path = @set[:directory]
+        @trigger = @set[:trigger]
         @manual = "#{@path}/html"
         @classlist = []
-        fetch_manual unless File.exists?("#{@path}/manual.tar.gz")
+        @fetching = false
+        unless(File.exists?("#{@path}/manual.tar.gz"))
+            fetch_manual
+            @fetching = true
+        end
         @ops = {
             "-"     => [ "arithmetic",  "Subtraction or Negation",      "3 - 2 == 1" ],
             "+"     => [ "arithmetic",  "Addition",                     "3 + 2 == 5" ],
@@ -73,7 +77,7 @@ class PhpFuncLookup < ModSpox::Plugin
         add_sig(:sig => 'pfunc show channels', :method => :list_channels, :desc => 'Show channels with auto lookup enabled')
         Helpers.load_message(:incoming, :Privmsg)
         @pipeline.hook(self, :listen, ModSpox::Messages::Incoming::Privmsg)
-        populate_classes
+        populate_classes unless @fetching
     end
         
     def phpfunc(m, params)
@@ -98,7 +102,7 @@ class PhpFuncLookup < ModSpox::Plugin
     end
     
     def listen(m)
-        if(m.target.is_a?(Channel) && Setting.val(:phpfunc)[:channels].include?(m.target.pk))
+        if(m.target.is_a?(Channel) && @set[:channels].include?(m.target.pk))
             if m.message =~ /^#{Regexp.escape(@trigger)}(\S+)$/
                 phpfunc(m, {:name => $1})
             end
@@ -106,9 +110,10 @@ class PhpFuncLookup < ModSpox::Plugin
     end
     
     def set_trigger(message, params)
-        vals = Setting.val(:phpfunc)
-        vals[:trigger] = params[:trigger]
-        Setting.filter(:name => 'phpfunc').first.value = vals
+        @set[:trigger] = params[:trigger]
+        s = Setting.filter(:name => 'phpfunc').first
+        s.value = @set
+        s.save
         @trigger = params[:trigger]
         reply message.replyto, "PHP function lookup trigger set to: #{params[:trigger]}"
     end
@@ -116,24 +121,25 @@ class PhpFuncLookup < ModSpox::Plugin
     def set_channels(message, params)
         channel = Channel.filter(:name => params[:channel]).first
         if(channel)
-            vals = Setting.val(:phpfunc)
             if(params[:action] == 'add')
-                vals[:channels] << channel.pk unless Setting.val(:phpfunc)[:channels].include?(channel.pk)
+                @set[:channels] << channel.pk unless @set[:channels].include?(channel.pk)
                 reply message.replyto, "Channel \2#{params[:channel]}\2 added to PHP auto lookup"
             else
-                vals[:channels].delete(channel.pk) if Setting.val(:phpfunc)[:channels].include?(channel.pk)
+                @set[:channels].delete(channel.pk) if @set[:channels].include?(channel.pk)
                 reply message.replyto, "Channel \2#{params[:channel]}\2 has been removed from PHP auto lookup"
             end
-            Setting.filter(:name => 'phpfunc').first.value = vals
+            s = Setting.filter(:name => 'phpfunc').first
+            s.value = @set
+            s.save
         else
             reply message.replyto, "Error: No record of channel #{params[:channel]}"
         end
     end
     
     def list_channels(message, params)
-        if(Setting.val(:phpfunc)[:channels].size > 0)
+        if(@set[:channels].size > 0)
             chans = []
-            Setting.val(:phpfunc)[:channels].each do |id|
+            @set[:channels].each do |id|
                 chans << Channel[id].name
             end
             reply message.replyto, "PHP auto lookup enabled channels: #{chans.join(', ')}"
@@ -143,7 +149,7 @@ class PhpFuncLookup < ModSpox::Plugin
     end
     
     def show_trigger(message, p)
-        reply message.replyto, "PHP auto lookup trigger: \2#{Setting.val(:phpfunc)[:trigger]}\2"
+        reply message.replyto, "PHP auto lookup trigger: \2#{@set[:trigger]}\2"
     end
     
     private
@@ -169,6 +175,8 @@ class PhpFuncLookup < ModSpox::Plugin
             Dir.chdir(@path)
             Helpers.safe_exec("tar -xzf #{@path}/manual.tar.gz", 60)
             Logger.info "PHP manual fetching complete."
+            populate_classes
+            @fetching = false
             reply message.replyto, "PHP manual fetch is now complete" unless message.nil?
         end
     end
@@ -177,10 +185,15 @@ class PhpFuncLookup < ModSpox::Plugin
         s = Setting.filter(:name => 'phpfunc').first
         unless(s)
             s = Setting.find_or_create(:name => 'phpfunc')
-            s.value = {:directory => Config.val(:plugin_directory) + '/php', :trigger => '@', :channels => []}
+            dir = Config.filter(:name => 'plugin_directory').first
+            @set = {:directory => dir.value + '/php', :trigger => '@', :channels => []}
+            s.value = @set
+            s.save
+        else
+            @set = s.value
         end
-        unless(File.directory?(Setting.val(:phpfunc)[:directory]))
-            FileUtils.mkdir_p(Setting.val(:phpfunc)[:directory])
+        unless(File.directory?(@set[:directory]))
+            FileUtils.mkdir_p(@set[:directory])
         end
     end
     
