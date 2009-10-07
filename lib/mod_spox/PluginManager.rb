@@ -28,6 +28,7 @@ module ModSpox
         # pipeline:: Pipeline for messages
         # Create new PluginManager
         def initialize(pipeline)
+            @plugin_map = Hash.new
             @plugins = Hash.new
             @pipeline = pipeline
             @pipeline.hook(self, :load_plugin, ModSpox::Messages::Internal::PluginLoadRequest)
@@ -142,115 +143,124 @@ module ModSpox
         def load_plugins
             @pipeline << Messages::Internal::TimerClear.new
             Models::Signature.set(:enabled => false)
-            [BotConfig[:pluginpath], BotConfig[:userpluginpath]].each do |path|
-                Dir.new(path).each do |file|
-                    if(file =~ /^[^\.].+\.rb$/)
-                        begin
-                            do_load("#{path}/#{file}")
-                        rescue Object => boom
-                            Logger.warn("Failed to load file: #{path}/#{file}. Reason: #{boom}")
-                        end
-                    end
-                end
+            [@plugin_map[:default], @plugin_map[:user]].each do |listing|
+                listing.keys.each{|plugin| do_load(plugin)}
             end
+            user_plugins.each{|plugin| do_load(plugin)}
             @pipeline << Messages::Internal::SignaturesUpdate.new
             @pipeline << Messages::Internal::PluginsReady.new
+            true
         end
 
         # Destroys plugins
         def unload_plugins
-            @plugins.each_pair do |sym, holder|
-                begin
-                    holder.plugin.destroy unless holder.plugin.nil?
-                    @pipeline.unhook_plugin(holder.plugin)
-                rescue Object => boom
-                    Logger.warn("Plugin destruction error: #{boom}\n#{boom.backtrace.join("\n")}")
-                end
-            end
+            @plugins.keys.each{|plugin| do_unload(plugin, false)}
+            Models::Signature.filter(:plugin => plugin.to_s).update(:enabled => false)
             @plugins_module = Module.new
             @pipeline << Messages::Internal::TimerClear.new
+            true
         end
 
-        # path:: path to plugin file
-        # Loads a plugin into the plugin module
-        def do_load(path)
-            if(File.exists?(path))
-                plugins = discover_plugins(path)
-                raise PluginMissing.new("Plugin file at: #{path} does not contain a plugin class") if plugins.nil?
-                @plugins_module.module_eval(IO.readlines(path).join("\n"))
-                begin
-                    plugins.each do |plugin|
-                        klass = @plugins_module.const_get(plugin)
-                        if(@plugins.has_key?(plugin.to_sym))
-                            @plugins[plugin.to_sym].set_plugin(klass.new({:pipeline => @pipeline, :plugin_module => @plugins_module}))
-                        else
-                            obj = klass.new({:pipeline => @pipeline, :plugin_module => @plugins_module})
-                            @plugins[plugin.to_sym] = PluginHolder.new(obj)
-                        end
-                        Logger.info("Properly initialized new plugin: #{plugin}")
-                        Database.reset_connections
-                    end
-                    Logger.info("All plugins found at: #{path} have been loaded")
-                rescue Object => boom
-                    Logger.warn("Plugin loading failed: #{boom}\n#{boom.backtrace.join("\n")}")
-                    Logger.warn("All constants loaded from file: #{path} will now be unloaded")
-                    do_unload(path)
+        # plugin_name:: Name of plugin to unload
+        # clean:: Perform clean up stuff
+        # Unloads plugin from the bot
+        def do_unload(plugin_name, clean=true)
+            plugin = plugin_name.to_sym
+            if(@plugins.has_key?(plugin))
+                unless(@plugins[plugin].plugin.nil?)
+                    @plugins[plugin].plugin.destroy
+                    @pipeline.unhook_plugin(@plugins[plugin].plugin)
+                    @plugins[plugin.to_sym].set_plugin(nil)
+                    @pipeline << Messages::Internal::TimerClear.new(plugin.to_sym) if clean
                 end
-            else
-                raise PluginFileNotFound.new("Failed to find file at: #{path}")
             end
-        end
-
-        # path:: path to plugin file
-        # Unloads a plugin and all constants from the plugin module
-        def do_unload(path)
-            if(File.exists?(path))
-                discover_plugins(path).each do |plugin|
-                    if(@plugins.has_key?(plugin.to_sym))
-                        @plugins[plugin.to_sym].plugin.destroy unless @plugins[plugin.to_sym].plugin.nil?
-                        @pipeline.unhook_plugin(@plugins[plugin.to_sym].plugin)
-                        @plugins[plugin.to_sym].set_plugin(nil)
-                        @pipeline << Messages::Internal::TimerClear.new(plugin.to_sym)
-                    end
-                    Models::Signature.filter(:plugin => plugin.to_s).destroy
-                end
-                discover_consts(path).each do |const|
-                    Logger.info("Removing constant: #{const}")
-                    @plugins_module.send(:remove_const, const)
-                end
-                Logger.info("Removed all constants found in file: #{path}")
-            else
-                raise PluginFileNotFound.new("Failed to find file at: #{path}")
+            discover_constants(plugin_path(plugin_name)).each do |const|
+                Logger.info("Removing constant: #{const}")
+                @plugins_module.send(:remove_const, const)
             end
+            Models::Signature.filter(:plugin => plugin.to_s).update(:enabled => false) if clean
+            true
         end
 
-        # path:: path to plugin
-        # Find class names of any plugins within the file at given path
+        # plugin_name:: Name of plugin to load
+        # Locates the location of this plugin and loads it into the bot
+        def do_load(plugin_name)
+            path = find_path(plugin_name)
+            raise PluginFileNotFound.new("Failed to find plugin file for plugin named: #{plugin_name}")
+            @plugins_module.module_eval(IO.binread(path))
+            klass = @plugins_module.const_get(plugin_name)
+            obj = klass.new({:pipeline => @pipeline, :plugin_module => @plugin_module})
+            if(@plugins.has_key?(plugin_name.to_sym))
+                @plugins[plugin_name.to_sym].set_plugin(obj)
+            else
+                @plugins[plugin_name.to_sym] = PluginHolder.new(obj)
+            end
+            true
+        end
+
+        # path:: path to directory of plugins
+        # Discover all valid plugins in given directory. Use this information
+        # to return a hash of: {:plugin_name => 'plugin/path'}
         def discover_plugins(path)
-            temp = Module.new
-            begin
-                temp.module_eval(IO.readlines(path).join("\n"))
-                klasses = []
-                temp.constants.each do |const|
-                    klass = temp.const_get(const)
-                    klasses << const if klass < Plugin
+            raise ArgumentError.new('Valid directory path required') unless File.directory?(path)
+            found = {}
+            Dir.new(path).each do |file|
+                begin
+                    next unless file[-3,3] == '.rb'
+                    discover_constants("#{path}/#{file}", true).each do |klass|
+                        found[klass.to_sym] = "#{path}/#{file}"
+                    end
+                rescue Object => boom
+                    Logger.warn("Failed to parse plugin file: #{path}/#{file} - Reason: #{boom}"
                 end
-                return klasses
-            rescue Object => boom
-                return nil
             end
+            return found
         end
 
-        # path:: path to plugin
-        # Find all constant names in given path
-        def discover_consts(path)
-            temp = Module.new
-            begin
-                temp.module_eval(IO.readlines(path).join("\n"))
-                return temp.constants
-            rescue Object => boom
-                return nil
+        # Generates a map of plugin locations
+        def map_plugins
+            @plugin_map.clear
+            [[BotConfig[:pluginpath], :default], [BotConfig[:userpluginpath], :user], [BotConfig[:pluginextraspath], :extra]].each do |base|
+                @plugin_map[base[1]] = discover_plugins(base[0])
             end
+            true
+        end
+
+        # name:: name of plugin
+        # return path or nil
+        def plugin_path(name)
+            name = name.to_sym unless name.is_a?(Symbol)
+            @plugin_map.values.each do |plugs|
+                return plugs[sym] if plugs[sym]
+            end
+            nil
+        end
+
+        # path:: path to plugin file
+        # plugins:: return only plugin constants
+        # Find all constants in a given ruby file
+        def discover_constants(path, plugins=false)
+            raise ArgumentError.new('Failed to locate plugin file') unless File.exists?(path)
+            consts = []
+            sandbox = Module.new
+            sandbox.module_eval(IO.binread(path))
+            sandbox.constants.each{|klass| consts << klass.to_sym if !plugins || (plugins && klass < ModSpox::Plugin)}
+            return consts
+        end
+
+        def add_user_plugin(name)
+            plugs = Models::Setting.find_or_create(:name => 'load_plugins')
+            list = plugs.value.nil? ? Array.new : plugs.value
+            list << name unless list.include?(name)
+            plugs.value = list
+            plugs.save
+        end
+
+        def user_plugins
+            plugs = Models::Setting.find_or_create(:name => 'load_plugins')
+            plugs.value = Array.new if plugs.value.nil?
+            plugs.save
+            return plugs.value.dup
         end
 
     end
