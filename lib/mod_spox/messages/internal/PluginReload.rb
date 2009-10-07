@@ -4,13 +4,10 @@ module ModSpox
             # Sends message to reload plugin. If new and stale
             # attributes are set, only that plugin will be reloaded
             class PluginReload
-                # Path to new plugin to load
-                attr_reader :fresh
-                # Path to stale plugin to remove
-                attr_reader :stale
-                def initialize(fresh=nil, stale=nil)
-                    @fresh = fresh
-                    @stale = stale
+                # name of plugin to reload
+                attr_reader :name
+                def initialize(name=nil)
+                    @name = name
                 end
             end
         end
