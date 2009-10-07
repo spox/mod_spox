@@ -38,6 +38,8 @@ module ModSpox
             @pipeline.hook(self, :plugin_request, ModSpox::Messages::Internal::PluginRequest)
             @plugins_module = Module.new
             @plugin_lock = Mutex.new
+            @master_lock = Mutex.new
+            map_plugins
             load_plugins
         end
 
@@ -45,51 +47,48 @@ module ModSpox
         # Destroys and reinitializes plugins
         def reload_plugins(message=nil)
             @pipeline << Messages::Internal::QueueSocket.new
-            begin
-                @plugin_lock.synchronize do
-                    if(!message.nil? && (message.fresh && message.stale))
-                        do_unload(message.stale)
-                        FileUtils.remove_file(message.stale)
-                        FileUtils.copy(message.fresh, BotConfig[:userpluginpath])
-                        do_load(message.stale)
-                        Logger.info("Completed reload of plugin: #{message.stale}")
+            map_plugins
+            @master_lock.synchronize do
+                begin
+                    if(!message.nil? && !message.name.nil?)
+                        do_unload(message.name)
+                        Logger.info("Completed reload of plugin: #{message.name}")
                     else
                         unload_plugins
                         load_plugins
+                        Logger.info("Completed full plugin reload")
                     end
+                rescue Object => boom
+                    Logger.error("PluginManager caught error on plugin reload: #{boom}")
+                ensure
+                    @pipeline << Messages::Internal::UnqueueSocket.new
+                    @pipeline << Messages::Internal::PluginModuleResponse.new(nil, @plugins_module)
                 end
-            rescue Object => boom
-                Logger.error("PluginManager caught error on plugin reload: #{boom}")
-            ensure
-                @pipeline << Messages::Internal::UnqueueSocket.new
             end
         end
 
         # Destroys plugins
         def destroy_plugins
-            unload_plugins
+            @master_lock.synchronize{unload_plugins}
         end
 
         # message:: Messages::Internal::PluginLoadRequest
         # Loads a plugin
         def load_plugin(message)
             @pipeline << Messages::Internal::QueueSocket.new
-            begin
-                path = !message.name ? "#{BotConfig[:userpluginpath]}/#{message.path.gsub(/^.+\//, '')}" : "#{BotConfig[:userpluginpath]}/#{message.name}"
+            @master_lock.synchronize do
                 begin
-                    File.symlink(message.path, path)
-                rescue NotImplementedError => boom
-                    FileUtils.copy(message.path, path)
+                    do_load(message.name)
+                    @pipeline << Messages::Internal::PluginLoadResponse.new(message.requester, true)
+                    Logger.info("Loaded new plugin: #{message.name}")
+                rescue Object => boom
+                    Logger.warn("Failed to load plugin: #{message.name} Reason: #{boom}")
+                    @pipeline << Messages::Internal::PluginLoadResponse.new(message.requester, false)
+                ensure
+                    @pipeline << Messages::Internal::SignaturesUpdate.new
+                    @pipeline << Messages::Internal::UnqueueSocket.new
+                    @pipeline << Messages::Internal::PluginModuleResponse.new(nil, @plugins_module)
                 end
-                do_load(path)
-                @pipeline << Messages::Internal::PluginLoadResponse.new(message.requester, true)
-                Logger.info("Loaded new plugin: #{message.path}")
-            rescue Object => boom
-                Logger.warn("Failed to load plugin: #{message.path} Reason: #{boom}")
-                @pipeline << Messages::Internal::PluginLoadResponse.new(message.requester, false)
-            ensure
-                @pipeline << Messages::Internal::SignaturesUpdate.new
-                @pipeline << Messages::Internal::UnqueueSocket.new
             end
         end
 
@@ -97,22 +96,18 @@ module ModSpox
         # Unloads a plugin
         def unload_plugin(message)
             @pipeline << Messages::Internal::QueueSocket.new
-            begin
-                do_unload(message.path)
-                unless(File.symlink?(message.path))
-                    unless(message.name.nil?)
-                        FileUtils.copy(message.path, "#{BotConfig[:userpluginpath]}/#{message.name}")
-                    end
+            @master_lock.synchronize do
+                begin
+                    do_unload(message.name)
+                    @pipeline << Messages::Internal::PluginUnloadResponse.new(message.requester, true)
+                    Logger.info("Unloaded plugin: #{message.name}")
+                rescue Object => boom
+                    Logger.warn("Failed to unload plugin: #{message.name} Reason: #{boom}")
+                    @pipeline << Messages::Internal::PluginUnloadResponse.new(message.requester, false)
+                ensure
+                    @pipeline << Messages::Internal::UnqueueSocket.new
+                    @pipeline << Messages::Internal::SignaturesUpdate.new
                 end
-                File.delete(message.path)
-                @pipeline << Messages::Internal::PluginUnloadResponse.new(message.requester, true)
-                Logger.info("Unloaded plugin: #{message.path}")
-            rescue Object => boom
-                Logger.warn("Failed to unload plugin: #{message.path} Reason: #{boom}")
-                @pipeline << Messages::Internal::PluginUnloadResponse.new(message.requester, false)
-            ensure
-                @pipeline << Messages::Internal::UnqueueSocket.new
-                @pipeline << Messages::Internal::SignaturesUpdate.new
             end
         end
 
@@ -131,10 +126,6 @@ module ModSpox
                 response = Messages::Internal::PluginResponse.new(message.requester, nil)
             end
             @pipeline << response
-        end
-
-        def upgrade_plugins
-            @plugins[:PluginLoader].plugin.extras_upgrade
         end
 
         private
@@ -158,6 +149,7 @@ module ModSpox
             Models::Signature.filter(:plugin => plugin.to_s).update(:enabled => false)
             @plugins_module = Module.new
             @pipeline << Messages::Internal::TimerClear.new
+            @pipeline << Messages::Internal::SignaturesUpdate.new
             true
         end
 
@@ -165,35 +157,39 @@ module ModSpox
         # clean:: Perform clean up stuff
         # Unloads plugin from the bot
         def do_unload(plugin_name, clean=true)
-            plugin = plugin_name.to_sym
-            if(@plugins.has_key?(plugin))
-                unless(@plugins[plugin].plugin.nil?)
-                    @plugins[plugin].plugin.destroy
-                    @pipeline.unhook_plugin(@plugins[plugin].plugin)
-                    @plugins[plugin.to_sym].set_plugin(nil)
-                    @pipeline << Messages::Internal::TimerClear.new(plugin.to_sym) if clean
+            @plugin_lock.synchronize do
+                plugin = plugin_name.to_sym
+                if(@plugins.has_key?(plugin))
+                    unless(@plugins[plugin].plugin.nil?)
+                        @plugins[plugin].plugin.destroy
+                        @pipeline.unhook_plugin(@plugins[plugin].plugin)
+                        @plugins[plugin.to_sym].set_plugin(nil)
+                        @pipeline << Messages::Internal::TimerClear.new(plugin.to_sym) if clean
+                    end
                 end
+                discover_constants(plugin_path(plugin_name)).each do |const|
+                    Logger.info("Removing constant: #{const}")
+                    @plugins_module.send(:remove_const, const)
+                end
+                Models::Signature.filter(:plugin => plugin.to_s).update(:enabled => false) if clean
             end
-            discover_constants(plugin_path(plugin_name)).each do |const|
-                Logger.info("Removing constant: #{const}")
-                @plugins_module.send(:remove_const, const)
-            end
-            Models::Signature.filter(:plugin => plugin.to_s).update(:enabled => false) if clean
             true
         end
 
         # plugin_name:: Name of plugin to load
         # Locates the location of this plugin and loads it into the bot
         def do_load(plugin_name)
-            path = find_path(plugin_name)
-            raise PluginFileNotFound.new("Failed to find plugin file for plugin named: #{plugin_name}")
-            @plugins_module.module_eval(IO.binread(path))
-            klass = @plugins_module.const_get(plugin_name)
-            obj = klass.new({:pipeline => @pipeline, :plugin_module => @plugin_module})
-            if(@plugins.has_key?(plugin_name.to_sym))
-                @plugins[plugin_name.to_sym].set_plugin(obj)
-            else
-                @plugins[plugin_name.to_sym] = PluginHolder.new(obj)
+            @plugin_lock.synchronize do
+                path = find_path(plugin_name)
+                raise PluginFileNotFound.new("Failed to find plugin file for plugin named: #{plugin_name}")
+                @plugins_module.module_eval(IO.binread(path))
+                klass = @plugins_module.const_get(plugin_name)
+                obj = klass.new({:pipeline => @pipeline, :plugin_module => @plugin_module}, :plugin_manager => self)
+                if(@plugins.has_key?(plugin_name.to_sym))
+                    @plugins[plugin_name.to_sym].set_plugin(obj)
+                else
+                    @plugins[plugin_name.to_sym] = PluginHolder.new(obj)
+                end
             end
             true
         end
@@ -211,7 +207,7 @@ module ModSpox
                         found[klass.to_sym] = "#{path}/#{file}"
                     end
                 rescue Object => boom
-                    Logger.warn("Failed to parse plugin file: #{path}/#{file} - Reason: #{boom}"
+                    Logger.warn("Failed to parse plugin file: #{path}/#{file} - Reason: #{boom}")
                 end
             end
             return found
@@ -219,9 +215,11 @@ module ModSpox
 
         # Generates a map of plugin locations
         def map_plugins
-            @plugin_map.clear
-            [[BotConfig[:pluginpath], :default], [BotConfig[:userpluginpath], :user], [BotConfig[:pluginextraspath], :extra]].each do |base|
-                @plugin_map[base[1]] = discover_plugins(base[0])
+            @plugin.synchronize do
+                @plugin_map.clear
+                [[BotConfig[:pluginpath], :default], [BotConfig[:userpluginpath], :user], [BotConfig[:pluginextraspath], :extra]].each do |base|
+                    @plugin_map[base[1]] = discover_plugins(base[0])
+                end
             end
             true
         end
