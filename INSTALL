@@ -1,6 +1,0 @@
-Install:
-
-gem install --include-dependencies mod_spox
-    
-More detailed information can be found at in the Aquiring and
-Requirements section of the README.rdoc file
