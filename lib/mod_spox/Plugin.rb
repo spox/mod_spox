@@ -7,9 +7,16 @@ module ModSpox
         include Models
         def initialize(args)
             @pipeline = args[:pipeline]
-            @plugin_module = args[:plugin_module]
+            @plugin_module = nil
             raise Exceptions::BotException.new('Plugin creation failed to supply message pipeline') unless @pipeline.is_a?(Pipeline)
+            @pipeline.hook(self, :set_module, ModSpox::Messages::Internal::PluginModuleResponse)
             @pipeline.hook_plugin(self)
+        end
+
+        # m:: Modspox::Messages::Internal::PluginModuleReponse
+        # Set the plugin module
+        def set_module(m)
+            @plugin_module = m.module
         end
 
         # Called before the object is destroyed by the ModSpox::PluginManager
@@ -43,7 +50,9 @@ module ModSpox
         # Returns constant given from plugin module. Raises ModSpox::Exceptions::InvalidType
         # exception if constant is not found within the module
         # Note: Use _ for depth (ie: Foo::Bar::Fee if Fee is wanted give: :Foo_Bar_Fee)
+        # Second Note: This method will not return a valid result during initialization
         def plugin_const(const)
+            return nil if @plugin_module.nil?
             klass = @plugin_module
             begin
                 const.to_s.split('_').each do |part|
