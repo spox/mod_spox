@@ -1,0 +1,7 @@
+== mod_spox
+
+YARIRCB -> Yet Another Ruby IRC Bot
+
+=== 0.4.0
+
+It may not be new, but it will be IMPROVED!
