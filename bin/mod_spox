@@ -1,0 +1,74 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+%w(rubygems thread logger getoptlong mod_spox).each{|f| require f}
+
+begin
+    require 'fastthread'
+rescue LoadError
+    # silently ignore
+end
+
+opt = GetoptLong.new(
+    ['--config', '-c', GetoptLong::NO_ARGUMENT],
+    ['--path', '-p', GetoptLong::REQUIRED_ARGUMENT],
+    ['--version', '-v', GetoptLong::NO_ARGUMENT],
+    ['--help', '-h', GetoptLong::NO_ARGUMENT],
+    ['--daemon', '-D', GetoptLong::NO_ARGUMENT],
+    ['--debug', '-d', GetoptLong::OPTIONAL_ARGUMENT],
+    ['--verbosity', '-V', GetoptLong::REQUIRED_ARGUMENT])
+
+verb = nil
+config = false
+daemon = false
+debug = $stdout
+path = nil
+
+opts.each do |opt,arg|
+    case opt
+    when '--help'
+        puts 'Usage: mod_spox [opts]'
+        puts '--config -c:                          Run configuration wizard'
+        puts '--path -p /tmp:                       Set path for configuration files'
+        puts '--version -v:                         Print version information'
+        puts '--help -h:                            Print this help information'
+        puts '--daemon -d:                          Daemonize the process'
+        puts '--debug -D [logfile]                  Turn on debugging (defaults to stdout)'
+        puts '--verbosity -V [(info|warn|fatal)]    verbosity of debug output (default fatal)'
+        exit
+    when '--version'
+        puts "mod_spox IRC robot (version #{ModSpox::VERSION})"
+        puts 'http://github.com/spox/mod_spox'
+        exit
+    when '--config'
+        config = true
+    when '--path'
+        path = arg
+    when '--daemon'
+        daemon = true
+    when '--verbosity'
+        case arg
+        when 'info'
+            verb = Logger::INFO
+        when 'error'
+            verb = Logger::ERROR
+        when 'warn'
+            verb = Logger::WARN
+        when 'fatal'
+            verb = Logger::FATAL
+        else
+            verb = Logger::FATAL
+        end
+    when '--debug'
+        debug = File.writable?(arg) ? arg : $stdout
+    end
+end
+
+if(config)
+    require 'mod_spox/ConfigurationWizard'
+    wizard = ModSpox::ConfigurationWizard.new(path)
+    wizard.run
+    exit
+end
+
+puts 'done'
