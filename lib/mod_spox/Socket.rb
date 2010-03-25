@@ -14,7 +14,7 @@ module ModSpox
         # Create a new IRC socket
         def initialize(args={})
             @args = {:server => nil, :port => nil, :delay => 2.0, :burst_lines => 4,
-                :burst_in => 2}
+                :burst_in => 2}.merge(args)
             @socket = nil
             @connect_lock = Splib::Monitor.new
             @queue = Splib::PriorityQueue.new
@@ -80,7 +80,9 @@ module ModSpox
             raise 'Already running' if @thread && @thread.alive?
             @thread = Thread.new do
                 until(@stop) do
-                    write(@sendq.pop)
+                    m = sendq.pop
+                    next unless m
+                    write(m)
                     t = Time.now.to_i - @time_check
                     if(t > @burst_in)
                         @time_check = nil
@@ -98,8 +100,10 @@ module ModSpox
         # Stop worker
         def stop
             @stop = true
-            @queue << ' '
+            @queue << nil
             @thread.join
+            @thread = nil
+            true
         end
         
     end
