@@ -10,12 +10,13 @@ require 'rake/gempackagetask'
 require 'rake/rdoctask'
 require 'rake/testtask'
 require 'spec/rake/spectask'
+require './lib/mod_spox'
 
 spec = Gem::Specification.new do |s|
   s.name = 'mod_spox'
-  s.version = '0.0.1'
+  s.version = ModSpox::VERSION
   s.has_rdoc = true
-  s.extra_rdoc_files = ['README', 'LICENSE']
+  s.extra_rdoc_files = ['README.rdoc', 'LICENSE']
   s.summary = 'Your summary here'
   s.description = s.summary
   s.author = ''
@@ -33,9 +34,9 @@ Rake::GemPackageTask.new(spec) do |p|
 end
 
 Rake::RDocTask.new do |rdoc|
-  files =['README', 'LICENSE', 'lib/**/*.rb']
+  files =['README.rdoc', 'LICENSE', 'lib/**/*.rb']
   rdoc.rdoc_files.add(files)
-  rdoc.main = "README" # page to start on
+  rdoc.main = "README.rdoc" # page to start on
   rdoc.title = "mod_spox Docs"
   rdoc.rdoc_dir = 'doc/rdoc' # rdoc output folder
   rdoc.options << '--line-numbers'
