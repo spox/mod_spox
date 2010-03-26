@@ -1,4 +1,4 @@
-require 'pipeliner/pipeline'
+require 'pipeliner'
 require 'baseirc'
 
 module ModSpox
