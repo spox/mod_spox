@@ -1,3 +1,5 @@
+require 'mod_spox/Plugin'
+
 require 'splib'
 Splib.load :CodeReloader, :Constants
 
@@ -69,7 +71,7 @@ module ModSpox
                 ModSpox::Plugins.const_get(x)}.find_all{|x|
                     x < ModSpox::Plugin && !@plugins.has_key(x)}
             plugs.each do |pl|
-                @plugins[pl] = {:module => nil, :plugin => pl.new(@args)}
+                @plugins[pl.to_sym] = {:module => nil, :plugin => pl.new(@args)}
             end
             plugs
         end
@@ -82,7 +84,7 @@ module ModSpox
                 mod = Splib.load_code(file)
                 plugs = mod.constants.map{|x|mod.const_get(x)}.find_all{|x|x < ModSpox::Plugin}
                 plugs.each do |pl|
-                    @plugins[pl] = {:module => mod, :plugin => pl}
+                    @plugins[pl.to_s.split('::').last.to_sym] = {:module => mod, :plugin => pl.new(@args)}
                 end
             else
                 raise ArgumentError.new 'File does not exist'
