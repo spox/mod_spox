@@ -9,7 +9,7 @@ require 'mod_spox/PluginManager'
 class PluginManagerTest < Test::Unit::TestCase
     def setup
         @pm = ModSpox::PluginManager.new(:irc => nil, :pool => nil, :timer => nil, :pipeline => nil)
-        @dummy = File.dirname(__FILE__) + '/DummyPlugin.rb'
+        @dummy = File.dirname(__FILE__) + '/plugins/DummyPlugin.rb'
     end
 
     def test_file_load
@@ -20,7 +20,7 @@ class PluginManagerTest < Test::Unit::TestCase
         assert_kind_of(Module, @pm.plugins[:Plug][:module])
     end
 
-    def test_file_unload
+    def test_unload
         @pm.load_plugin(:file => @dummy)
         assert(@pm.plugins[:Plug])
         @pm.unload_plugin(:Plug)
@@ -35,5 +35,15 @@ class PluginManagerTest < Test::Unit::TestCase
         @pm.reload_plugin(:Plug)
         assert_not_equal(:foo, @pm.plugins[:Plug][:plugin].var)
         assert_nil(@pm.plugins[:Plug][:plugin].var)
+    end
+
+    def test_find_files
+        ModSpox.config_dir = File.dirname(__FILE__)
+        plugs = @pm.find_plugins
+        assert_equal("#{File.dirname(__FILE__)}/plugins/DummyPlugin.rb", plugs[:files].first)
+    end
+
+    def test_gem_load
+        flunk 'Write this test'
     end
 end
