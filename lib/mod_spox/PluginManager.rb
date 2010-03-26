@@ -62,6 +62,24 @@ module ModSpox
         # name:: Name of plugin (or :all to reload all plugins)
         # Reloads single or all plugins
         def reload_plugin(name = :all)
+            name = name.to_sym
+            plugs = []
+            if(name == :all)
+                pls = []
+                @plugins.values.each do |x|
+                    pls.push(x[:module].path) if x[:module]
+                    x[:plugin].destroy
+                end
+                @plugins.clear
+                pls.each{|x| plugs += load_plugin(:file => x)}
+                plugs += create_gem_plugins
+            else
+                raise NameError.new "No plugin found with name: #{name}" unless @plugins[name]
+                path = @plugins[name][:module] ? @plugins[name][:module].path : nil
+                unload_plugin(name)
+                plugs = path ? load_plugin(:file => path) : load_plugin(:gem => name)
+            end
+            plugs
         end
 
         def find_plugins
