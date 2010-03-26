@@ -49,6 +49,14 @@ module ModSpox
         # name:: Name of plugin
         # Unloads the plugin with the given name
         def unload_plugin(name)
+            name = name.to_sym
+            if(@plugins[name])
+                @plugins[name][:plugin].destroy
+                @plugins.delete(name)
+            else
+                raise NameError.new "No plugin found with name: #{name}"
+            end
+            true
         end
 
         # name:: Name of plugin (or :all to reload all plugins)
