@@ -1,4 +1,6 @@
 require 'thread'
+require 'splib'
+Splib.load :PriorityQueue
 
 module ModSpox
     # The Outputter object is used to properly queue messages
