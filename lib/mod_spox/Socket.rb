@@ -27,6 +27,39 @@ module ModSpox
             @thread = nil
         end
 
+        # d:: delay
+        # Set the burst delay
+        def burst_delay=(d)
+            @args[:delay] = d
+        end
+
+        # i:: seconds to check for burst
+        # Set allowed seconds for burst
+        def burst_in=(i)
+            @args[:burst_in] = i
+        end
+
+        # l:: number of lines
+        # Set number of lines allowed during burst
+        def burst_lines=(l)
+            @args[:burst_lines] = l
+        end
+
+        # Delay when burst limit reached
+        def burst_delay
+            @args[:delay]
+        end
+
+        # Length of time to watch for exceeding burst
+        def burst_in
+            @args[:burst_in]
+        end
+
+        # Number of lines allowed in burst
+        def burst_lines
+            @args[:burst_lines]
+        end
+
         # s:: Server name
         # Set server name
         def server=(s)
