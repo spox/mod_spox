@@ -9,7 +9,7 @@ rescue LoadError
     # silently ignore
 end
 
-opt = GetoptLong.new(
+opts = GetoptLong.new(
     ['--config', '-c', GetoptLong::NO_ARGUMENT],
     ['--path', '-p', GetoptLong::REQUIRED_ARGUMENT],
     ['--version', '-v', GetoptLong::NO_ARGUMENT],
@@ -70,5 +70,8 @@ if(config)
     wizard.run
     exit
 end
+
+bot = ModSpox::Bot.new
+bot.start
 
 puts 'done'
