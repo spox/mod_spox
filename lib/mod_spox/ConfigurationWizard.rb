@@ -15,6 +15,7 @@ module ModSpox
             puts "## mod_spox configuration wizard ##\n\n"
             ask_bot_questions
             ask_connection_questions
+            puts "\n## Configuration is now complete ##"
         end
 
         private
@@ -27,10 +28,10 @@ module ModSpox
 
         def ask_bot_questions
             @bot.transaction do
-                @bot[:nick] = get_input('IRC Nick', /^[A-Za-z\|\\\{\}\[\]\^\`~\_\-]+[A-Za-z0-9\|\\\{\}\[\]\^\`~\_\-]*$/, 'mod_spox')
-                @bot[:password] = get_input('IRC Password', @bot[:password])
-                @bot[:username] = get_input('IRC Username', '.+', @bot[:username])
-                @bot[:realname] = get_input('IRC Real Name', '.+', @bot[:realname])
+                @bot[:nick] = get_input('IRC Nick', /^[A-Za-z\|\\\{\}\[\]\^\`~\_\-]+[A-Za-z0-9\|\\\{\}\[\]\^\`~\_\-]*$/, @bot[:nick])
+                @bot[:password] = get_input('IRC Password', /.+/, @bot[:password])
+                @bot[:username] = get_input('IRC Username', /.+/, @bot[:username])
+                @bot[:realname] = get_input('IRC Real Name', /.+/, @bot[:realname])
             end
         end
 
@@ -41,7 +42,7 @@ module ModSpox
                     pt = get_input('Server Port', /^\d+$/, '6667')
                     @connection[:servers] << {:server => s, :port => pt}
                 end
-                @connection[:burst_lines] = get_input('Socket burst limit (lines)', /^\d+$/, @connectin[:burst_lines])
+                @connection[:burst_lines] = get_input('Socket burst limit (lines)', /^\d+$/, @connection[:burst_lines])
                 @connection[:burst_in] = get_input('Socket burst duration (seconds)', /^\d+$/, @connection[:burst_in])
                 @connection[:burst_delay] = get_input('Socket burst delay (seconds)', /^\d+$/, @connection[:burst_delay])
             end
@@ -115,7 +116,7 @@ module ModSpox
             until(response) do
                 print output
                 if(default)
-                    print "[#{default}]: "
+                    print " [#{default}]: "
                 else
                     print ': '
                 end
