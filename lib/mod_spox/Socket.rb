@@ -15,6 +15,7 @@ module ModSpox
         def initialize(args={})
             @args = {:server => nil, :port => nil, :delay => 2.0, :burst_lines => 4,
                 :burst_in => 2}.merge(args)
+            self.port = args[:port] if args[:port]
             @socket = nil
             @connect_lock = Splib::Monitor.new
             @queue = Splib::PriorityQueue.new
