@@ -3,6 +3,7 @@ require 'actiontimer'
 require 'pipeliner'
 require 'spockets'
 require 'baseirc'
+require 'pstore'
 require 'mod_spox'
 require 'mod_spox/Socket'
 require 'mod_spox/Outputter'
@@ -30,20 +31,29 @@ module ModSpox
 
     # IRC Bot
     class Bot
+
+        attr_reader :pool
+        attr_reader :timer
+        attr_reader :pipeline
+        attr_reader :irc
+        attr_reader :plugin_manager
+        attr_reader :socket
+
         # :db_path:: Path to database file
         # Create a new bot instance
-        def initialize(db_path)
-            @db = initialize_db(db_path)
+        def initialize
+            @halt = false
+            @socket = nil
+            @con_info = {}
             @start_time = Time.now
             @pool = ActionPool::Pool.new(:a_to => 10)
             @timer = ActionTimer::Timer.new(:pool => @pool)
             @pipeline = Pipeliner::Pipeline.new(:pool => @pool)
-            @socket = nil
             @outputter = Outputter.new(@socket.queue)
             @irc = BaseIRC::IRC.new(@outputter.queue)
             @sockets = Spockets::Spockets.new
             @factory = MessageFactory::Factory.new
-            @halt = false
+            @plugin_manager = PluginManager.new(self)
             @monitor = Splib::Monitor.new
         end
 
@@ -52,6 +62,7 @@ module ModSpox
                 raise 'This should only be called by the main thread'
             end
             do_setup
+            @socket.connect
             @monitor.wait_until{ @halt }
         end
 
@@ -63,7 +74,14 @@ module ModSpox
 
         def connect_to(server, port=6667)
             close_socket
-            @socket = Socket.new(:server => server, :port => port)
+            @socket = Socket.new(:server => server, :port => port, :delay => @con_info[:burst_delay],
+                :burst_lines => @con_info[:burst_lines], :burst_in => @con_info[:burst_in])
+        end
+
+        def cycle_connect
+            load_servers if @con_info[:servers].empty?
+            srv = @con_info[:servers].pop
+            connect_to(srv[:server], srv[:port])
         end
 
         private
@@ -78,6 +96,13 @@ module ModSpox
                 unless(m)
                     @pipeline << m
                 end
+            end
+        end
+
+        def load_servers
+            store = PStore.new("#{ModSpox.config_dir}/connection.pstore")
+            store.transaction do
+                @con_info = store.dup
             end
         end
     end
