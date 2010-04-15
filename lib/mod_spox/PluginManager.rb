@@ -12,22 +12,15 @@ module ModSpox
         # Hash of plugin instances and modules
         attr_reader :plugins
 
-        # args:: Argument hash.
-        # :pipeline:: Pipeliner::Pipeline
-        # :irc:: BaseIRC::IRC
-        # :timer:: ActionTimer::Timer
-        # :pool:: ActionPool::Pool
+        # bot:: Bot instance
         # Create a new plugin manager
         # :nodoc:
         # {:PluginName => {:module => Module(containing constants), :plugin => Plugin instance}}
-        def initialize(args={})
-            [:pipeline, :irc, :timer, :pool].each do |x|
-                unless(args.has_key?(x))
-                    raise ArgumentEror.new "Expecting #{x}"
-                end
+        def initialize(bot)
+            unless(bot.is_a?(Bot))
+                raise ArgumentError.new("Expecting type Bot. Received type #{bot.class}")
             end
-            @args = args
-            @args[:pm] = self
+            @bot = bot
             @plugins = {}
         end
 
@@ -97,7 +90,7 @@ module ModSpox
                 ModSpox::Plugins.const_get(x)}.find_all{|x|
                     x < ModSpox::Plugin && !@plugins.has_key(x)}
             plugs.each do |pl|
-                @plugins[pl.to_sym] = {:module => nil, :plugin => pl.new(@args)}
+                @plugins[pl.to_sym] = {:module => nil, :plugin => pl.new(@bot)}
             end
             plugs
         end
@@ -110,7 +103,7 @@ module ModSpox
                 mod = Splib.load_code(file)
                 plugs = mod.constants.map{|x|mod.const_get(x)}.find_all{|x|x < ModSpox::Plugin}
                 plugs.each do |pl|
-                    @plugins[pl.to_s.split('::').last.to_sym] = {:module => mod, :plugin => pl.new(@args)}
+                    @plugins[pl.to_s.split('::').last.to_sym] = {:module => mod, :plugin => pl.new(@bot)}
                 end
             else
                 raise ArgumentError.new 'File does not exist'

@@ -10,17 +10,18 @@ module ModSpox
         # :timer:: ActionTimer::Timer
         # :pool:: ActionPool::Pool
         # Create new plugin instance
-        def initialize(args={})
-            [:pipeline, :irc, :timer, :pool].each do |x|
-                unless(args.has_key?(x))
-                    raise ArgumentEror.new "Expecting #{x}"
-                end
-            end
-            @pipeline = args[:pipeline]
-            @irc = args[:irc]
-            @timer = args[:timer]
-            @pool = args[:pool]
-            @pluginmanager = args[:pm]
+        def initialize(bot)
+            @pipeline = bot.pipeline
+            @irc = bot.irc
+            @timer = bot.timer
+            @pool = bot.pool
+            @plugin_manager = bot.plugin_manager
+            @bot = bot
+            setup
+        end
+
+        # This is used for any setup the plugin may need to perform
+        def setup
         end
 
         # Called before the the plugin is destroyed. Useful
