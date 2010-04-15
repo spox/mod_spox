@@ -21,8 +21,8 @@ spec = Gem::Specification.new do |s|
   s.description = s.summary
   s.author = ''
   s.email = ''
-  # s.executables = ['your_executable_here']
-  s.files = %w(LICENSE README Rakefile) + Dir.glob("{bin,lib,spec}/**/*")
+  s.executables = ['mod_spox']
+  s.files = %w(LICENSE README.rdoc Rakefile) + Dir.glob("{bin,lib,spec}/**/*")
   s.require_path = "lib"
   s.bindir = "bin"
 end
