@@ -71,6 +71,8 @@ if(config)
     exit
 end
 
+require 'mod_spox/Bot'
+
 bot = ModSpox::Bot.new
 bot.start
 
