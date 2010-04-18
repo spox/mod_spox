@@ -12,16 +12,25 @@ module ModSpox
         attr_reader :queue
         # q:: Splib::PriorityQueue
         # Create a new Outputter
-        def initialize(q)
+        def initialize(q = nil)
             @queue = Queue.new
             @sockq = q
             @thread = nil
             @stop = false
         end
 
+        # q:: Splib::PriorityQueue
+        # Set the queue to use
+        def queue=(q)
+            stop
+            @sockq = q
+            start
+        end
+
         # Start the outputter
         def start
             raise 'Already running' if @thread && @thread.alive?
+            raise 'No output queue found' if @sockq.nil?
             @thread = Thread.new do
                 until(@stop) do
                     m = @queue.pop
