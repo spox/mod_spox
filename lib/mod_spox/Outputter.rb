@@ -1,6 +1,6 @@
 require 'thread'
 require 'splib'
-Splib.load :PriorityQueue
+Splib.load :PriorityQueue, :Monitor
 
 module ModSpox
     # The Outputter object is used to properly queue messages
@@ -17,31 +17,37 @@ module ModSpox
             @sockq = q
             @thread = nil
             @stop = false
+            @lock = Splib::Monitor.new
         end
 
         # q:: Splib::PriorityQueue
         # Set the queue to use
         def queue=(q)
-            stop
-            @sockq = q
-            start
+            @lock.synchronize{ @sockq = q }
         end
 
         # Start the outputter
         def start
             raise 'Already running' if @thread && @thread.alive?
-            raise 'No output queue found' if @sockq.nil?
             @thread = Thread.new do
+                Logger.debug 'Output thread is now running'
                 until(@stop) do
                     m = @queue.pop
                     next unless m
+                    if(@sockq.nil?)
+                        Logger.debug 'No output queue defined. Message dropped.'
+                        next
+                    end
                     parts = m.split
                     if(parts.last[0,1] == ':')
-                        @sockq.push(parts[parts.size - 2].to_sym, m)
+                        @lock.synchronize do
+                            @sockq.push(parts[parts.size - 2].to_sym, m)
+                        end
                     else
-                        @sockq.push(:default, m)
+                        @lock.synchronize{ @sockq.push(:default, m) }
                     end
                 end
+                Logger.debug 'Output thread has completed and is now stopped'
             end
             true
         end
