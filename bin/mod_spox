@@ -18,11 +18,12 @@ opts = GetoptLong.new(
     ['--debug', '-d', GetoptLong::OPTIONAL_ARGUMENT],
     ['--verbosity', '-V', GetoptLong::REQUIRED_ARGUMENT])
 
-verb = nil
+verb = Logger::FATAL
 config = false
 daemon = false
 debug = $stdout
 path = nil
+logger = nil
 
 opts.each do |opt,arg|
     case opt
@@ -60,7 +61,7 @@ opts.each do |opt,arg|
             verb = Logger::FATAL
         end
     when '--debug'
-        debug = File.writable?(arg) ? arg : $stdout
+        logger = Logger.new(File.writable?(arg) ? arg : $stdout)
     end
 end
 
@@ -73,7 +74,37 @@ end
 
 require 'mod_spox/Bot'
 
+if(logger)
+    logger.serverity = verb
+    ModSpox::Logger.logger = logger
+    ModSpox::Logger.info('Logger has been initialized')
+end
+
+if(path)
+    if(Directory.writable?(path) && Directory.readable?(path))
+        ModSpox.config_dir = path
+        ModSpox::Logger.info("Bot configuration path has been set to: #{ModSpox.config_dir}")
+    else
+        puts "Error: Configuration path does not have proper permissions"
+        exit 1
+    end
+end
+
+if(daemon)
+    ModSpox::Logger.info('Daemon requested. Attempting to daemonize bot.')
+    if(RUBY_VERSION > '1.9.0')
+        Process.daemon
+    else
+        if(pid = fork)
+            Signal.trap('HUP', 'IGNORE')
+            process.detach(pid)
+            exit
+        end
+    end
+    ModSpox::Logger.info('Daemonization is now complete.')
+end
+
+ModSpox::Logger.info('Initializing and starting the bot')
+
 bot = ModSpox::Bot.new
 bot.start
-
-puts 'done'
