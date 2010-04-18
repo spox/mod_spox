@@ -27,6 +27,11 @@ module ModSpox
             @thread = nil
         end
 
+        # Is socket connected?
+        def connected?
+            @socket && @socket.connected?
+        end
+
         # d:: delay
         # Set the burst delay
         def burst_delay=(d)
