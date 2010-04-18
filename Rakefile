@@ -30,7 +30,7 @@ spec = Gem::Specification.new do |s|
     s.add_dependency 'pipeliner' , '~> 1.0'
     s.add_dependency 'spockets', '~> 0.1.1'
     s.add_dependency 'splib', '~> 1.4.3'
-    s.add_dependency 'messagefactory', '~> 0.0.1'
+    s.add_dependency 'messagefactory', '~> 0.0.2'
     s.add_dependency 'baseirc', '~> 1.0'
 end
 
