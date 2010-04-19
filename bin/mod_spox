@@ -108,5 +108,14 @@ end
 
 ModSpox::Logger.info('Initializing and starting the bot')
 
-bot = ModSpox::Bot.new
-bot.start
+begin
+    bot = ModSpox::Bot.new
+    bot.start
+rescue ModSpox::ConfigurationMissing => e
+    puts "ERROR: #{e}"
+    puts "Try running: mod_spox -c"
+    exit 1
+rescue => e
+    puts "ERROR: #{e}"
+    exit 1
+end
