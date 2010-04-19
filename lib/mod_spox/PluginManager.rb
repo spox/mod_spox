@@ -28,6 +28,7 @@ module ModSpox
             end
             @bot = bot
             @plugins = {}
+            load_builtins
         end
 
         # args:: Arguments for loading ({:gem => gem_name} or {:file => path})
@@ -81,6 +82,7 @@ module ModSpox
             plugs
         end
 
+        # Returns listing of all available plugins
         def find_plugins
             {:files => find_local_plugins,
                 :gems => find_gem_plugins}
@@ -88,15 +90,23 @@ module ModSpox
 
         private
 
+        # Loads all builtin plugins
+        def load_builtins
+            Dir.glob(File.dirname(__FILE__)+'/plugins/*.rb').each do |file|
+                require file
+            end
+            create_non_module_plugins
+        end
+
         # Instantiates any plugins found in the ModSpox::Plugins namespace
         # that do not already exist. Returns array of plugin constants
         # created.
-        def create_gem_plugins
+        def create_non_module_plugins
             plugs = ModSpox::Plugins.constants.map{|x|
                 ModSpox::Plugins.const_get(x)}.find_all{|x|
-                    x < ModSpox::Plugin && !@plugins.has_key(x)}
+                    x < ModSpox::Plugin && !@plugins.has_key?(x)}
             plugs.each do |pl|
-                @plugins[pl.to_sym] = {:module => nil, :plugin => pl.new(@bot)}
+                @plugins[pl.to_s.split('::').last.to_sym] = {:module => nil, :plugin => pl.new(@bot)}
             end
             plugs
         end
@@ -110,6 +120,7 @@ module ModSpox
                 plugs = mod.constants.map{|x|mod.const_get(x)}.find_all{|x|x < ModSpox::Plugin}
                 plugs.each do |pl|
                     @plugins[pl.to_s.split('::').last.to_sym] = {:module => mod, :plugin => pl.new(@bot)}
+                    Logger.info "New plugin loaded: #{pl}"
                 end
             else
                 raise ArgumentError.new 'File does not exist'
