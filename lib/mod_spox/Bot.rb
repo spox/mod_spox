@@ -10,6 +10,7 @@ require 'mod_spox/Socket'
 require 'mod_spox/Outputter'
 require 'mod_spox/Logger'
 require 'mod_spox/PluginManager'
+require 'mod_spox/Messages'
 
 module ModSpox
 
@@ -89,6 +90,7 @@ module ModSpox
             @socket.connect
             register_socket
             Logger.debug "Established connection to: #{server}:#{port}"
+            @pipeline << Messages::Connected.new
         end
 
         def cycle_connect
@@ -120,6 +122,7 @@ module ModSpox
                     @pipeline << m
                 end
             end
+            @outputter.queue = @socket.queue
             @sockets.on_close(@socket.socket){|s| cycle_connect }
         end
 
