@@ -13,6 +13,9 @@ require 'mod_spox/PluginManager'
 
 module ModSpox
 
+    class ConfigurationMissing < RuntimeError
+    end
+
     # Give us a nice easy way to globally access the
     # directory we are supposed to store our data in
     class << self
@@ -90,6 +93,9 @@ module ModSpox
 
         def cycle_connect
             load_servers if @con_info.empty? || @con_info[:servers].empty?
+            if(@con_info[:servers].empty?)
+                raise ConfigurationMissing.new 'No servers found in connection configuration'
+            end
             srv = @con_info[:servers].pop
             connect_to(srv[:server], srv[:port])
         end
@@ -108,18 +114,26 @@ module ModSpox
         # pretty much what makes the bot go.
         def register_socket
             @sockets.add(@socket.socket) do |m|
+                Logger.debug(">> #{m.strip}")
                 m = @factory.process(m)
                 unless(m)
                     @pipeline << m
                 end
             end
-            @sockets.on_close(@socket.socket){ cycle_connect }
+            @sockets.on_close(@socket.socket){|s| cycle_connect }
         end
 
         def load_servers
+            unless(File.exists?("#{ModSpox.config_dir}/connection.pstore"))
+                raise ConfigurationMissing.new 'No configuration files found'
+            end
             store = PStore.new("#{ModSpox.config_dir}/connection.pstore")
+            @con_info.clear
             store.transaction do
-                @con_info = store.dup
+                @con_info[:burst_in] = store[:burst_in]
+                @con_info[:burst_delay] = store[:burst_delay]
+                @con_info[:burst_lines] = store[:burst_lines]
+                @con_info[:servers] = store[:servers]
             end
         end
     end
