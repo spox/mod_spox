@@ -115,9 +115,17 @@ module ModSpox
         def register_socket
             @sockets.add(@socket.socket) do |m|
                 Logger.debug(">> #{m.strip}")
-                m = @factory.process(m)
-                unless(m)
-                    @pipeline << m
+                m = nil
+                begin
+                    m = @factory.process(m)
+                    unless(m)
+                        @pipeline << m
+                    end
+                rescue NoMethodError
+                    # drop and continue
+                    # TODO: Modify the MessageFactory to provide a RAW type
+                    # => message to hold message strings for which no processor
+                    # => exists.
                 end
             end
             @sockets.on_close(@socket.socket){|s| cycle_connect }
