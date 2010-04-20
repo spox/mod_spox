@@ -101,6 +101,7 @@ module ModSpox
             ensure
                 @connect_lock.unlock
             end
+            start
             return true
         end
 
@@ -119,20 +120,29 @@ module ModSpox
         def start
             raise 'Already running' if @thread && @thread.alive?
             @thread = Thread.new do
-                until(@stop) do
-                    m = sendq.pop
-                    next unless m
-                    write(m)
-                    t = Time.now.to_i - @time_check
-                    if(t > @burst_in)
-                        @time_check = nil
-                        @burst_check = 0
-                    elsif(t <= @burst_in && @burst_check >= @burst_lines)
-                        sleep(@delay)
-                        @time_check = nil
-                        @burst_check = 0
+                Logger.debug "Socket thread is now running"
+                begin
+                    until(@stop) do
+                        m = @queue.pop
+                        next unless m
+                        write(m)
+                        t = Time.now.to_i - @time_check
+                        if(t > @args[:burst_in])
+                            @time_check = nil
+                            @burst_check = 0
+                        elsif(t <= @args[:burst_in] && @burst_check >= @args[:burst_lines])
+                            Logger.info "Burst limit reached. Sleeping for: #{@args[:delay]} seconds"
+                            sleep(@args[:delay])
+                            @time_check = nil
+                            @burst_check = 0
+                        end
                     end
+                rescue => e
+                    Logger.debug "Socket thread encountered an error: #{e}"
+                    Logger.debug "Restarting socket thread"
+                    retry
                 end
+                Logger.debug "Socket thread is now complete"
             end
             true
         end
