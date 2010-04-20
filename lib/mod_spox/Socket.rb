@@ -107,6 +107,7 @@ module ModSpox
         # message:: Message to send
         # Send a message to the server
         def write(message)
+            Logger.info("<< #{message}")
             @socket.puts("#{message}\n")
             @socket.flush
             @last_send = Time.now
