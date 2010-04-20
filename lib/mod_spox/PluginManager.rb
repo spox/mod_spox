@@ -107,6 +107,7 @@ module ModSpox
                     x < ModSpox::Plugin && !@plugins.has_key?(x)}
             plugs.each do |pl|
                 @plugins[pl.to_s.split('::').last.to_sym] = {:module => nil, :plugin => pl.new(@bot)}
+                Logger.debug("Intialized new plugin: #{pl}")
             end
             plugs
         end
