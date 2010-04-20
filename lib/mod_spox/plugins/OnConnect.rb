@@ -1,6 +1,7 @@
 module ModSpox
     module Plugins
-        class OnConnect < ::ModSpox::Plugin
+        # Sends initial credentials on connection
+        class OnConnect < ModSpox::Plugin
             def setup
                 @pipeline.hook(Messages::Connected, self, :on_connect)
                 @nick = nil
@@ -8,6 +9,8 @@ module ModSpox
                 @real_name = nil
             end
 
+            # message:: Messages::Connected
+            # Sends credentials to server
             def on_connect(message)
                 get_nick_info
                 @irc.nick(@nick)
