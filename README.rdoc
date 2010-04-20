@@ -1,7 +1,64 @@
 == mod_spox
 
-YARIRCB -> Yet Another Ruby IRC Bot
+Ruby IRC bot
+
+=== What's new
+
+This is pretty much a complete rewrite of the core bot, which also means
+a majority of the old plugins will be rewritten to play nice with the new
+core. As I start porting over old plugins, there will be a few that I'm not
+going to want to rewrite, and at that point I'll add adapters in to make
+them work. Otherwise, the new plugin structure has lots of great new features:
+
+* Improved plugin to plugin communication
+* Easier API for sending output
+* Better access to bot internals
+* Packaging freedom
+
+So, mod_spox started way back when as a school project as a way to demonstrate
+a bunch of ideas that I had been working on. As such, the old version ended up
+becoming a monstrosity due to the variety of ideas all smashed into this single
+project. So, once mod_spox got to a some what stable point, I began to gut the
+entire project. And that's where we are now. A slew of independent libraries
+that are glued together by mod_spox. It makes things easier to test, easier to
+upgrade and easier to maintain. Hurray!
+
+The plugins were a big part of this rebuilding process too. In the old setup,
+the plugins were generally held within the gem, and loaded as needed. They could
+also be single files thrown into the .plugins directory, but this proved to get
+messy after awhile. So, now we have a setup where plugins can be files in a plugin
+directory, required plugins that are built into the bot itself or gems that
+can be loaded in. The gems make it very easy for plugins to be maintained and
+upgraded without reliance on the bot. And because I am currently targetting this
+version for JRuby to run my personal instance of the bot I'll be working on being
+able to load plugins in jars as well.
+
+=== Current status
+
+* Send PONG messages to stay connected
+* Connect to IRC server
+* Run and store configuration
 
 === 0.4.0
 
 It may not be new, but it will be IMPROVED!
+
+=== How to run this version:
+
+    git clone git://github.com/spox/mod_spox.git
+    cd mod_spox
+    git fetch origin 0.4.0:0.4.0
+    git checkout 0.4.0
+    rake gem
+    gem install pkg/
+
+Once everything is installed, run:
+
+    mod_spox -c
+
+And after you configure it, it's time to start it up. Here is what you will
+probably want to see debug info in the console:
+
+    mod_spox -V debug -d
+
+- spox
