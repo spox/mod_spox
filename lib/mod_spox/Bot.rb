@@ -116,10 +116,15 @@ module ModSpox
         # pretty much what makes the bot go.
         def register_socket
             @sockets.add(@socket.socket) do |m|
-                Logger.info(">> #{m.strip}")
-                m = @factory.process(m)
-                unless(m)
-                    @pipeline << m
+                m.strip!
+                Logger.info(">> #{m}")
+                begin
+                    m = @factory.process(m)
+                    if(m)
+                        @pipeline << m
+                    end
+                rescue => e
+                    Logger.debug "Message factory failure: #{e}"
                 end
             end
             @outputter.queue = @socket.queue
