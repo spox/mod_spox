@@ -27,7 +27,7 @@ spec = Gem::Specification.new do |s|
     s.bindir = "bin"
     s.add_dependency 'actionpool', '~> 0.2.3'
     s.add_dependency 'actiontimer', '~> 0.2.1'
-    s.add_dependency 'pipeliner' , '~> 1.0'
+    s.add_dependency 'pipeliner' , '~> 1.1'
     s.add_dependency 'spockets', '~> 0.1.1'
     s.add_dependency 'splib', '~> 1.4.3'
     s.add_dependency 'messagefactory', '~> 0.0.5'
