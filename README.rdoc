@@ -35,7 +35,10 @@ able to load plugins in jars as well.
 
 === Current status
 
+* Working builtin plugins (these are required plugins)
 * Send PONG messages to stay connected
+* Process outgoing messages
+* Process incoming messages
 * Connect to IRC server
 * Run and store configuration
 
