@@ -46,7 +46,7 @@ module ModSpox
                     else
                         @lock.synchronize{ @sockq.push(:default, m) }
                     end
-                    Logger.debug "<< #{m}"
+                    Logger.debug "Outgoing message queued: #{m}"
                 end
                 Logger.debug 'Output thread has completed and is now stopped'
             end

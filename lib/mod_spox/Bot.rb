@@ -116,7 +116,7 @@ module ModSpox
         # pretty much what makes the bot go.
         def register_socket
             @sockets.add(@socket.socket) do |m|
-                Logger.debug(">> #{m.strip}")
+                Logger.info(">> #{m.strip}")
                 m = @factory.process(m)
                 unless(m)
                     @pipeline << m
