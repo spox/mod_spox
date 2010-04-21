@@ -4,13 +4,7 @@ require 'splib'
 Splib.load :CodeReloader, :Constants, :Monitor
 
 require 'mod_spox/Bot'
-# TODO: We need to have the plugin manager keep track of what is to be
-# => loaded on startup. Thus, we need to add a pstore file in the config directory
-# => to keep track of what plugins we need to attempt to load on startup.
-# => There is also the fact that we need to provide builtin plugins for basic
-# => functionality. These include the old userinfo, ponger, and related plugins. Should
-# => probably be thrown into a plugins subdirectory here since they will be considered
-# => integrated parts of the bot and any extra plugins will be lone files or gems
+
 module ModSpox
     # Manages plugins for mod_spox
     class PluginManager
