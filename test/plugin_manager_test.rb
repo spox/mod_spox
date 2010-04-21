@@ -3,25 +3,34 @@ $:.unshift File.join(File.dirname(__FILE__),'..','lib')
 require 'test/unit'
 require 'mod_spox/PluginManager'
 
+require 'ostruct'
+
+
+class Bot < OpenStruct
+end
+
 class PluginManagerTest < Test::Unit::TestCase
     def setup
-        @pm = ModSpox::PluginManager.new(:irc => nil, :pool => nil, :timer => nil, :pipeline => nil)
+        bot = ModSpox::Bot.new
+        @pm = ModSpox::PluginManager.new(bot)
         @dummy = File.dirname(__FILE__) + '/plugins/DummyPlugin.rb'
     end
 
     def test_file_load
+        size = @pm.plugins.size
         assert_kind_of(Class, @pm.load_plugin(:file => @dummy).first)
-        assert_equal(1, @pm.plugins.size)
+        assert_equal(size + 1, @pm.plugins.size)
         assert(@pm.plugins[:Plug])
         assert_kind_of(ModSpox::Plugin, @pm.plugins[:Plug][:plugin])
         assert_kind_of(Module, @pm.plugins[:Plug][:module])
     end
 
     def test_unload
+        size = @pm.plugins.size
         @pm.load_plugin(:file => @dummy)
         assert(@pm.plugins[:Plug])
         @pm.unload_plugin(:Plug)
-        assert(@pm.plugins.empty?)
+        assert_equal(size, @pm.plugins.size)
     end
 
     def test_file_reload
