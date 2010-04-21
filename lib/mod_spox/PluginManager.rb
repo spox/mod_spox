@@ -1,7 +1,7 @@
 require 'mod_spox/Plugin'
 
 require 'splib'
-Splib.load :CodeReloader, :Constants
+Splib.load :CodeReloader, :Constants, :Monitor
 
 require 'mod_spox/Bot'
 # TODO: We need to have the plugin manager keep track of what is to be
@@ -28,6 +28,7 @@ module ModSpox
             end
             @bot = bot
             @plugins = {}
+            @lock = Splib::Monitor.new
             load_builtins
         end
 
@@ -102,12 +103,15 @@ module ModSpox
         # that do not already exist. Returns array of plugin constants
         # created.
         def create_non_module_plugins
-            plugs = ModSpox::Plugins.constants.map{|x|
-                ModSpox::Plugins.const_get(x)}.find_all{|x|
-                    x < ModSpox::Plugin && !@plugins.has_key?(x)}
-            plugs.each do |pl|
-                @plugins[pl.to_s.split('::').last.to_sym] = {:module => nil, :plugin => pl.new(@bot)}
-                Logger.debug("Intialized new plugin: #{pl}")
+            plugs = []
+            @lock.synchronize do
+                plugs = ModSpox::Plugins.constants.map{|x|
+                    ModSpox::Plugins.const_get(x)}.find_all{|x|
+                        x < ModSpox::Plugin && !@plugins.has_key?(x)}
+                plugs.each do |pl|
+                    @plugins[pl.to_s.split('::').last.to_sym] = {:module => nil, :plugin => pl.new(@bot)}
+                    Logger.debug("Intialized new plugin: #{pl}")
+                end
             end
             plugs
         end
@@ -116,15 +120,17 @@ module ModSpox
         # Load all plugins within given file
         def load_plugins_in(file)
             plugs = []
-            if(File.exists?(file))
-                mod = Splib.load_code(file)
-                plugs = mod.constants.map{|x|mod.const_get(x)}.find_all{|x|x < ModSpox::Plugin}
-                plugs.each do |pl|
-                    @plugins[pl.to_s.split('::').last.to_sym] = {:module => mod, :plugin => pl.new(@bot)}
-                    Logger.info "New plugin loaded: #{pl}"
+            @lock.synchronize do
+                if(File.exists?(file))
+                    mod = Splib.load_code(file)
+                    plugs = mod.constants.map{|x|mod.const_get(x)}.find_all{|x|x < ModSpox::Plugin}
+                    plugs.each do |pl|
+                        @plugins[pl.to_s.split('::').last.to_sym] = {:module => mod, :plugin => pl.new(@bot)}
+                        Logger.info "New plugin loaded: #{pl}"
+                    end
+                else
+                    raise ArgumentError.new 'File does not exist'
                 end
-            else
-                raise ArgumentError.new 'File does not exist'
             end
             plugs
         end
