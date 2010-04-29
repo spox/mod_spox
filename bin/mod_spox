@@ -117,5 +117,8 @@ rescue ModSpox::ConfigurationMissing => e
     exit 1
 rescue => e
     puts "ERROR: #{e}"
+    if(logger)
+        puts e.backtrace.join("\n")
+    end
     exit 1
 end
