@@ -12,6 +12,9 @@ module ModSpox
         # Hash of plugin instances and modules
         attr_reader :plugins
 
+        # Plugin specific timer
+        attr_reader :timer
+
         # bot:: Bot instance
         # Create a new plugin manager
         # :nodoc:
@@ -23,6 +26,7 @@ module ModSpox
             @bot = bot
             @plugins = {}
             @lock = Splib::Monitor.new
+            @timer = ActionTimer::Timer.new(:pool => @bot.pool)
             load_builtins
         end
 
@@ -103,7 +107,7 @@ module ModSpox
                     ModSpox::Plugins.const_get(x)}.find_all{|x|
                         x < ModSpox::Plugin && !@plugins.has_key?(x)}
                 plugs.each do |pl|
-                    @plugins[pl.to_s.split('::').last.to_sym] = {:module => nil, :plugin => pl.new(@bot)}
+                    @plugins[pl.to_s.split('::').last.to_sym] = {:module => nil, :plugin => pl.new(@bot, @timer)}
                     Logger.debug("Intialized new plugin: #{pl}")
                 end
             end
@@ -119,7 +123,7 @@ module ModSpox
                     mod = Splib.load_code(file)
                     plugs = mod.constants.map{|x|mod.const_get(x)}.find_all{|x|x < ModSpox::Plugin}
                     plugs.each do |pl|
-                        @plugins[pl.to_s.split('::').last.to_sym] = {:module => mod, :plugin => pl.new(@bot)}
+                        @plugins[pl.to_s.split('::').last.to_sym] = {:module => mod, :plugin => pl.new(@bot, @timer)}
                         Logger.info "New plugin loaded: #{pl}"
                     end
                 else

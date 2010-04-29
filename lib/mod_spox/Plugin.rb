@@ -10,10 +10,10 @@ module ModSpox
         # :timer:: ActionTimer::Timer
         # :pool:: ActionPool::Pool
         # Create new plugin instance
-        def initialize(bot)
+        def initialize(bot, timer)
             @pipeline = bot.pipeline
             @irc = bot.irc
-            @timer = bot.timer
+            @timer = timer
             @pool = bot.pool
             @plugin_manager = bot.plugin_manager
             @bot = bot
