@@ -1,4 +1,5 @@
 require 'splib'
+require 'socket'
 Splib.load :Monitor, :PriorityQueue
 
 module ModSpox
