@@ -1,0 +1,13 @@
+0.1.1
+    * Only load Iconv library when it will actually be used
+0.0.6
+    * Fixed bug exposed when extremely fast input
+      is received.
+0.0.5
+
+    * Added a delete alias
+    * Added an on_close method to set an action
+        to run when a closed socket is detected
+    * Added an include? method to check if a socket
+        is currently being watched
+    * Added clear method to remove all sockets

@@ -1,0 +1,53 @@
+== MessageFactory
+
+MessageFactory is a simple little library for parsing messages from an IRC
+server and generating easy to use objects from them. This library is intended
+to be used within an IRC type application, and does nothing of value by itself.
+
+=== install (easy):
+
+    gem install messagefactory
+
+=== install (less easy):
+
+    git clone http://github.com/spox/messagefactory.git
+    cd messagefactory
+    gem build *.gemspec
+    gem install ./
+
+=== install (less easy that's a little easier)
+
+{rip}[http://hellorip.com/about.html] makes it easy to install directly from a github repository.
+
+=== Testing
+
+MessageFactory is currently tested on:
+
+* Ruby 1.8.6-p383
+* Ruby 1.8.7-p248
+* Ruby 1.9.1-p376
+* JRuby 1.4.0
+
+== Example
+
+=== Code:
+
+    require 'messagefactory'
+
+    factory = MessageFactory::Factory.new
+    message = factory.process(':mod_spox!~mod_spox@host JOIN :#m')
+    p message
+
+=== Result:
+
+    #<MessageFactory::Message direction=:incoming, received=Fri Feb 05 19:58:42 UTC 2010, raw=":mod_spox!~mod_spox@host JOIN :#m", type=:join, source="mod_spox!~mod_spox@host", channel="#m">
+
+== Last remarks
+
+If you find any bugs, please report them through {github}[http://github.com/spox/messagefactory/issues].
+If you are in need of any help, you can generally find me on DALnet and Freenode.
+
+== License
+
+    MessageFactory is licensed under the LGPLv3
+    Copyright (c) 2009 spox <spox@modspox.com>
