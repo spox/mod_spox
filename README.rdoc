@@ -44,7 +44,7 @@ able to load plugins in jars as well.
 
 === 0.4.0
 
-It may not be new, but it will be IMPROVED!
+It may not be new, but it will be IMPROVED! This version is for Ruby version 1.8.7 and greater.
 
 === How to run this version:
 
@@ -52,8 +52,13 @@ It may not be new, but it will be IMPROVED!
     cd mod_spox
     git fetch origin 0.4.0:0.4.0
     git checkout 0.4.0
+
+=== Gem install
     rake gem
     gem install pkg/
+
+=== setup.rb install
+    ruby setup.rb
 
 Once everything is installed, run:
 
