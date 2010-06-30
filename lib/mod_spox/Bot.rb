@@ -1,11 +1,4 @@
-require 'actionpool'
-require 'actiontimer'
-require 'pipeliner'
-require 'spockets'
-require 'baseirc'
-require 'messagefactory'
 require 'pstore'
-require 'mod_spox'
 require 'mod_spox/Socket'
 require 'mod_spox/Outputter'
 require 'mod_spox/Logger'
@@ -46,7 +39,6 @@ module ModSpox
         attr_reader :plugin_manager
         attr_reader :socket
 
-        # :db_path:: Path to database file
         # Create a new bot instance
         def initialize
             @halt = false
@@ -65,6 +57,7 @@ module ModSpox
             @monitor = Splib::Monitor.new
         end
 
+        # Start the IRC bot
         def start
             unless(Thread.current == Thread.main)
                 raise 'This should only be called by the main thread'
@@ -75,6 +68,7 @@ module ModSpox
             Logger.debug 'Main thread back in action. Time to shut this thing down'
         end
 
+        # Stop the IRC bot
         def stop
             @halt = true
             @pool.shutdown
@@ -82,6 +76,9 @@ module ModSpox
             @monitor.broadcast
         end
 
+        # server:: IRC server
+        # port:: IRC port
+        # Connect the the given IRC server and port
         def connect_to(server, port=6667)
             close_socket
             Logger.debug "Attempting connection to: #{server}:#{port}"
@@ -93,6 +90,7 @@ module ModSpox
             @pipeline << Messages::Connected.new
         end
 
+        # Attempt connection to next available server
         def cycle_connect
             load_servers if @con_info.empty? || @con_info[:servers].empty?
             if(@con_info[:servers].empty?)
@@ -102,6 +100,7 @@ module ModSpox
             connect_to(srv[:server], srv[:port])
         end
 
+        # Close the socket connection to the IRC server
         def close_socket
             return unless @socket
             if(@socket.connected?)
@@ -131,6 +130,7 @@ module ModSpox
             @sockets.on_close(@socket.socket){|s| cycle_connect }
         end
 
+        # Load available servers from configuration file
         def load_servers
             unless(File.exists?("#{ModSpox.config_dir}/connection.pstore"))
                 raise ConfigurationMissing.new 'No configuration files found'
