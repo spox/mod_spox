@@ -1,4 +1,4 @@
-#! /home/spox/.rvm/rubies/ruby-1.8.7-p249/bin/ruby
+#!/usr/bin/env ruby
 # encoding: utf-8
 
 require 'getoptlong'
