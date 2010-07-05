@@ -55,6 +55,7 @@ module ModSpox
             @factory = MessageFactory::Factory.new
             @plugin_manager = PluginManager.new(self)
             @monitor = Splib::Monitor.new
+            @pipeline << Messages::Initialized.new
         end
 
         # Start the IRC bot
