@@ -48,25 +48,25 @@ It may not be new, but it will be IMPROVED! This version is for Ruby version 1.8
 
 === How to run this version:
 
-    git clone git://github.com/spox/mod_spox.git
-    cd mod_spox
-    git fetch origin 0.4.0:0.4.0
-    git checkout 0.4.0
+  git clone git://github.com/spox/mod_spox.git
+  cd mod_spox
+  git fetch origin 0.4.0:0.4.0
+  git checkout 0.4.0
 
 === Gem install
-    rake gem
-    gem install pkg/
+  rake gem
+  gem install pkg/
 
 === setup.rb install
-    ruby setup.rb
+  ruby setup.rb
 
 Once everything is installed, run:
 
-    mod_spox -c
+  mod_spox -c
 
 And after you configure it, it's time to start it up. Here is what you will
 probably want to see debug info in the console:
 
-    mod_spox -V debug -d
+  mod_spox -V debug -d
 
 - spox

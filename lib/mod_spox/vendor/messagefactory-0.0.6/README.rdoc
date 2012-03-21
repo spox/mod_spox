@@ -6,14 +6,14 @@ to be used within an IRC type application, and does nothing of value by itself.
 
 === install (easy):
 
-    gem install messagefactory
+  gem install messagefactory
 
 === install (less easy):
 
-    git clone http://github.com/spox/messagefactory.git
-    cd messagefactory
-    gem build *.gemspec
-    gem install ./
+  git clone http://github.com/spox/messagefactory.git
+  cd messagefactory
+  gem build *.gemspec
+  gem install ./
 
 === install (less easy that's a little easier)
 
@@ -32,15 +32,15 @@ MessageFactory is currently tested on:
 
 === Code:
 
-    require 'messagefactory'
+  require 'messagefactory'
 
-    factory = MessageFactory::Factory.new
-    message = factory.process(':mod_spox!~mod_spox@host JOIN :#m')
-    p message
+  factory = MessageFactory::Factory.new
+  message = factory.process(':mod_spox!~mod_spox@host JOIN :#m')
+  p message
 
 === Result:
 
-    #<MessageFactory::Message direction=:incoming, received=Fri Feb 05 19:58:42 UTC 2010, raw=":mod_spox!~mod_spox@host JOIN :#m", type=:join, source="mod_spox!~mod_spox@host", channel="#m">
+  #<MessageFactory::Message direction=:incoming, received=Fri Feb 05 19:58:42 UTC 2010, raw=":mod_spox!~mod_spox@host JOIN :#m", type=:join, source="mod_spox!~mod_spox@host", channel="#m">
 
 == Last remarks
 
@@ -49,5 +49,5 @@ If you are in need of any help, you can generally find me on DALnet and Freenode
 
 == License
 
-    MessageFactory is licensed under the LGPLv3
-    Copyright (c) 2009 spox <spox@modspox.com>
+  MessageFactory is licensed under the LGPLv3
+  Copyright (c) 2009 spox <spox@modspox.com>

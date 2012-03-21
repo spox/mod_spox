@@ -4,14 +4,14 @@ The Spox Library is collection of helper methods and classes.
 
 === install (easy):
 
-    gem install splib
+  gem install splib
 
 === install (less easy):
 
-    git clone http://github.com/spox/splib.git
-    cd splib
-    gem build *.gemspec
-    gem install ./
+  git clone http://github.com/spox/splib.git
+  cd splib
+  gem build *.gemspec
+  gem install ./
 
 === install (less easy that's a little easier)
 
@@ -34,167 +34,167 @@ The Spox Library has various things located within it. The Splib#load method wil
 
 Access to a variety of URL shortening services
 
-    require 'splib'
+  require 'splib'
 
-    Splib.load :UrlShorteners
-    puts Splib.tiny_url 'www.google.com'
-    puts Splib.trim_url 'www.google.com'
-    puts Splib.isgd_url 'www.google.com'
-    puts Splib.shortest_url 'www.google.com'
+  Splib.load :UrlShorteners
+  puts Splib.tiny_url 'www.google.com'
+  puts Splib.trim_url 'www.google.com'
+  puts Splib.isgd_url 'www.google.com'
+  puts Splib.shortest_url 'www.google.com'
 
-    Results:
+  Results:
 
-    http://tinyurl.com/2ty
-    http://tr.im/Ig5f
-    http://is.gd/5wmJ1
-    http://tr.im/Ig5p
+  http://tinyurl.com/2ty
+  http://tr.im/Ig5f
+  http://is.gd/5wmJ1
+  http://tr.im/Ig5p
 
 ==== Conversions
 
 Easy conversion for seconds and bytes to something more human readable
 
-    require 'splib'
+  require 'splib'
 
-    Splib.load :Conversions
-    puts Splib.format_seconds 9999999
-    puts Splib.format_size 9999999999
+  Splib.load :Conversions
+  puts Splib.format_seconds 9999999
+  puts Splib.format_size 9999999999
 
-    Results:
+  Results:
 
-    3 months 3 weeks 1 day 17 hours 46 minutes 39 seconds
-    9.31 Gigabytes
+  3 months 3 weeks 1 day 17 hours 46 minutes 39 seconds
+  9.31 Gigabytes
 
 ==== Exec
 
 Adding a bit of safety and ease of use to exec
 
-    require 'splib'
+  require 'splib'
 
-    Splib.load :Exec
-    begin
-        Splib.exec('echo test', 10, 1)
-    rescue IOError
-        puts 'Exceeded allowed number of returned bytes'
-    end
-    begin
-        Splib.exec('while [ true ]; do true; done;', 1)
-    rescue Timeout::Error
-        puts 'Exceeded allowed running time'
-    end
-    puts Splib.exec('echo "hello world"')
+  Splib.load :Exec
+  begin
+    Splib.exec('echo test', 10, 1)
+  rescue IOError
+    puts 'Exceeded allowed number of returned bytes'
+  end
+  begin
+    Splib.exec('while [ true ]; do true; done;', 1)
+  rescue Timeout::Error
+    puts 'Exceeded allowed running time'
+  end
+  puts Splib.exec('echo "hello world"')
 
-    Results:
+  Results:
 
-    Exceeded allowed number of returned bytes
-    Exceeded allowed running time
-    hello world
+  Exceeded allowed number of returned bytes
+  Exceeded allowed running time
+  hello world
 
 ==== Constants
 
 Find constants easily, especially within loaded modules
 
-    require 'splib'
+  require 'splib'
 
-    Splib.load :Constants
-    mod = Module.new
-    mod.class_eval("
-        module Fu
-            class Bar
-            end
-        end"
-    )
-    p Splib.find_const('String')
-    fb = Splib.find_const('Fu::Bar', [mod]).new
-    p fb
-    p Splib.type_of?(fb, 'Fu::Bar')
+  Splib.load :Constants
+  mod = Module.new
+  mod.class_eval("
+    module Fu
+      class Bar
+      end
+    end"
+  )
+  p Splib.find_const('String')
+  fb = Splib.find_const('Fu::Bar', [mod]).new
+  p fb
+  p Splib.type_of?(fb, 'Fu::Bar')
 
 
-    Results:
+  Results:
 
-    String
-    #<#<Module:0x95f2fd0>::Fu::Bar:0x95f287c>
-    true
+  String
+  #<#<Module:0x95f2fd0>::Fu::Bar:0x95f287c>
+  true
 
 
 ==== PriorityQueue
 
 Add some logic to item queueing
 
-    require 'splib'
+  require 'splib'
 
-    Splib.load :PriorityQueue
+  Splib.load :PriorityQueue
 
-    queue = Splib::PriorityQueue.new{|s| s == :last }
-    queue.push(:last, 'last')
-    2.times{ queue.push(:slot1, 'test') }
-    2.times{ queue.push(:slot2, 'fubar') }
-    until(queue.empty?)
-        puts queue.pop
-    end
+  queue = Splib::PriorityQueue.new{|s| s == :last }
+  queue.push(:last, 'last')
+  2.times{ queue.push(:slot1, 'test') }
+  2.times{ queue.push(:slot2, 'fubar') }
+  until(queue.empty?)
+    puts queue.pop
+  end
 
-    Results:
+  Results:
 
-    test
-    fubar
-    test
-    fubar
-    last
+  test
+  fubar
+  test
+  fubar
+  last
 
 ==== Float
 
 Need to know if your float is within a delta?
 
-    require 'splib'
-    Splib.load :Float
+  require 'splib'
+  Splib.load :Float
 
-    p 4.21.within_delta?(:expected => 4.30, :delta => 0.1)
+  p 4.21.within_delta?(:expected => 4.30, :delta => 0.1)
 
-    => true
+  => true
 
 ==== Monitor
 
 Annoyed that your monitor is generating thread owner errors? This simple
 monitor does its best to ensure your threads stay where they are supposed.
 
-    require 'splib'
-    Splib.load :Monitor
+  require 'splib'
+  Splib.load :Monitor
 
-    output = []
-    go = false
-    monitor = Splib::Monitor.new
-    t = Thread.new{ monitor.wait_until{go}; output << :foo}
-    Thread.new{ monitor.wait_while{!go}; output << :bar}
-    Thread.new{ monitor.wait; output << :foobar }
-    Thread.pass
-    monitor.broadcast
-    t.wakeup
-    Thread.pass
-    p output
-    go = true
-    monitor.signal
-    Thread.pass
-    p output
-    Thread.pass
-    monitor.broadcast
-    Thread.pass
-    p output
+  output = []
+  go = false
+  monitor = Splib::Monitor.new
+  t = Thread.new{ monitor.wait_until{go}; output << :foo}
+  Thread.new{ monitor.wait_while{!go}; output << :bar}
+  Thread.new{ monitor.wait; output << :foobar }
+  Thread.pass
+  monitor.broadcast
+  t.wakeup
+  Thread.pass
+  p output
+  go = true
+  monitor.signal
+  Thread.pass
+  p output
+  Thread.pass
+  monitor.broadcast
+  Thread.pass
+  p output
 
-    Results:
+  Results:
 
-    [:foobar]
-    [:foobar, :foo]
-    [:foobar, :foo, :bar]
+  [:foobar]
+  [:foobar, :foo]
+  [:foobar, :foo, :bar]
 
 The monitor also provides simple wait timers. See the following code:
 
-    require 'splib'
-    Splib.load :Monitor
+  require 'splib'
+  Splib.load :Monitor
 
-    monitor = Splib::Monitor.new
-    a = Queue.new
-    5.times{ Thread.new{ monitor.wait(0.1); a << 1; } }
-    sleep(0.2)
-    puts "Size: #{a.size}"
+  monitor = Splib::Monitor.new
+  a = Queue.new
+  5.times{ Thread.new{ monitor.wait(0.1); a << 1; } }
+  sleep(0.2)
+  puts "Size: #{a.size}"
 
 Here we have five threads waiting with a timeout. Nicely, the monitor only uses
 a single thread for timing, instead of generating a new thread for each timeout.
@@ -203,15 +203,15 @@ a single thread for timing, instead of generating a new thread for each timeout.
 
 Make getting an actual amount of sleeping a bit easier:
 
-    require 'splib'
-    Splib.load :Sleep
+  require 'splib'
+  Splib.load :Sleep
 
-    puts Kernel.sleep(0.01)
-    puts Splib.sleep(0.01)
+  puts Kernel.sleep(0.01)
+  puts Splib.sleep(0.01)
 
-    =>
-        0
-        0.00228595733642578
+  =>
+    0
+    0.00228595733642578
 
 ==== CodeReloader
 
@@ -219,41 +219,41 @@ Easily reload code into a module:
 
 First, assume that file.rb starts out with the following contents:
 
-    class Foo
-        def test
-            puts 'Test'
-        end
+  class Foo
+    def test
+      puts 'Test'
     end
+  end
 
 Then, after the Splib.load_code call, we modify the file to contain:
 
-    class Foo
-        def untest
-            puts 'UnTest'
-        end
+  class Foo
+    def untest
+      puts 'UnTest'
     end
+  end
 
 Okay, now we proceed:
 
-    require 'splib'
-    Splib.load :CodeReloader, :Constants
+  require 'splib'
+  Splib.load :CodeReloader, :Constants
 
-    mod = Splib.load_code('file.rb')
-    foo = Splib.find_const('Foo', [mod]).new
-    p foo.respond_to?(:test)
-    puts foo.test
-    mod = Splib.reload_code(mod)
-    foo = Splib.find_const('Foo', [mod]).new
-    p foo.respond_to?(:test)
-    p foo.respond_to?(:untest)
-    puts foo.untest
+  mod = Splib.load_code('file.rb')
+  foo = Splib.find_const('Foo', [mod]).new
+  p foo.respond_to?(:test)
+  puts foo.test
+  mod = Splib.reload_code(mod)
+  foo = Splib.find_const('Foo', [mod]).new
+  p foo.respond_to?(:test)
+  p foo.respond_to?(:untest)
+  puts foo.untest
 
-    =>
-        true
-        Test
-        false
-        true
-        UnTest
+  =>
+    true
+    Test
+    false
+    true
+    UnTest
 
 == Last remarks
 
@@ -261,5 +261,5 @@ If you find any bugs, please report them through {github}[http://github.com/spox
 
 == License
 
-    Spox Library is licensed under the MIT License
-    Copyright (c) 2009 spox <spox@modspox.com>
+  Spox Library is licensed under the MIT License
+  Copyright (c) 2009 spox <spox@modspox.com>

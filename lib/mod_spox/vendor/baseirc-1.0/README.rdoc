@@ -7,14 +7,14 @@ library.)
 
 === install (easy):
 
-    gem install baseirc
+  gem install baseirc
 
 === install (less easy)
 
-    git clone http://github.com/spox/baseirc.git
-    cd baseirc
-    gem build *.gemspec
-    gem install ./
+  git clone http://github.com/spox/baseirc.git
+  cd baseirc
+  gem build *.gemspec
+  gem install ./
 
 === install (less easy that's a little easier)
 
@@ -33,17 +33,17 @@ BaseIRC is currently tested on:
 
 === Code:
 
-    require 'baseirc'
+  require 'baseirc'
 
-    socket = []
-    irc = BaseIRC::IRC.new(socket)
-    irc.privmsg('spox', 'hi')
+  socket = []
+  irc = BaseIRC::IRC.new(socket)
+  irc.privmsg('spox', 'hi')
 
-    p socket
+  p socket
 
 === Result:
 
-    ["PRIVMSG spox :hi"]
+  ["PRIVMSG spox :hi"]
 
 The BaseIRC::IRC object takes a socket, or socket like, object. The only thing
 the library requires of this object is that it has << defined.
@@ -55,5 +55,5 @@ If you are in need of any help, you can generally find me on DALnet and Freenode
 
 == License
 
-    BaseIRC is licensed under the MIT License
-    Copyright (c) 2009 spox <spox@modspox.com>
+  BaseIRC is licensed under the MIT License
+  Copyright (c) 2009 spox <spox@modspox.com>

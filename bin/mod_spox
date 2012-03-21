@@ -5,19 +5,19 @@ require 'getoptlong'
 require 'mod_spox'
 
 begin
-    require 'fastthread'
+  require 'fastthread'
 rescue LoadError
-    # silently ignore
+  # silently ignore
 end
 
 opts = GetoptLong.new(
-    ['--config', '-c', GetoptLong::NO_ARGUMENT],
-    ['--path', '-p', GetoptLong::REQUIRED_ARGUMENT],
-    ['--version', '-v', GetoptLong::NO_ARGUMENT],
-    ['--help', '-h', GetoptLong::NO_ARGUMENT],
-    ['--daemon', '-D', GetoptLong::NO_ARGUMENT],
-    ['--debug', '-d', GetoptLong::OPTIONAL_ARGUMENT],
-    ['--verbosity', '-V', GetoptLong::REQUIRED_ARGUMENT])
+  ['--config', '-c', GetoptLong::NO_ARGUMENT],
+  ['--path', '-p', GetoptLong::REQUIRED_ARGUMENT],
+  ['--version', '-v', GetoptLong::NO_ARGUMENT],
+  ['--help', '-h', GetoptLong::NO_ARGUMENT],
+  ['--daemon', '-D', GetoptLong::NO_ARGUMENT],
+  ['--debug', '-d', GetoptLong::OPTIONAL_ARGUMENT],
+  ['--verbosity', '-V', GetoptLong::REQUIRED_ARGUMENT])
 
 verb = Logger::FATAL
 config = false
@@ -27,99 +27,99 @@ path = nil
 logger = nil
 
 opts.each do |opt,arg|
-    case opt
-    when '--help'
-        puts 'Usage: mod_spox [opts]'
-        puts '--config -c:                          Run configuration wizard'
-        puts '--path -p /tmp:                       Set path for configuration files'
-        puts '--version -v:                         Print version information'
-        puts '--help -h:                            Print this help information'
-        puts '--daemon -d:                          Daemonize the process'
-        puts '--debug -D [logfile]                  Turn on debugging (defaults to stdout)'
-        puts '--verbosity -V [(info|warn|fatal)]    verbosity of debug output (default fatal)'
-        exit
-    when '--version'
-        puts "mod_spox IRC robot (version #{ModSpox::VERSION})"
-        puts 'http://github.com/spox/mod_spox'
-        exit
-    when '--config'
-        config = true
-    when '--path'
-        path = arg
-    when '--daemon'
-        daemon = true
-    when '--verbosity'
-        case arg
-        when 'debug'
-            verb = Logger::DEBUG
-        when 'info'
-            verb = Logger::INFO
-        when 'error'
-            verb = Logger::ERROR
-        when 'warn'
-            verb = Logger::WARN
-        when 'fatal'
-            verb = Logger::FATAL
-        else
-            verb = Logger::FATAL
-        end
-    when '--debug'
-        logger = Logger.new(File.writable?(arg) ? arg : $stdout)
+  case opt
+  when '--help'
+    puts 'Usage: mod_spox [opts]'
+    puts '--config -c:              Run configuration wizard'
+    puts '--path -p /tmp:             Set path for configuration files'
+    puts '--version -v:             Print version information'
+    puts '--help -h:              Print this help information'
+    puts '--daemon -d:              Daemonize the process'
+    puts '--debug -D [logfile]          Turn on debugging (defaults to stdout)'
+    puts '--verbosity -V [(info|warn|fatal)]  verbosity of debug output (default fatal)'
+    exit
+  when '--version'
+    puts "mod_spox IRC robot (version #{ModSpox::VERSION})"
+    puts 'http://github.com/spox/mod_spox'
+    exit
+  when '--config'
+    config = true
+  when '--path'
+    path = arg
+  when '--daemon'
+    daemon = true
+  when '--verbosity'
+    case arg
+    when 'debug'
+      verb = Logger::DEBUG
+    when 'info'
+      verb = Logger::INFO
+    when 'error'
+      verb = Logger::ERROR
+    when 'warn'
+      verb = Logger::WARN
+    when 'fatal'
+      verb = Logger::FATAL
+    else
+      verb = Logger::FATAL
     end
+  when '--debug'
+    logger = Logger.new(File.writable?(arg) ? arg : $stdout)
+  end
 end
 
 if(config)
-    require 'mod_spox/ConfigurationWizard'
-    wizard = ModSpox::ConfigurationWizard.new(path)
-    wizard.run
-    exit
+  require 'mod_spox/ConfigurationWizard'
+  wizard = ModSpox::ConfigurationWizard.new(path)
+  wizard.run
+  exit
 end
 
 require 'mod_spox/Bot'
 
 if(logger)
-    logger.level = verb
-    ModSpox::Logger.logger = logger
-    ModSpox::Logger.info('Logger has been initialized')
+  logger.level = verb
+  ModSpox::Logger.logger = logger
+  ModSpox::Logger.info('Logger has been initialized')
 end
 
 if(path)
-    if(Directory.writable?(path) && Directory.readable?(path))
-        ModSpox.config_dir = path
-        ModSpox::Logger.info("Bot configuration path has been set to: #{ModSpox.config_dir}")
-    else
-        puts "Error: Configuration path does not have proper permissions"
-        exit 1
-    end
+  if(Directory.writable?(path) && Directory.readable?(path))
+    ModSpox.config_dir = path
+    ModSpox::Logger.info("Bot configuration path has been set to: #{ModSpox.config_dir}")
+  else
+    puts "Error: Configuration path does not have proper permissions"
+    exit 1
+  end
 end
 
 if(daemon)
-    ModSpox::Logger.info('Daemon requested. Attempting to daemonize bot.')
-    if(RUBY_VERSION > '1.9.0')
-        Process.daemon
-    else
-        if(pid = fork)
-            Signal.trap('HUP', 'IGNORE')
-            process.detach(pid)
-            exit
-        end
+  ModSpox::Logger.info('Daemon requested. Attempting to daemonize bot.')
+  if(RUBY_VERSION > '1.9.0')
+    Process.daemon
+  else
+    if(pid = fork)
+      Signal.trap('HUP', 'IGNORE')
+      process.detach(pid)
+      exit
     end
-    ModSpox::Logger.info('Daemonization is now complete.')
+  end
+  ModSpox::Logger.info('Daemonization is now complete.')
 end
 
 ModSpox::Logger.info('Initializing and starting the bot')
 
 begin
-    bot = ModSpox::Bot.new
-    bot.start
+  bot = ModSpox::Bot.new
+  bot.start
 rescue ModSpox::ConfigurationMissing => e
-    puts "ERROR: #{e}"
-    puts "Try running: mod_spox -c"
-    exit 1
+  puts "ERROR: #{e}"
+  puts "Try running: mod_spox -c"
+  exit 1
 rescue => e
-    puts "ERROR: #{e}"
-    if(logger)
-        puts e.backtrace.join("\n")
-    end
-    exit 1
+  puts "ERROR: #{e}"
+  if(logger)
+    puts e.backtrace.join("\n")
+  end
+  exit 1
 end

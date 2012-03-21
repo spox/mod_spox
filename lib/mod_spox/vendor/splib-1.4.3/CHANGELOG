@@ -1,39 +1,39 @@
 1.4.3
-    * Added new Splib.sleep to return actual sleep times that are useful
-    * Added Monitor#try_lock
-    * Modify locking behavior on Monitor#signal and Monitor#broadcast
-    * Updates to Monitor#wait when used with a timeout
-    * Added some simple checking to remove dead threads that fail to release their lock
-    * CodeReloader.reload_code returns new holder instead of gutted holder
+  * Added new Splib.sleep to return actual sleep times that are useful
+  * Added Monitor#try_lock
+  * Modify locking behavior on Monitor#signal and Monitor#broadcast
+  * Updates to Monitor#wait when used with a timeout
+  * Added some simple checking to remove dead threads that fail to release their lock
+  * CodeReloader.reload_code returns new holder instead of gutted holder
 1.4.2
-    * Modify Float#within_delta? to use #between? like any
-        reasonable person would
-    * Add a priority setting for Splib.exec
-    * Add process tracking with Splib.exec so we don't leave
-        children laying around if we get shutdown
+  * Modify Float#within_delta? to use #between? like any
+    reasonable person would
+  * Add a priority setting for Splib.exec
+  * Add process tracking with Splib.exec so we don't leave
+    children laying around if we get shutdown
 1.4.1
-    * Updates in Monitor to attempt to force
-        threads to stay put
-    * Fix Monitor's locking/unlocking
+  * Updates in Monitor to attempt to force
+    threads to stay put
+  * Fix Monitor's locking/unlocking
 1.4
-    * Clean up exclusive usage in Monitor
-    * Add a timeout on Monitor#wait
-    * Add Monitor#locked?
-    * Add Float library to define Float#within_delta?
+  * Clean up exclusive usage in Monitor
+  * Add a timeout on Monitor#wait
+  * Add Monitor#locked?
+  * Add Float library to define Float#within_delta?
 1.3
-    * Add simple monitor
+  * Add simple monitor
 1.2
-    * Added Array#fixed_flatten for pre 1.9 versions
-    * Remove IO.binread from CodeReloader for pre 1.9 versions
-    * Use array for Conversion information storage since we
-        only have Hash ordering in 1.9
-    * Use #chr for pre 1.9
-    * Make Splib.exec a wrapper for normal and threaded versions
-        Check platform and use threaded version when on java
-        automatically
+  * Added Array#fixed_flatten for pre 1.9 versions
+  * Remove IO.binread from CodeReloader for pre 1.9 versions
+  * Use array for Conversion information storage since we
+    only have Hash ordering in 1.9
+  * Use #chr for pre 1.9
+  * Make Splib.exec a wrapper for normal and threaded versions
+    Check platform and use threaded version when on java
+    automatically
 1.1
-    * Added Splib.type_of? method to the Constants library
-    * Splib.find_const returns nil if constant not found
-    * Added Splib.find_const to the Constants library
+  * Added Splib.type_of? method to the Constants library
+  * Splib.find_const returns nil if constant not found
+  * Added Splib.find_const to the Constants library
 1.0
-    * Initial release
+  * Initial release
