@@ -15,14 +15,6 @@ them work. Otherwise, the new plugin structure has lots of great new features:
 * Better access to bot internals
 * Packaging freedom
 
-So, mod_spox started way back when as a school project as a way to demonstrate
-a bunch of ideas that I had been working on. As such, the old version ended up
-becoming a monstrosity due to the variety of ideas all smashed into this single
-project. So, once mod_spox got to a some what stable point, I began to gut the
-entire project. And that's where we are now. A slew of independent libraries
-that are glued together by mod_spox. It makes things easier to test, easier to
-upgrade and easier to maintain. Hurray!
-
 The plugins were a big part of this rebuilding process too. In the old setup,
 the plugins were generally held within the gem, and loaded as needed. They could
 also be single files thrown into the .plugins directory, but this proved to get
@@ -56,9 +48,6 @@ It may not be new, but it will be IMPROVED! This version is for Ruby version 1.8
 === Gem install
   rake gem
   gem install pkg/
-
-=== setup.rb install
-  ruby setup.rb
 
 Once everything is installed, run:
 
