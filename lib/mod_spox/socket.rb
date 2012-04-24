@@ -1,6 +1,6 @@
 require 'splib'
 require 'socket'
-Splib.load :Monitor, :PriorityQueue
+Splib.load :monitor, :priority_queue
 
 module ModSpox
   # IRC Socket

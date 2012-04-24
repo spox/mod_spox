@@ -1,3 +1,5 @@
+require 'mod_spox/plugin'
+
 class Plug < ModSpox::Plugin
   attr_accessor :var
   def initialize(*args)

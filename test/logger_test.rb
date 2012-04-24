@@ -1,7 +1,7 @@
 $:.unshift File.join(File.dirname(__FILE__),'..','lib')
 
 require 'test/unit'
-require 'mod_spox/Logger'
+require 'mod_spox/logger'
 
 require 'stringio'
 

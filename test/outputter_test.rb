@@ -2,7 +2,7 @@
 $:.unshift File.join(File.dirname(__FILE__),'..','lib')
 
 require 'test/unit'
-require 'mod_spox/Outputter'
+require 'mod_spox/outputter'
 
 class OutputterTest < Test::Unit::TestCase
 

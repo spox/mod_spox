@@ -1,6 +1,7 @@
 require 'thread'
+require 'rubygems'
 require 'splib'
-Splib.load :PriorityQueue, :Monitor
+Splib.load :priority_queue, :monitor
 
 module ModSpox
   # The Outputter object is used to properly queue messages

@@ -2,7 +2,7 @@
 $:.unshift File.join(File.dirname(__FILE__),'..','lib')
 
 require 'test/unit'
-require 'mod_spox/Bot'
+require 'mod_spox/bot'
 
 class BotTest < Test::Unit::TestCase
   def test_config_default

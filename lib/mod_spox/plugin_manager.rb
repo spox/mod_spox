@@ -1,9 +1,9 @@
-require 'mod_spox/Plugin'
-
+require 'mod_spox/plugin'
+require 'mod_spox/bot'
 require 'splib'
-Splib.load :CodeReloader, :Constants, :Monitor
 
-require 'mod_spox/Bot'
+Splib.load :code_reloader, :constants, :monitor
+
 
 module ModSpox
   # Manages plugins for mod_spox

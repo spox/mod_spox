@@ -69,13 +69,13 @@ opts.each do |opt,arg|
 end
 
 if(config)
-  require 'mod_spox/ConfigurationWizard'
+  require 'mod_spox/configuration_wizard'
   wizard = ModSpox::ConfigurationWizard.new(path)
   wizard.run
   exit
 end
 
-require 'mod_spox/Bot'
+require 'mod_spox/bot'
 
 if(logger)
   logger.level = verb

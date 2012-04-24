@@ -1,7 +1,7 @@
 $:.unshift File.join(File.dirname(__FILE__),'..','lib')
 
 require 'test/unit'
-require 'mod_spox/PluginManager'
+require 'mod_spox/plugin_manager'
 
 require 'ostruct'
 
@@ -11,6 +11,7 @@ end
 
 class PluginManagerTest < Test::Unit::TestCase
   def setup
+    ModSpox.config_dir = nil
     bot = ModSpox::Bot.new
     @pm = ModSpox::PluginManager.new(bot)
     @dummy = File.dirname(__FILE__) + '/plugins/DummyPlugin.rb'

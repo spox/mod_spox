@@ -1,9 +1,9 @@
 require 'pstore'
-require 'mod_spox/Socket'
-require 'mod_spox/Outputter'
-require 'mod_spox/Logger'
-require 'mod_spox/PluginManager'
-require 'mod_spox/Messages'
+require 'mod_spox/socket'
+require 'mod_spox/outputter'
+require 'mod_spox/logger'
+require 'mod_spox/plugin_manager'
+require 'mod_spox/messages'
 
 module ModSpox
 
@@ -21,7 +21,7 @@ module ModSpox
     # Directory to store files. If it has not been set,
     # it will default to '/tmp'
     def config_dir
-      if(class_variable_defined?(:@@config_dir))
+      if(class_variable_defined?(:@@config_dir) && !@@config_dir.to_s.empty?)
         @@config_dir
       else
         '/tmp'
