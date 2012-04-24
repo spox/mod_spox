@@ -1,0 +1,79 @@
+GIT
+  remote: git://github.com/spox/actionpool.git
+  revision: 51e05ec633b7745aec672b38fc1a1014bd8fb139
+  specs:
+    actionpool (0.2.3)
+      splib (~> 1.4)
+
+GIT
+  remote: git://github.com/spox/actiontimer.git
+  revision: fcda2ea3cb23db54d7e11005d093970145fed54c
+  specs:
+    actiontimer (0.2.1)
+      actionpool (~> 0.2.3)
+      splib (~> 1.4)
+
+GIT
+  remote: git://github.com/spox/baseirc.git
+  revision: 282e43c598f57f259b2f46007a0a9846f75cf915
+  specs:
+    baseirc (1.0)
+
+GIT
+  remote: git://github.com/spox/messagefactory.git
+  revision: 3fa42c0f8502a13f38e6e48d472467839ecb3e78
+  specs:
+    messagefactory (0.0.6)
+      splib (~> 1.4.3)
+
+GIT
+  remote: git://github.com/spox/pipeliner.git
+  revision: e86dccfa8033c478be6733ff70b0aa8db35f6405
+  specs:
+    pipeliner (1.1)
+      actionpool (~> 0.2.3)
+      splib (~> 1.4.3)
+
+GIT
+  remote: git://github.com/spox/splib.git
+  revision: fd4451243ce4c9a319e74b33e6decdd09a509f43
+  specs:
+    splib (1.4.3)
+
+GIT
+  remote: git://github.com/spox/spockets.git
+  revision: 48a314b0ca34a698489055f7a986d294906b74c1
+  specs:
+    spockets (0.1.1)
+      actionpool (~> 0.2.3)
+
+PATH
+  remote: .
+  specs:
+    mod_spox (0.4.0)
+      actionpool (~> 0.2.3)
+      actiontimer (~> 0.2.1)
+      baseirc (~> 1.0)
+      messagefactory (~> 0.0.5)
+      pipeliner (~> 1.1)
+      splib (~> 1.4.3)
+      spockets (~> 0.1.1)
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    rake (0.9.2.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  actionpool!
+  actiontimer!
+  baseirc!
+  messagefactory!
+  mod_spox!
+  pipeliner!
+  rake
+  splib!
+  spockets!
