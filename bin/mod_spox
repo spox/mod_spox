@@ -34,8 +34,8 @@ opts.each do |opt,arg|
     puts '--path -p /tmp:             Set path for configuration files'
     puts '--version -v:             Print version information'
     puts '--help -h:              Print this help information'
-    puts '--daemon -d:              Daemonize the process'
-    puts '--debug -D [logfile]          Turn on debugging (defaults to stdout)'
+    puts '--daemon -D:              Daemonize the process'
+    puts '--debug -d [logfile]          Turn on debugging (defaults to stdout)'
     puts '--verbosity -V [(info|warn|fatal)]  verbosity of debug output (default fatal)'
     exit
   when '--version'
@@ -64,7 +64,7 @@ opts.each do |opt,arg|
       verb = Logger::FATAL
     end
   when '--debug'
-    logger = Logger.new(File.writable?(arg) ? arg : $stdout)
+    logger = Logger.new(File.writable?(arg) ? arg : STDOUT)
   end
 end
 

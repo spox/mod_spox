@@ -63,17 +63,18 @@ module ModSpox
     def reload_plugin(name = :all)
       name = name.to_sym
       plugs = []
+      Logger.debug "Requested reload of: #{name}"
       if(name == :all)
         pls = []
-        @plugins.values.each do |x|
-          pls.push(x[:module].path) if x[:module]
-          x[:plugin].destroy
+        Logger.debug 'Reloading all plugins'
+        @plugins.keys.each do |name|
+          path = @plugins[name][:module] ? @plugins[name][:module].path : nil
+          unload_plugin(name)
+          plugs = path ? load_plugin(:file => path) : load_plugin(:gem => name)
         end
-        @plugins.clear
-        pls.each{|x| plugs += load_plugin(:file => x)}
-        plugs += create_gem_plugins
       else
         raise NameError.new "No plugin found with name: #{name}" unless @plugins[name]
+        Logger.debug "Reloading plugin: #{name}"
         path = @plugins[name][:module] ? @plugins[name][:module].path : nil
         unload_plugin(name)
         plugs = path ? load_plugin(:file => path) : load_plugin(:gem => name)
@@ -92,7 +93,7 @@ module ModSpox
     # Loads all builtin plugins
     def load_builtins
       Dir.glob(File.dirname(__FILE__)+'/plugins/*.rb').each do |file|
-        require file
+        load_plugin(:file => file)
       end
       create_non_module_plugins
     end
@@ -102,13 +103,15 @@ module ModSpox
     # created.
     def create_non_module_plugins
       plugs = []
-      @lock.synchronize do
-        plugs = ModSpox::Plugins.constants.map{|x|
-          ModSpox::Plugins.const_get(x)}.find_all{|x|
-            x < ModSpox::Plugin && !@plugins.has_key?(x)}
-        plugs.each do |pl|
-          @plugins[pl.to_s.split('::').last.to_sym] = {:module => nil, :plugin => pl.new(@bot, @timer)}
-          Logger.debug("Intialized new plugin: #{pl}")
+      if(defined?(ModSpox::Plugins))
+        @lock.synchronize do
+          plugs = ModSpox::Plugins.constants.map{|x|
+            ModSpox::Plugins.const_get(x)}.find_all{|x|
+              x < ModSpox::Plugin && !@plugins.has_key?(x)}
+          plugs.each do |pl|
+            @plugins[pl.to_s.split('::').last.to_sym] = {:module => nil, :plugin => pl.new(@bot, @timer, self)}
+            Logger.debug("Intialized new plugin: #{pl}")
+          end
         end
       end
       plugs
@@ -117,14 +120,19 @@ module ModSpox
     # file:: Path to file
     # Load all plugins within given file
     def load_plugins_in(file)
+      Logger.debug "Requested plugin load at: #{file}"
       plugs = []
       @lock.synchronize do
         if(File.exists?(file))
           mod = Splib.load_code(file)
-          plugs = mod.constants.map{|x|mod.const_get(x)}.find_all{|x|x < ModSpox::Plugin}
-          plugs.each do |pl|
-            @plugins[pl.to_s.split('::').last.to_sym] = {:module => mod, :plugin => pl.new(@bot, @timer)}
-            Logger.info "New plugin loaded: #{pl}"
+          con = mod.const_get(:ModSpox)
+          con = con.const_get(:Plugins) if con
+          if(con)
+            plugs = con.constants.map{|x|con.const_get(x)}.find_all{|x|x < ModSpox::Plugin}
+            plugs.each do |pl|
+              @plugins[pl.to_s.split('::').last.to_sym] = {:module => mod, :plugin => pl.new(@bot, @timer, self)}
+              Logger.info "New plugin loaded: #{pl}"
+            end
           end
         else
           raise ArgumentError.new 'File does not exist'

@@ -10,13 +10,16 @@ module ModSpox
     # :timer:: ActionTimer::Timer
     # :pool:: ActionPool::Pool
     # Create new plugin instance
-    def initialize(bot, timer)
+    def initialize(bot, timer, manager)
       @pipeline = bot.pipeline
       @irc = bot.irc
       @timer = timer
       @pool = bot.pool
-      @plugin_manager = bot.plugin_manager
+      @plugin_manager = manager
       @bot = bot
+      if(self.respond_to?(:add_triggers))
+        @pipeline.hook(Messages::Initialized, self, :add_triggers)
+      end
       setup
     end
 
@@ -31,6 +34,21 @@ module ModSpox
     # self from the pipeline
     def destroy
       @pipeline.unhook(self)
+    end
+
+    def current_nick
+      info[:nick]
+    end
+
+    def info
+      _info = {}
+      store = PStore.new("#{ModSpox.config_dir}/bot.pstore")
+      store.transaction do
+        _info[:nick] = store[:nick]
+        _info[:username] = store[:username]
+        _info[:realname] = store[:realname]
+      end
+      _info
     end
   end
 end

@@ -1,9 +1,9 @@
 module ModSpox
   module Plugins
     # Sends initial credentials on connection
-    class OnConnect < ModSpox::Plugin
+    class OnConnect < ::ModSpox::Plugin
       def setup
-        @pipeline.hook(Messages::Connected, self, :on_connect)
+        @pipeline.hook(::ModSpox::Messages::Connected, self, :on_connect)
         @nick = nil
         @username = nil
         @real_name = nil
@@ -20,7 +20,7 @@ module ModSpox
       private
 
       def get_nick_info
-        info = PStore.new("#{ModSpox.config_dir}/bot.pstore")
+        info = PStore.new("#{::ModSpox.config_dir}/bot.pstore")
         info.transaction do
           @nick = info[:nick]
           @username = info[:username]
