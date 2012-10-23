@@ -19,6 +19,7 @@ module ModSpox
       @bot = bot
       if(self.respond_to?(:add_triggers))
         @pipeline.hook(Messages::Initialized, self, :add_triggers)
+        @pipeline.hook(Messages::PluginReload, self, :add_triggers)
       end
       setup
     end

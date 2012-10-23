@@ -51,6 +51,7 @@ module ModSpox
       name = name.to_sym
       if(@plugins[name])
         @plugins[name][:plugin].destroy
+        @bot.pipeline.unhook(@plugins[name][:plugin])
         @plugins.delete(name)
       else
         raise NameError.new "No plugin found with name: #{name}"
@@ -79,6 +80,7 @@ module ModSpox
         unload_plugin(name)
         plugs = path ? load_plugin(:file => path) : load_plugin(:gem => name)
       end
+      @bot.pipeline << Messages::PluginReload
       plugs
     end
 

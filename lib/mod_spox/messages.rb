@@ -10,5 +10,7 @@ module ModSpox
     end
     class Shutdown < Message
     end
+    class PluginReload < Message
+    end
   end
 end
